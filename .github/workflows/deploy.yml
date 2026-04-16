@@ -24,21 +24,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Fix file structure
+      - name: Debug
         run: |
-          mkdir -p public
-          cp -f icon-192.png public/ 2>/dev/null || true
-          cp -f icon-512.png public/ 2>/dev/null || true
-          cat > src/main.jsx << 'EOF'
-          import React from 'react'
-          import ReactDOM from 'react-dom/client'
-          import App from './App.jsx'
-          ReactDOM.createRoot(document.getElementById('root')).render(
-            <React.StrictMode>
-              <App />
-            </React.StrictMode>
-          )
-          EOF
+          echo "=== ROOT ==="
+          ls -la
+          echo "=== SRC ==="
+          ls -la src/
+          echo "=== main.jsx ==="
+          cat src/main.jsx
+          echo "=== App.jsx (first 5 lines) ==="
+          head -5 src/App.jsx
       - run: npm install
       - run: npm run build
       - uses: actions/configure-pages@v4
