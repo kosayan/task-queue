@@ -27,9 +27,14 @@ jobs:
       - name: Fix file structure
         run: |
           mkdir -p public src
-          mv -f icon-192.png public/ 2>/dev/null || true
-          mv -f icon-512.png public/ 2>/dev/null || true
-          mv -f main.jsx src/ 2>/dev/null || true
+          cp -f icon-192.png public/ 2>/dev/null || true
+          cp -f icon-512.png public/ 2>/dev/null || true
+          cp -f main.jsx src/ 2>/dev/null || true
+          cp -f App.jsx src/ 2>/dev/null || true
+          echo "=== ROOT ==="
+          ls -la
+          echo "=== SRC ==="
+          ls -la src/
       - run: npm install
       - run: npm run build
       - uses: actions/configure-pages@v4
