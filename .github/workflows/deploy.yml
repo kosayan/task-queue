@@ -24,16 +24,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Debug
+      - name: Fix file structure
         run: |
-          echo "=== ROOT ==="
-          ls -la
-          echo "=== SRC ==="
-          ls -la src/
-          echo "=== main.jsx ==="
-          cat src/main.jsx
-          echo "=== App.jsx (first 5 lines) ==="
-          head -5 src/App.jsx
+          mkdir -p public
+          cp -f icon-192.png public/ 2>/dev/null || true
+          cp -f icon-512.png public/ 2>/dev/null || true
+      - name: Fix iOS text replacements
+        run: |
+          sed -i 's/\xe2\x80\x9c/"/g' src/App.jsx
+          sed -i 's/\xe2\x80\x9d/"/g' src/App.jsx
+          sed -i "s/\xe2\x80\x98/'/g" src/App.jsx
+          sed -i "s/\xe2\x80\x99/'/g" src/App.jsx
+          sed -i 's/\xe2\x80\xa6/.../g' src/App.jsx
       - run: npm install
       - run: npm run build
       - uses: actions/configure-pages@v4
