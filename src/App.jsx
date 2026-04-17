@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from “react”;
 
-const APP_VERSION = “2.2.0”;
+const APP_VERSION = “2.3.0”;
 
 const IMPORTANCE = [
 { value: 3, label: “高”, color: “#ff3b30” },
@@ -166,6 +166,10 @@ const fileInputRef = useRef(null);
 useEffect(() => { saveTasks(tasks); }, [tasks]);
 useEffect(() => { localStorage.setItem(SORT_KEY, sortOrder); }, [sortOrder]);
 useEffect(() => { saveDefaults(defaults); }, [defaults]);
+
+const updateSubtasks = useCallback((taskId, subtasks) => {
+setTasks((prev) => prev.map((t) => (t.id === taskId ? { …t, subtasks } : t)));
+}, []);
 
 // Past locations for suggestions
 const pastLocations = useMemo(() => {
@@ -385,10 +389,10 @@ if (focusMode && topTask) {
 const label = getScoreLabel(topTask.score);
 const weightInfo = WEIGHT.find((w) => w.value === topTask.weight);
 return (
-<div style={styles.focusRoot}>
+<div style={styles.focusRoot} onClick={() => setFocusMode(false)}>
 <style>{globalStyles}</style>
 <button style={styles.focusClose} onClick={() => setFocusMode(false)}>✕</button>
-<div style={styles.focusContent}>
+<div style={styles.focusContent} onClick={(e) => e.stopPropagation()}>
 <div style={{ …styles.focusBadge, color: label.color, borderColor: label.color + “66” }}>
 {label.text}
 </div>
@@ -481,8 +485,8 @@ return (
   {/* Filter */}
   <div style={styles.filterRow}>
     {[
-      { key: "active", label: "アクティブ" },
       { key: "noDeadline", label: "期限なし" },
+      { key: "active", label: "アクティブ" },
       { key: "all", label: "すべて" },
       { key: "done", label: "完了済み" },
     ].map((f) => (
@@ -724,6 +728,7 @@ return (
         onToggleDone={() => toggleDone(task.id)}
         onEdit={() => startEdit(task)}
         onDelete={() => deleteTask(task.id)}
+        onUpdateSubtasks={(subs) => updateSubtasks(task.id, subs)}
       />
     ))}
   </div>
@@ -924,11 +929,35 @@ return (
 );
 }
 
-function TaskCard({ task, expanded, onToggleExpand, onToggleDone, onEdit, onDelete }) {
+function TaskCard({ task, expanded, onToggleExpand, onToggleDone, onEdit, onDelete, onUpdateSubtasks }) {
 const label = getScoreLabel(task.score);
 const isOverdue = task.score >= 1000;
 const weightInfo = WEIGHT.find((w) => w.value === task.weight);
 const impInfo = IMPORTANCE.find((x) => x.value === task.importance);
+const [newSubtask, setNewSubtask] = useState(””);
+
+const subtasks = task.subtasks || [];
+const subtasksDone = subtasks.filter((s) => s.done).length;
+const hasSubtasks = subtasks.length > 0;
+
+const addSubtask = () => {
+if (!newSubtask.trim()) return;
+const sub = {
+id: Date.now().toString(36) + Math.random().toString(36).slice(2, 4),
+title: newSubtask.trim(),
+done: false,
+};
+onUpdateSubtasks([…subtasks, sub]);
+setNewSubtask(””);
+};
+
+const toggleSubtask = (subId) => {
+onUpdateSubtasks(subtasks.map((s) => (s.id === subId ? { …s, done: !s.done } : s)));
+};
+
+const deleteSubtask = (subId) => {
+onUpdateSubtasks(subtasks.filter((s) => s.id !== subId));
+};
 
 const touchStartX = useRef(0);
 const touchStartY = useRef(0);
@@ -1048,6 +1077,14 @@ return (
                 <span>🔁</span>
               </>
             )}
+            {hasSubtasks && (
+              <>
+                <span style={{ opacity: 0.3 }}>·</span>
+                <span style={{ color: subtasksDone === subtasks.length ? "#4ade80" : "#aaa" }}>
+                  {subtasksDone}/{subtasks.length}
+                </span>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -1094,6 +1131,58 @@ return (
           </div>
         )}
         {task.memo && <div style={styles.detailMemo}>{task.memo}</div>}
+
+        {/* Subtasks */}
+        <div style={styles.subtaskSection}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <span style={styles.detailLabel}>サブタスク</span>
+            {hasSubtasks && (
+              <span style={{ fontSize: 11, color: subtasksDone === subtasks.length ? "#4ade80" : "#aaa", fontFamily: "'JetBrains Mono', monospace" }}>
+                {subtasksDone}/{subtasks.length}
+              </span>
+            )}
+          </div>
+          {subtasks.map((sub) => (
+            <div key={sub.id} className="no-expand" style={styles.subtaskItem}>
+              <button
+                style={{
+                  ...styles.subtaskCheck,
+                  background: sub.done ? "#4ade80" : "transparent",
+                  borderColor: sub.done ? "#4ade80" : "#555",
+                }}
+                onClick={(e) => { e.stopPropagation(); toggleSubtask(sub.id); }}
+              >
+                {sub.done && <span style={{ fontSize: 9, color: "#000" }}>✓</span>}
+              </button>
+              <span style={{ ...styles.subtaskTitle, textDecoration: sub.done ? "line-through" : "none", opacity: sub.done ? 0.5 : 1 }}>
+                {sub.title}
+              </span>
+              <button
+                style={styles.subtaskDelete}
+                onClick={(e) => { e.stopPropagation(); deleteSubtask(sub.id); }}
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+          <div className="no-expand" style={styles.subtaskAdd}>
+            <input
+              style={styles.subtaskInput}
+              placeholder="サブタスクを追加..."
+              value={newSubtask}
+              onChange={(e) => setNewSubtask(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); addSubtask(); } }}
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              style={styles.subtaskAddBtn}
+              onClick={(e) => { e.stopPropagation(); addSubtask(); }}
+            >
+              +
+            </button>
+          </div>
+        </div>
+
         <div style={styles.detailActions}>
           <button className="no-expand" style={styles.detailBtn} onClick={(e) => { e.stopPropagation(); onEdit(); }}>
             編集
@@ -1480,5 +1569,70 @@ fontSize: 9,
 color: “#333”,
 userSelect: “none”,
 pointerEvents: “none”,
+},
+subtaskSection: {
+marginTop: 14,
+paddingTop: 10,
+},
+subtaskItem: {
+display: “flex”,
+alignItems: “center”,
+gap: 10,
+padding: “7px 0”,
+borderBottom: “1px solid #1a1a1a”,
+},
+subtaskCheck: {
+width: 18,
+height: 18,
+borderRadius: 4,
+border: “2px solid”,
+display: “flex”,
+alignItems: “center”,
+justifyContent: “center”,
+cursor: “pointer”,
+flexShrink: 0,
+transition: “all 0.2s”,
+},
+subtaskTitle: {
+fontSize: 13,
+color: “#ddd”,
+flex: 1,
+},
+subtaskDelete: {
+background: “none”,
+border: “none”,
+color: “#555”,
+fontSize: 12,
+cursor: “pointer”,
+padding: 4,
+flexShrink: 0,
+},
+subtaskAdd: {
+display: “flex”,
+gap: 8,
+marginTop: 8,
+},
+subtaskInput: {
+flex: 1,
+padding: “8px 10px”,
+background: “#0a0a0a”,
+border: “1px solid #333”,
+borderRadius: 6,
+color: “#fff”,
+fontSize: 12,
+outline: “none”,
+},
+subtaskAddBtn: {
+width: 32,
+height: 32,
+borderRadius: 6,
+border: “1px solid #444”,
+background: “#1a1a1a”,
+color: “#aaa”,
+fontSize: 16,
+cursor: “pointer”,
+display: “flex”,
+alignItems: “center”,
+justifyContent: “center”,
 },
 };
