@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from “react”;
 
-const APP_VERSION = “2.3.0”;
+const APP_VERSION = “2.4.0”;
 
 const IMPORTANCE = [
 { value: 3, label: “高”, color: “#ff3b30” },
@@ -443,6 +443,9 @@ return (
       <button className="btn-icon" style={styles.iconBtn} onClick={() => setShowSearch((v) => !v)}>
         {showSearch ? "✕" : "🔍"}
       </button>
+      <button className="btn-icon" style={styles.iconBtn} onClick={() => { window.location.reload(); }}>
+        ↻
+      </button>
       <button className="btn-icon" style={styles.iconBtn} onClick={() => setShowSettings(true)}>
         ⚙
       </button>
@@ -485,9 +488,9 @@ return (
   {/* Filter */}
   <div style={styles.filterRow}>
     {[
+      { key: "all", label: "すべて" },
       { key: "noDeadline", label: "期限なし" },
       { key: "active", label: "アクティブ" },
-      { key: "all", label: "すべて" },
       { key: "done", label: "完了済み" },
     ].map((f) => (
       <button
