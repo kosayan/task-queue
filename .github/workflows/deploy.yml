@@ -1,3 +1,50 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Fix file structure
+        run: |
+          mkdir -p public
+          cp -f icon-192.png public/ 2>/dev/null || true
+          cp -f icon-512.png public/ 2>/dev/null || true
+      - name: Fix iOS text replacements
+        run: |
+          sed -i 's/\xe2\x80\x9c/"/g' src/App.jsx
+          sed -i 's/\xe2\x80\x9d/"/g' src/App.jsx
+          sed -i "s/\xe2\x80\x98/'/g" src/App.jsx
+          sed -i "s/\xe2\x80\x99/'/g" src/App.jsx
+          sed -i 's/\xe2\x80\xa6/.../g' src/App.jsx
+      - run: npm install
+      - run: npm run build
+      - uses: actions/configure-pages@v4
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
       - name: Fix iOS text replacements
         run: |
           sed -i 's/\xe2\x80\x9c/"/g' src/App.jsx
