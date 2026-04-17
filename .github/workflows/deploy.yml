@@ -36,6 +36,7 @@ jobs:
           sed -i "s/\xe2\x80\x98/'/g" src/App.jsx
           sed -i "s/\xe2\x80\x99/'/g" src/App.jsx
           sed -i 's/\xe2\x80\xa6/.../g' src/App.jsx
+          sed -i '/```/d' src/App.jsx
       - run: npm install
       - run: npm run build
       - uses: actions/configure-pages@v4
@@ -44,12 +45,3 @@ jobs:
           path: dist
       - id: deployment
         uses: actions/deploy-pages@v4
-
-      - name: Fix iOS text replacements
-        run: |
-          sed -i 's/\xe2\x80\x9c/"/g' src/App.jsx
-          sed -i 's/\xe2\x80\x9d/"/g' src/App.jsx
-          sed -i "s/\xe2\x80\x98/'/g" src/App.jsx
-          sed -i "s/\xe2\x80\x99/'/g" src/App.jsx
-          sed -i 's/\xe2\x80\xa6/.../g' src/App.jsx
-          sed -i '/^```$/d' src/App.jsx
