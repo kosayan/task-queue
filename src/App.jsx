@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from “react”;
-const VER = “3.2.0”;
+const VER = “3.3.0”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
-const SORTS = [{ v: “smart”, l: “スマート順” }, { v: “deadline”, l: “締切順” }, { v: “heavy”, l: “重い順” }, { v: “light”, l: “軽い順” }, { v: “created”, l: “作成日順” }, { v: “impGroup”, l: “重要度まとめ” }, { v: “weightGroup”, l: “重さまとめ” }];
-const ROI_MAP = {“3-3”:”#f97316”,“3-2”:”#eab308”,“3-1”:”#22c55e”,“3-0”:”#22c55e”,“2-3”:”#3b82f6”,“2-2”:”#06b6d4”,“2-1”:”#14b8a6”,“2-0”:”#14b8a6”,“1-3”:”#a855f7”,“1-2”:”#c084fc”,“1-1”:”#67e8f9”,“1-0”:”#67e8f9”};
+const SORTS = [{ v: “smart”, l: “スマート順” }, { v: “heavy”, l: “重い順” }, { v: “light”, l: “軽い順” }, { v: “deadline”, l: “締切順” }, { v: “impGroup”, l: “重要度まとめ” }, { v: “weightGroup”, l: “重さまとめ” }, { v: “created”, l: “作成日順” }];
+const ROI_MAP = {“3-3”:”#f97316”,“3-2”:”#eab308”,“3-1”:”#22c55e”,“3-0”:”#84cc16”,“2-3”:”#3b82f6”,“2-2”:”#06b6d4”,“2-1”:”#14b8a6”,“2-0”:”#5eead4”,“1-3”:”#a855f7”,“1-2”:”#c084fc”,“1-1”:”#67e8f9”,“1-0”:”#a7f3d0”};
 const TIER_MAP = {“3-1”:1,“3-0”:1,“3-2”:2,“3-3”:3,“2-1”:4,“2-0”:4,“2-2”:5,“2-3”:6,“1-1”:7,“1-0”:7,“1-2”:8,“1-3”:9};
 const TIER = {
 1:{bg:”#162016”,border:“rgba(34,197,94,0.35)”,shadow:“rgba(34,197,94,0.1)”,fs:16,fw:800,tc:”#fff”,mc:”#ccc”,pad:16,mfs:11,bfs:10,bp:“4px 10px”},
@@ -18,19 +18,19 @@ const TIER = {
 9:{bg:”#0a090c”,border:“rgba(168,85,247,0.1)”,shadow:“none”,fs:11,fw:500,tc:”#777”,mc:”#555”,pad:8,mfs:7.5,bfs:7,bp:“2px 5px”},
 };
 const TIER_LIGHT = {
-1:{bg:”#f0fdf4”,border:“rgba(34,197,94,0.4)”,shadow:“rgba(34,197,94,0.08)”,tc:”#111”,mc:”#555”},
-2:{bg:”#fefce8”,border:“rgba(234,179,8,0.35)”,shadow:“rgba(234,179,8,0.06)”,tc:”#222”,mc:”#666”},
-3:{bg:”#fff7ed”,border:“rgba(249,115,22,0.3)”,shadow:“rgba(249,115,22,0.05)”,tc:”#222”,mc:”#666”},
-4:{bg:”#f0fdfa”,border:“rgba(20,184,166,0.3)”,shadow:“rgba(20,184,166,0.04)”,tc:”#333”,mc:”#777”},
-5:{bg:”#fff”,border:“rgba(6,182,212,0.25)”,shadow:“rgba(6,182,212,0.04)”,tc:”#333”,mc:”#777”},
-6:{bg:”#faf9ff”,border:“rgba(59,130,246,0.2)”,shadow:“rgba(59,130,246,0.03)”,tc:”#444”,mc:”#888”},
-7:{bg:”#f8f8f8”,border:“rgba(103,232,249,0.2)”,shadow:“rgba(103,232,249,0.02)”,tc:”#555”,mc:”#999”},
-8:{bg:”#f6f4f9”,border:“rgba(192,132,252,0.18)”,shadow:“rgba(192,132,252,0.02)”,tc:”#666”,mc:”#999”},
-9:{bg:”#f4f3f5”,border:“rgba(168,85,247,0.15)”,shadow:“none”,tc:”#777”,mc:”#aaa”},
+1:{bg:”#bbf7d0”,border:“rgba(22,163,74,0.6)”,shadow:“rgba(22,163,74,0.15)”,tc:”#14532d”,mc:”#166534”},
+2:{bg:”#fde68a”,border:“rgba(202,138,4,0.55)”,shadow:“rgba(202,138,4,0.12)”,tc:”#713f12”,mc:”#854d0e”},
+3:{bg:”#fed7aa”,border:“rgba(234,88,12,0.5)”,shadow:“rgba(234,88,12,0.1)”,tc:”#7c2d12”,mc:”#9a3412”},
+4:{bg:”#a5f3fc”,border:“rgba(14,165,233,0.5)”,shadow:“rgba(14,165,233,0.08)”,tc:”#164e63”,mc:”#155e75”},
+5:{bg:”#dbeafe”,border:“rgba(37,99,235,0.4)”,shadow:“rgba(37,99,235,0.06)”,tc:”#1e3a8a”,mc:”#1e40af”},
+6:{bg:”#ede9fe”,border:“rgba(124,58,237,0.35)”,shadow:“rgba(124,58,237,0.05)”,tc:”#4c1d95”,mc:”#5b21b6”},
+7:{bg:”#fdfcf8”,border:“rgba(161,161,170,0.4)”,shadow:“rgba(0,0,0,0.04)”,tc:”#3f3f46”,mc:”#52525b”},
+8:{bg:”#f5f3ec”,border:“rgba(168,85,247,0.3)”,shadow:“rgba(168,85,247,0.03)”,tc:”#581c87”,mc:”#6b21a8”},
+9:{bg:”#edeae0”,border:“rgba(168,85,247,0.25)”,shadow:“none”,tc:”#6b21a8”,mc:”#7e22ce”},
 };
 const TH = {
 dark:{bg:”#0a0a0a”,card:”#111”,text:”#fff”,sub:”#aaa”,mut:”#888”,dim:”#555”,brd:”#333”,inp:”#1a1a1a”,cOff:”#1a1a1a”,cOffT:”#888”,cOn:”#fff”,cOnT:”#000”,iBg:”#1a1a1a”,iBrd:”#333”,iC:”#ccc”,fBrd:”#444”,fOffT:”#999”,modal:“rgba(0,0,0,0.7)”,toast:”#1a1a1a”,memo:”#0a0a0a”,memB:”#2a2a2a”,shd:“rgba(0,0,0,0.4)”,chk:”#555”,addB:”#555”,addC:”#aaa”,sch:“dark”},
-light:{bg:”#f8f7f4”,card:”#fff”,text:”#222”,sub:”#666”,mut:”#999”,dim:”#bbb”,brd:”#d5d3ce”,inp:”#f0efec”,cOff:”#f0efec”,cOffT:”#888”,cOn:”#222”,cOnT:”#fff”,iBg:”#fff”,iBrd:”#ddd”,iC:”#666”,fBrd:”#d5d3ce”,fOffT:”#888”,modal:“rgba(0,0,0,0.4)”,toast:”#fff”,memo:”#f0efec”,memB:”#e0e0e0”,shd:“rgba(0,0,0,0.06)”,chk:”#ccc”,addB:”#ccc”,addC:”#999”,sch:“light”}
+light:{bg:”#e8e5dc”,card:”#fdfcf8”,text:”#18181b”,sub:”#3f3f46”,mut:”#52525b”,dim:”#a1a1aa”,brd:”#c4c0b3”,inp:”#f5f3ec”,cOff:”#f5f3ec”,cOffT:”#52525b”,cOn:”#18181b”,cOnT:”#fff”,iBg:”#fdfcf8”,iBrd:”#c4c0b3”,iC:”#3f3f46”,fBrd:”#b8b4a7”,fOffT:”#52525b”,modal:“rgba(24,24,27,0.5)”,toast:”#fdfcf8”,memo:”#f5f3ec”,memB:”#b8b4a7”,shd:“rgba(0,0,0,0.1)”,chk:”#a1a1aa”,addB:”#a1a1aa”,addC:”#52525b”,sch:“light”}
 };
 
 function roi(i,w){return ROI_MAP[i+”-”+(w>=3?3:w>=2?2:w>=1?1:0)]||”#555”}
@@ -51,7 +51,7 @@ if(so===“impGroup”||so===“weightGroup”)return tierN(task.importance,task
 return 5;
 }
 
-const SK=“task-queue-v1”,SOK=“task-queue-sort”,DK=“task-queue-defaults”,THK=“task-queue-theme”,TRK=“task-queue-trash”,HRK=“task-queue-habits”,DRK=“task-queue-dayreset”,LEK=“task-queue-locemojis”,LXK=“task-queue-lastexport”,TPK=“task-queue-todaypicks”,TDK=“task-queue-todaypickday”;
+const SK=“task-queue-v1”,SOK=“task-queue-sort”,DK=“task-queue-defaults”,THK=“task-queue-theme”,TRK=“task-queue-trash”,HRK=“task-queue-habits”,DRK=“task-queue-dayreset”,LEK=“task-queue-locemojis”,LXK=“task-queue-lastexport”,TPK=“task-queue-todaypicks”,TDK=“task-queue-todaypickday”,BNK=“task-queue-bannercount”;
 const DD={importance:2,weight:2,hasDeadline:true,recurrence:“none”,location:””};
 function ld(k,d){try{const r=localStorage.getItem(k);return r?JSON.parse(r):d}catch{return d}}
 function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
@@ -88,8 +88,10 @@ const[particles,setParticles]=useState([]);
 const[showBackupNudge,setShowBackupNudge]=useState(false);
 const[todayPicks,setTodayPicks]=useState(()=>ld(TPK,[]));
 const[showPicker,setShowPicker]=useState(false);
+const[bannerCount,setBannerCount]=useState(()=>ld(BNK,5));
 const ur=useRef(null);const fr=useRef(null);const formRef=useRef(null);
 const topSwipeStart=useRef(0);const dragStartY=useRef(0);const dragType=useRef(null);
+const sortDDRef=useRef(null);
 const T=isDark?TH.dark:TH.light;
 
 useEffect(()=>{sv(SK,tasks)},[tasks]);
@@ -97,6 +99,7 @@ useEffect(()=>{sv(HRK,habits)},[habits]);
 useEffect(()=>{sv(TRK,trash)},[trash]);
 useEffect(()=>{sv(LEK,locEmojis)},[locEmojis]);
 useEffect(()=>{sv(TPK,todayPicks)},[todayPicks]);
+useEffect(()=>{sv(BNK,bannerCount)},[bannerCount]);
 useEffect(()=>{
 const d=new Date();if(d.getHours()<dayReset)d.setDate(d.getDate()-1);
 const today=d.toISOString().slice(0,10);const lastDay=ld(TDK,””);
@@ -117,6 +120,7 @@ useEffect(()=>{sv(DRK,dayReset)},[dayReset]);
 useEffect(()=>{const now=Date.now();setTrash(p=>p.filter(t=>(now-t.deletedAt)<30*24*36e5))},[]);
 useEffect(()=>{const now=new Date();const lr=ld(“task-queue-lastreset”,0);const rt=new Date();rt.setHours(dayReset,0,0,0);if(now>rt&&lr<rt.getTime()){setHabits(p=>p.map(h=>({…h,doneToday:false})));sv(“task-queue-lastreset”,Date.now())}},[dayReset]);
 useEffect(()=>{if(showForm&&formRef.current)formRef.current.scrollIntoView({behavior:“smooth”,block:“center”})},[showForm]);
+useEffect(()=>{if(!showSortDD)return;const h=e=>{if(sortDDRef.current&&!sortDDRef.current.contains(e.target))setShowSortDD(false)};document.addEventListener(“mousedown”,h);document.addEventListener(“touchstart”,h);return()=>{document.removeEventListener(“mousedown”,h);document.removeEventListener(“touchstart”,h)}},[showSortDD]);
 
 const quickUpdate=useCallback((id,field,val)=>{setTasks(p=>p.map(t=>t.id===id?{…t,[field]:val}:t))},[]);
 const upSub=useCallback((id,s)=>setTasks(p=>p.map(t=>t.id===id?{…t,subtasks:s}:t)),[]);
@@ -213,8 +217,8 @@ return r
 const topTasks=useMemo(()=>{
 const a=tasks.filter(t=>!t.done&&t.type!==“wish”).map(t=>({…t,sc:score(t),bd:band(t)}));
 a.sort((x,y)=>{if(x.bd!==y.bd)return x.bd-y.bd;if(x.weight!==y.weight)return x.weight-y.weight;return y.importance-x.importance});
-return a.slice(0,3)
-},[tasks]);
+return a.slice(0,bannerCount)
+},[tasks,bannerCount]);
 useEffect(()=>{if(topIdx>=topTasks.length&&topTasks.length>0)setTopIdx(0)},[topTasks.length,topIdx]);
 
 const groups=useMemo(()=>{
@@ -279,7 +283,7 @@ return(<div style={{minHeight:“100vh”,background:T.bg,color:T.text,fontFamil
   <div style={{fontSize:16,fontWeight:700,color:T.text,marginBottom:5}}>{curTop.icon?curTop.icon+" ":""}{curTop.title}</div>
   <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,color:T.sub,display:"flex",gap:8}}><span>{fmtDl(curTop.deadline)}</span><span style={{opacity:.3}}>|</span><span>スコア {Math.round(score(curTop))}</span></div>
 </div>
-{topTasks.length>1&&<div style={{display:"flex",justifyContent:"center",gap:6,marginTop:6}}>{topTasks.map((_,i)=><span key={i} onClick={()=>setTopIdx(i)} style={{width:6,height:6,borderRadius:"50%",background:i===topIdx?sLabel(score(curTop)).c:T.dim,cursor:"pointer",transition:"background .2s"}}/>)}</div>}
+{topTasks.length>1&&topTasks.length<=5&&<div style={{display:"flex",justifyContent:"center",gap:6,marginTop:6}}>{topTasks.map((_,i)=><span key={i} onClick={()=>setTopIdx(i)} style={{width:6,height:6,borderRadius:"50%",background:i===topIdx?sLabel(score(curTop)).c:T.dim,cursor:"pointer",transition:"background .2s"}}/>)}</div>}
 </div>)}
 
 {/* Wish roulette banner (C1) */}
@@ -302,12 +306,16 @@ return(<div style={{minHeight:“100vh”,background:T.bg,color:T.text,fontFamil
   <div style={{display:"flex",gap:4,marginBottom:6}}>
     {(isTask?[{k:"all",l:"すべて"},{k:"noDeadline",l:"期限なし"},{k:"active",l:"アクティブ"},{k:"done",l:"完了"}]:[{k:"all",l:"すべて"},{k:"done",l:"完了"}]).map(f=>(<button key={f.k} style={{padding:"4px 9px",borderRadius:6,border:"1px solid "+T.fBrd,fontSize:11,fontWeight:600,whiteSpace:"nowrap",background:filter===f.k&&locFilter===null?T.cOn:"transparent",color:filter===f.k&&locFilter===null?T.cOnT:T.fOffT,cursor:"pointer"}} onClick={()=>{setFilter(f.k);setLocFilter(null)}}>{f.l}</button>))}
   </div>
-  <div style={{display:"flex",gap:6,marginBottom:10,alignItems:"center",flexWrap:"wrap",position:"relative"}}>
-    <button style={{display:"flex",alignItems:"center",gap:3,padding:"4px 10px",borderRadius:8,border:"1px solid "+T.fBrd,background:T.inp,fontSize:11,fontWeight:600,color:T.sub,fontFamily:"'JetBrains Mono',monospace",cursor:"pointer",position:"relative"}} onClick={()=>setShowSortDD(v=>!v)}>▼ {SORTS.find(s=>s.v===sortOrder)?.l}</button>
-    {showSortDD&&<div style={{position:"absolute",top:32,left:0,background:T.card,border:"1px solid "+T.brd,borderRadius:10,padding:6,zIndex:50,boxShadow:"0 4px 12px "+T.shd,minWidth:140}}>{SORTS.map(s=><button key={s.v} style={{display:"block",width:"100%",textAlign:"left",padding:"8px 12px",borderRadius:6,border:"none",background:sortOrder===s.v?T.cOn:"transparent",color:sortOrder===s.v?T.cOnT:T.sub,fontSize:12,fontWeight:600,cursor:"pointer",marginBottom:2}} onClick={()=>{setSortOrder(s.v);setShowSortDD(false);setOpenGroup(null)}}>{s.l}</button>)}</div>}
-    <button style={{display:"flex",alignItems:"center",gap:4,padding:"4px 10px",borderRadius:8,border:"1px solid "+T.fBrd,background:T.inp,fontSize:11,color:T.mut,cursor:"pointer"}} onClick={()=>setShowSearch(v=>!v)}>🔍 検索</button>
-    {locs.length>0&&isTask&&<><span style={{fontSize:12,color:T.mut}}>📍</span>{locs.map(l=><button key={l} style={{padding:"3px 10px",borderRadius:14,fontSize:10,fontWeight:600,color:locFilter===l?T.cOnT:T.mut,background:locFilter===l?T.cOn:T.inp,border:"1px solid "+T.brd,cursor:"pointer",display:"flex",alignItems:"center",gap:3}} onClick={()=>setLocFilter(locFilter===l?null:l)}>{locEmojis[l]&&<span>{locEmojis[l]}</span>}{l}</button>)}</>}
+  <div style={{display:"flex",gap:6,marginBottom:6,alignItems:"center",position:"relative"}}>
+    <button style={{display:"flex",alignItems:"center",justifyContent:"center",width:34,height:30,borderRadius:8,border:"1px solid "+T.fBrd,background:showSearch?T.cOn:T.inp,color:showSearch?T.cOnT:T.mut,fontSize:14,cursor:"pointer",flexShrink:0}} onClick={()=>setShowSearch(v=>!v)}>🔍</button>
+    <div ref={sortDDRef} style={{position:"relative"}}>
+      <button style={{display:"flex",alignItems:"center",gap:3,padding:"6px 10px",borderRadius:8,border:"1px solid "+T.fBrd,background:T.inp,fontSize:11,fontWeight:600,color:T.sub,fontFamily:"'JetBrains Mono',monospace",cursor:"pointer"}} onClick={()=>setShowSortDD(v=>!v)}>▼ {SORTS.find(s=>s.v===sortOrder)?.l}</button>
+      {showSortDD&&<div style={{position:"absolute",top:34,left:0,background:T.card,border:"1px solid "+T.brd,borderRadius:10,padding:6,zIndex:50,boxShadow:"0 4px 12px "+T.shd,minWidth:140}}>{SORTS.map(s=><button key={s.v} style={{display:"block",width:"100%",textAlign:"left",padding:"8px 12px",borderRadius:6,border:"none",background:sortOrder===s.v?T.cOn:"transparent",color:sortOrder===s.v?T.cOnT:T.sub,fontSize:12,fontWeight:600,cursor:"pointer",marginBottom:2}} onClick={()=>{setSortOrder(s.v);setShowSortDD(false);setOpenGroup(null)}}>{s.l}</button>)}</div>}
+    </div>
   </div>
+  {locs.length>0&&isTask&&<div style={{display:"flex",gap:6,marginBottom:10,alignItems:"center",flexWrap:"wrap"}}>
+    <span style={{fontSize:12,color:T.mut}}>📍</span>{locs.map(l=><button key={l} style={{padding:"3px 10px",borderRadius:14,fontSize:10,fontWeight:600,color:locFilter===l?T.cOnT:T.mut,background:locFilter===l?T.cOn:T.inp,border:"1px solid "+T.brd,cursor:"pointer",display:"flex",alignItems:"center",gap:3}} onClick={()=>setLocFilter(locFilter===l?null:l)}>{locEmojis[l]&&<span>{locEmojis[l]}</span>}{l}</button>)}
+  </div>}
   {showSearch&&<input className="form-slide" style={{width:"100%",padding:"10px 12px",background:T.inp,border:"1px solid "+T.brd,borderRadius:9,color:T.text,fontSize:14,outline:"none",marginBottom:8}} placeholder="検索..." value={searchQ} onChange={e=>setSearchQ(e.target.value)} autoFocus/>}
 </>}
 
@@ -360,7 +368,7 @@ return(<div style={{minHeight:“100vh”,background:T.bg,color:T.text,fontFamil
 {/* TASK/WISH LIST */}
 {!isHabit&&!isGroupMode&&<div style={{display:“flex”,flexDirection:“column”,gap:8}}>
 {sorted.length===0&&<div style={{textAlign:“center”,padding:36,color:T.dim,fontSize:13,fontFamily:”‘JetBrains Mono’,monospace”}}>{searchQ?“検索結果なし”:filter===“done”?“完了タスクなし”:“タスクを追加しましょう”}</div>}
-{sorted.map(task=><TaskCard key={task.id} task={task} T={T} isDark={isDark} sortOrder={sortOrder} expanded={expandedId===task.id} memoExp={memoExpId===task.id} dragging={draggingId===task.id} draggable={isWish} isToday={todayPicks.includes(task.id)} onToggleExpand={()=>{setExpandedId(expandedId===task.id?null:task.id);setMemoExpId(null)}} onToggleMemo={()=>{setMemoExpId(memoExpId===task.id?null:task.id);setExpandedId(null)}} onToggleDone={()=>togDone(task.id)} onEdit={()=>startEdit(task)} onDelete={()=>delTask(task.id)} onUpdateSubtasks={s=>upSub(task.id,s)} onUpdateMemo={m=>upMemo(task.id,m)} onQuickUpdate={(f,v)=>quickUpdate(task.id,f,v)} onDragStart={y=>dragStart(task.id,“wish”,y)} onDragMove={dragMove} onDragEnd={dragEnd}/>)}
+{sorted.map(task=><TaskCard key={task.id} task={task} T={T} isDark={isDark} sortOrder={sortOrder} expanded={expandedId===task.id} memoExp={memoExpId===task.id} dragging={draggingId===task.id} draggable={isWish} isToday={todayPicks.includes(task.id)} locEmojis={locEmojis} onToggleExpand={()=>{setExpandedId(expandedId===task.id?null:task.id);setMemoExpId(null)}} onToggleMemo={()=>{setMemoExpId(memoExpId===task.id?null:task.id);setExpandedId(null)}} onToggleDone={()=>togDone(task.id)} onEdit={()=>startEdit(task)} onDelete={()=>delTask(task.id)} onUpdateSubtasks={s=>upSub(task.id,s)} onUpdateMemo={m=>upMemo(task.id,m)} onQuickUpdate={(f,v)=>quickUpdate(task.id,f,v)} onDragStart={y=>dragStart(task.id,“wish”,y)} onDragMove={dragMove} onDragEnd={dragEnd}/>)}
 
 </div>}
 
@@ -374,7 +382,7 @@ return(<div style={{minHeight:“100vh”,background:T.bg,color:T.text,fontFamil
 </button>
 {openGroup===g.k&&<div style={{display:“flex”,flexDirection:“column”,gap:6,marginTop:6,marginBottom:4,paddingLeft:6}}>
 {g.items.length===0&&<div style={{padding:12,color:T.dim,fontSize:11,fontFamily:”‘JetBrains Mono’,monospace”}}>なし</div>}
-{g.items.map(task=><TaskCard key={task.id} task={task} T={T} isDark={isDark} sortOrder={sortOrder} expanded={expandedId===task.id} memoExp={memoExpId===task.id} dragging={false} draggable={false} isToday={todayPicks.includes(task.id)} onToggleExpand={()=>{setExpandedId(expandedId===task.id?null:task.id);setMemoExpId(null)}} onToggleMemo={()=>{setMemoExpId(memoExpId===task.id?null:task.id);setExpandedId(null)}} onToggleDone={()=>togDone(task.id)} onEdit={()=>startEdit(task)} onDelete={()=>delTask(task.id)} onUpdateSubtasks={s=>upSub(task.id,s)} onUpdateMemo={m=>upMemo(task.id,m)} onQuickUpdate={(f,v)=>quickUpdate(task.id,f,v)}/>)}
+{g.items.map(task=><TaskCard key={task.id} task={task} T={T} isDark={isDark} sortOrder={sortOrder} expanded={expandedId===task.id} memoExp={memoExpId===task.id} dragging={false} draggable={false} isToday={todayPicks.includes(task.id)} locEmojis={locEmojis} onToggleExpand={()=>{setExpandedId(expandedId===task.id?null:task.id);setMemoExpId(null)}} onToggleMemo={()=>{setMemoExpId(memoExpId===task.id?null:task.id);setExpandedId(null)}} onToggleDone={()=>togDone(task.id)} onEdit={()=>startEdit(task)} onDelete={()=>delTask(task.id)} onUpdateSubtasks={s=>upSub(task.id,s)} onUpdateMemo={m=>upMemo(task.id,m)} onQuickUpdate={(f,v)=>quickUpdate(task.id,f,v)}/>)}
 </div>}
 
   </div>))}
@@ -385,6 +393,11 @@ return(<div style={{minHeight:“100vh”,background:T.bg,color:T.text,fontFamil
 
   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><span style={{fontSize:15,fontWeight:700,color:T.text}}>設定</span><button style={{background:"none",border:"none",color:T.mut,fontSize:16,cursor:"pointer"}} onClick={()=>setShowSettings(false)}>✕</button></div>
   <div style={{marginBottom:14}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>日付変更時刻</div><input type="number" min="0" max="23" style={{width:60,padding:"8px 10px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:14,outline:"none"}} value={dayReset} onChange={e=>setDayReset(parseInt(e.target.value)||0)}/><span style={{fontSize:11,color:T.mut,marginLeft:6}}>時</span></div>
+
+  <div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}>
+    <div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>今やるべきタスクの表示件数</div>
+    <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{[3,4,5,6,7].map(n=><button key={n} style={{padding:"6px 14px",borderRadius:7,border:"1px solid "+(bannerCount===n?T.cOn:T.brd),fontSize:12,fontWeight:700,cursor:"pointer",background:bannerCount===n?T.cOn:T.cOff,color:bannerCount===n?T.cOnT:T.cOffT}} onClick={()=>setBannerCount(n)}>{n}件</button>)}</div>
+  </div>
 
 {/* Place management (B4) */}
 
@@ -458,7 +471,7 @@ return(<div style={{minHeight:“100vh”,background:T.bg,color:T.text,fontFamil
   </div>)
 }
 
-function TaskCard({task,T,isDark,sortOrder,expanded,memoExp,dragging,draggable,isToday,onToggleExpand,onToggleMemo,onToggleDone,onEdit,onDelete,onUpdateSubtasks,onUpdateMemo,onQuickUpdate,onDragStart,onDragMove,onDragEnd}){
+function TaskCard({task,T,isDark,sortOrder,expanded,memoExp,dragging,draggable,isToday,locEmojis={},onToggleExpand,onToggleMemo,onToggleDone,onEdit,onDelete,onUpdateSubtasks,onUpdateMemo,onQuickUpdate,onDragStart,onDragMove,onDragEnd}){
 const isW=task.type===“wish”;
 // Near-deadline wish highlight
 const wishUrgent=isW&&task.deadline&&((new Date(task.deadline)-new Date())/36e5)<24&&((new Date(task.deadline)-new Date())/36e5)>=0;
@@ -498,7 +511,7 @@ return(<div style={{position:“relative”,overflow:“hidden”,borderRadius:1
 <span style={{color:rc,fontSize:ts.mfs,letterSpacing:1}}>{wDots(task.weight,rc)}</span>
 <span style={{opacity:.3}}>·</span>
 <span style={{color:isOD?"#ff3b30":ts.mc}}>{fmtDl(task.deadline)}</span>
-{task.location&&<><span style={{opacity:.3}}>·</span><span>📍{task.location}</span></>}
+{task.location&&<><span style={{opacity:.3}}>·</span><span>{locEmojis[task.location]||"📍"}{task.location}</span></>}
 {task.recurrence&&task.recurrence!=="none"&&<><span style={{opacity:.3}}>·</span><span>🔁</span></>}
 {hs&&<><span style={{opacity:.3}}>·</span><span style={{color:sd===subs.length?"#4ade80":ts.mc}}>{sd}/{subs.length}</span></>}
 </div>}
@@ -524,10 +537,6 @@ return(<div style={{position:“relative”,overflow:“hidden”,borderRadius:1
 <textarea style={{width:"100%",padding:"8px 10px",background:T.memo,border:"1px solid "+T.memB,borderRadius:6,color:T.sub,fontSize:12,outline:"none",minHeight:60,resize:"vertical",fontFamily:"inherit",lineHeight:1.5}} placeholder="メモを入力..." value={task.memo||""} onChange={e=>onUpdateMemo(e.target.value)} onClick={e=>e.stopPropagation()}/>
 </div>}
 {expanded&&<div style={{marginTop:12,paddingTop:12,borderTop:"1px solid "+T.brd,width:"100%",animation:"slideDown .25s ease"}}>
-<div style={{display:"flex",justifyContent:"flex-end",gap:6,marginBottom:8}}>
-<button className="ne" style={{padding:"4px 10px",borderRadius:6,border:"1px solid "+T.brd,background:"transparent",color:T.mut,fontSize:10,fontWeight:600,cursor:"pointer"}} onClick={e=>{e.stopPropagation();onEdit()}}>✏️ 編集</button>
-<button className="ne" style={{padding:"4px 10px",borderRadius:6,border:"1px solid rgba(255,59,48,0.3)",background:"transparent",color:"#ff3b30",fontSize:10,fontWeight:600,cursor:"pointer"}} onClick={e=>{e.stopPropagation();onDelete()}}>🗑</button>
-</div>
 {!isW&&<div className="ne" style={{display:"flex",gap:6,marginBottom:8,flexWrap:"wrap"}}>
 {IMP.map(o=><button key={o.v} style={{padding:"3px 8px",borderRadius:5,border:"1px solid "+(task.importance===o.v?o.c:T.brd),fontSize:10,fontWeight:600,cursor:"pointer",background:task.importance===o.v?o.c:T.cOff,color:task.importance===o.v?"#fff":T.cOffT}} onClick={e=>{e.stopPropagation();onQuickUpdate("importance",o.v)}}>{o.icon}{o.l}</button>)}
 <span style={{opacity:.2}}>|</span>
@@ -535,16 +544,22 @@ return(<div style={{position:“relative”,overflow:“hidden”,borderRadius:1
 </div>}
 {task.deadline&&<div style={{display:"flex",justifyContent:"space-between",padding:"4px 0",fontSize:12}}><span style={{color:T.mut,fontFamily:"'JetBrains Mono',monospace",fontSize:10}}>締切</span><span style={{color:T.text}}>{new Date(task.deadline).toLocaleString()}</span></div>}
 {task.recurrence&&task.recurrence!=="none"&&<div style={{display:"flex",justifyContent:"space-between",padding:"4px 0",fontSize:12}}><span style={{color:T.mut,fontFamily:"'JetBrains Mono',monospace",fontSize:10}}>繰り返し</span><span style={{color:T.text}}>{REC.find(r=>r.v===task.recurrence)?.l}</span></div>}
-{/* Memo editor (always editable in expand) */}
-<div className="ne" style={{marginTop:8}} onClick={e=>e.stopPropagation()}>
-<div style={{fontSize:9,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:4,fontFamily:"'JetBrains Mono',monospace"}}>メモ</div>
-<textarea style={{width:"100%",padding:8,background:T.memo,border:"1px solid "+T.memB,borderRadius:6,color:T.sub,fontSize:11,lineHeight:1.6,outline:"none",minHeight:40,resize:"vertical",fontFamily:"inherit"}} placeholder="メモ..." value={task.memo||""} onChange={e=>onUpdateMemo(e.target.value)}/>
-</div>
+{/* Subtasks */}
 <div style={{marginTop:10}}>
-{hs&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}><span style={{color:T.mut,fontFamily:"'JetBrains Mono',monospace",fontSize:9,letterSpacing:1,textTransform:"uppercase"}}>サブタスク</span><span style={{fontSize:10,color:sd===subs.length?"#4ade80":T.sub,fontFamily:"'JetBrains Mono',monospace"}}>{sd}/{subs.length}</span></div>}
-{subs.map(sub=><div key={sub.id} className="ne" style={{display:"flex",alignItems:"center",gap:6,padding:"5px 0",borderBottom:"1px solid "+(isDark?"#1a1a1a":T.brd)}}><button style={{width:14,height:14,borderRadius:3,border:"2px solid "+(sub.done?"#4ade80":T.chk),background:sub.done?"#4ade80":"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}} onClick={e=>{e.stopPropagation();onUpdateSubtasks(subs.map(s=>s.id===sub.id?{...s,done:!s.done}:s))}}>{sub.done&&<span style={{fontSize:7,color:"#000"}}>✓</span>}</button><span style={{fontSize:11,color:T.sub,flex:1,textDecoration:sub.done?"line-through":"none",opacity:sub.done?.5:1}}>{sub.title}</span><button style={{background:"none",border:"none",color:T.dim,fontSize:10,cursor:"pointer",padding:2}} onClick={e=>{e.stopPropagation();onUpdateSubtasks(subs.filter(s=>s.id!==sub.id))}}>✕</button></div>)}
-{(showSubInput||hs)?<div className="ne" style={{display:"flex",gap:6,marginTop:4}}><input style={{flex:1,padding:"6px 8px",background:T.memo,border:"1px solid "+T.brd,borderRadius:5,color:T.text,fontSize:10,outline:"none",minWidth:0}} placeholder="サブタスク追加..." value={ns} onChange={e=>setNs(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.stopPropagation();addS()}}} onClick={e=>e.stopPropagation()}/><button style={{width:26,height:26,borderRadius:5,border:"1px solid "+T.brd,background:T.cOff,color:T.sub,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} onClick={e=>{e.stopPropagation();addS()}}>+</button></div>
-:<button className="ne" style={{marginTop:2,padding:"4px 8px",borderRadius:5,border:"1px solid "+T.brd,background:"transparent",color:T.mut,fontSize:10,cursor:"pointer"}} onClick={e=>{e.stopPropagation();setShowSubInput(true)}}>+ サブタスク</button>}
+{hs&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}><span style={{color:T.sub,fontFamily:"'JetBrains Mono',monospace",fontSize:10,letterSpacing:1,textTransform:"uppercase",fontWeight:700}}>サブタスク</span><span style={{fontSize:11,color:sd===subs.length?"#4ade80":T.sub,fontFamily:"'JetBrains Mono',monospace",fontWeight:700}}>{sd}/{subs.length}</span></div>}
+{subs.map(sub=><div key={sub.id} className="ne" style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:"1px solid "+(isDark?"#1a1a1a":T.brd)}}><button style={{width:16,height:16,borderRadius:4,border:"2px solid "+(sub.done?"#4ade80":T.chk),background:sub.done?"#4ade80":"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}} onClick={e=>{e.stopPropagation();onUpdateSubtasks(subs.map(s=>s.id===sub.id?{...s,done:!s.done}:s))}}>{sub.done&&<span style={{fontSize:9,color:"#000",fontWeight:800}}>✓</span>}</button><span style={{fontSize:13,fontWeight:500,color:T.text,flex:1,textDecoration:sub.done?"line-through":"none",opacity:sub.done?.5:1,lineHeight:1.4}}>{sub.title}</span><button style={{background:"none",border:"none",color:T.dim,fontSize:12,cursor:"pointer",padding:4}} onClick={e=>{e.stopPropagation();onUpdateSubtasks(subs.filter(s=>s.id!==sub.id))}}>✕</button></div>)}
+{(showSubInput||hs)?<div className="ne" style={{display:"flex",gap:6,marginTop:6}}><input style={{flex:1,padding:"8px 10px",background:T.memo,border:"1px solid "+T.brd,borderRadius:6,color:T.text,fontSize:13,outline:"none",minWidth:0}} placeholder="サブタスク追加..." value={ns} onChange={e=>setNs(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.stopPropagation();addS()}}} onClick={e=>e.stopPropagation()}/><button style={{width:30,height:30,borderRadius:6,border:"1px solid "+T.brd,background:T.cOff,color:T.sub,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} onClick={e=>{e.stopPropagation();addS()}}>+</button></div>
+:<button className="ne" style={{marginTop:4,padding:"5px 10px",borderRadius:6,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:11,fontWeight:600,cursor:"pointer"}} onClick={e=>{e.stopPropagation();setShowSubInput(true)}}>+ サブタスク</button>}
+</div>
+{/* Memo editor (moved below subtasks) */}
+<div className="ne" style={{marginTop:12}} onClick={e=>e.stopPropagation()}>
+<div style={{fontSize:10,fontWeight:700,color:T.sub,textTransform:"uppercase",letterSpacing:1,marginBottom:5,fontFamily:"'JetBrains Mono',monospace"}}>メモ</div>
+<textarea style={{width:"100%",padding:10,background:T.memo,border:"1px solid "+T.memB,borderRadius:6,color:T.text,fontSize:13,lineHeight:1.6,outline:"none",minHeight:50,resize:"vertical",fontFamily:"inherit"}} placeholder="メモ..." value={task.memo||""} onChange={e=>onUpdateMemo(e.target.value)}/>
+</div>
+{/* Edit/Delete buttons moved to bottom right */}
+<div style={{display:"flex",justifyContent:"flex-end",gap:6,marginTop:12}}>
+<button className="ne" style={{padding:"5px 12px",borderRadius:6,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:11,fontWeight:600,cursor:"pointer"}} onClick={e=>{e.stopPropagation();onEdit()}}>✏️ 編集</button>
+<button className="ne" style={{padding:"5px 12px",borderRadius:6,border:"1px solid rgba(255,59,48,0.3)",background:"transparent",color:"#ff3b30",fontSize:11,fontWeight:600,cursor:"pointer"}} onClick={e=>{e.stopPropagation();onDelete()}}>🗑</button>
 </div>
 </div>}
 </div>
