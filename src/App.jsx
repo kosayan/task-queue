@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from “react”;
-const VER = “3.0.2”;
+const VER = “3.0.3”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
@@ -107,7 +107,7 @@ resetForm()
 
 const showUndo=useCallback((ts,a)=>{if(ur.current)clearTimeout(ur.current);setUndoData({tasks:ts,action:a});ur.current=setTimeout(()=>setUndoData(null),5000)},[]);
 const togDone=useCallback(id=>{
-setCheckAnim(id);setTimeout(()=>setCheckAnim(null),600);
+setCheckAnim(id);setTimeout(()=>setCheckAnim(null),700);
 setTasks(prev=>{const t=prev.find(x=>x.id===id);if(!t)return prev;if(!t.done&&t.recurrence&&t.recurrence!==“none”&&t.deadline){const nt={…t,id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),deadline:advRec(t.deadline,t.recurrence),done:false,createdAt:Date.now()};return prev.map(x=>x.id===id?{…x,done:true}:x).concat(nt)}return prev.map(x=>x.id===id?{…x,done:!x.done}:x)})
 },[]);
 const delTask=useCallback(id=>{const t=tasks.find(x=>x.id===id);if(!t)return;setTrash(p=>[…p,{…t,deletedAt:Date.now()}]);showUndo([t],“delete”);setTasks(p=>p.filter(x=>x.id!==id));if(expandedId===id)setExpandedId(null);if(editId===id){resetForm()}},[tasks,expandedId,showUndo,editId,resetForm]);
@@ -142,7 +142,7 @@ const a=tasks.filter(t=>!t.done&&t.type!==“wish”).map(t=>({…t,sc:score(t),
 a.sort((x,y)=>{if(x.bd!==y.bd)return x.bd-y.bd;if(x.weight!==y.weight)return x.weight-y.weight;return y.importance-x.importance});return a[0]
 },[tasks]);
 
-const gcss=”@import url(‘https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap’);*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html,body,#root{min-height:100vh}input,select,button,textarea{font-family:‘Noto Sans JP’,sans-serif}@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}@keyframes slideDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}@keyframes checkPop{0%{transform:scale(1)}30%{transform:scale(1.4)}60%{transform:scale(0.9)}100%{transform:scale(1)}}@keyframes checkGlow{0%{box-shadow:0 0 0 0 rgba(74,222,128,0.7)}70%{box-shadow:0 0 0 10px rgba(74,222,128,0)}100%{box-shadow:0 0 0 0 rgba(74,222,128,0)}}.task-card{animation:fadeIn .3s ease both}.overdue-pulse{animation:pulse 1.5s ease infinite}.form-slide{animation:slideUp .3s ease both}.check-anim{animation:checkPop .4s ease,checkGlow .6s ease}”;
+const gcss=”@import url(‘https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap’);*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html,body,#root{min-height:100vh}input,select,button,textarea{font-family:‘Noto Sans JP’,sans-serif}@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}@keyframes slideDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}@keyframes checkPop{0%{transform:scale(1)}20%{transform:scale(1.6)}50%{transform:scale(0.85)}70%{transform:scale(1.15)}100%{transform:scale(1)}}@keyframes checkGlow{0%{box-shadow:0 0 0 0 rgba(74,222,128,0.8)}50%{box-shadow:0 0 0 14px rgba(74,222,128,0)}100%{box-shadow:0 0 0 0 rgba(74,222,128,0)}}.task-card{animation:fadeIn .3s ease both}.overdue-pulse{animation:pulse 1.5s ease infinite}.form-slide{animation:slideUp .3s ease both}.check-anim{animation:checkPop .5s ease,checkGlow .7s ease}”;
 
 const isTask=mode===“task”,isWish=mode===“wish”,isHabit=mode===“habit”;
 const habitsSorted=useMemo(()=>[…habits].sort((a,b)=>(a.doneToday?1:0)-(b.doneToday?1:0)),[habits]);
@@ -192,18 +192,18 @@ return(<div style={{minHeight:“100vh”,background:T.bg,color:T.text,fontFamil
   </div>
 )}
 
-{/* Filter + Sort */}
+{/* Filter */}
 {!isHabit&&<>
-  <div style={{display:"flex",gap:4,marginBottom:6,flexWrap:"wrap"}}>
+  <div style={{display:"flex",gap:4,marginBottom:6}}>
     {(isTask?[{k:"all",l:"すべて"},{k:"noDeadline",l:"期限なし"},{k:"active",l:"アクティブ"},{k:"done",l:"完了"}]:[{k:"all",l:"すべて"},{k:"done",l:"完了"}]).map(f=>(<button key={f.k} style={{padding:"4px 9px",borderRadius:6,border:"1px solid "+T.fBrd,fontSize:11,fontWeight:600,whiteSpace:"nowrap",background:filter===f.k&&locFilter===null?T.cOn:"transparent",color:filter===f.k&&locFilter===null?T.cOnT:T.fOffT,cursor:"pointer"}} onClick={()=>{setFilter(f.k);setLocFilter(null);setDlFilt(null)}}>{f.l}</button>))}
-    {isTask&&[{k:"today",l:"今日中"},{k:"3days",l:"3日以内"},{k:"week",l:"今週中"}].map(f=>(<button key={f.k} style={{padding:"4px 9px",borderRadius:6,border:"1px dashed "+(dlFilt===f.k?"#ff3b30":T.fBrd),fontSize:10,fontWeight:600,whiteSpace:"nowrap",background:dlFilt===f.k?"rgba(255,59,48,0.1)":"transparent",color:dlFilt===f.k?"#ff3b30":T.fOffT,cursor:"pointer"}} onClick={()=>setDlFilt(dlFilt===f.k?null:f.k)}>{f.l}</button>))}
   </div>
-  <div style={{display:"flex",gap:6,marginBottom:10,alignItems:"center",flexWrap:"wrap",position:"relative"}}>
+  <div style={{display:"flex",gap:4,marginBottom:6,alignItems:"center",flexWrap:"wrap",position:"relative"}}>
     <button style={{display:"flex",alignItems:"center",gap:4,padding:"4px 10px",borderRadius:8,border:"1px solid "+T.fBrd,background:T.inp,fontSize:11,color:T.mut,cursor:"pointer"}} onClick={()=>setShowSearch(v=>!v)}>🔍</button>
     <button style={{display:"flex",alignItems:"center",gap:3,padding:"4px 10px",borderRadius:8,border:"1px solid "+T.fBrd,background:T.inp,fontSize:11,fontWeight:600,color:T.sub,fontFamily:"'JetBrains Mono',monospace",cursor:"pointer"}} onClick={()=>setShowSortDD(v=>!v)}>▼ {SORTS.find(s=>s.v===sortOrder)?.l}</button>
     {showSortDD&&<div style={{position:"absolute",top:32,left:40,background:T.card,border:"1px solid "+T.brd,borderRadius:10,padding:6,zIndex:50,boxShadow:"0 4px 12px "+T.shd}}>{SORTS.map(s=><button key={s.v} style={{display:"block",width:"100%",textAlign:"left",padding:"8px 12px",borderRadius:6,border:"none",background:sortOrder===s.v?T.cOn:"transparent",color:sortOrder===s.v?T.cOnT:T.sub,fontSize:12,fontWeight:600,cursor:"pointer",marginBottom:2,whiteSpace:"nowrap"}} onClick={()=>{setSortOrder(s.v);setShowSortDD(false)}}>{s.l}</button>)}</div>}
-    {locs.length>0&&isTask&&<><span style={{fontSize:12,color:T.mut}}>📍</span>{locs.map(l=><button key={l} style={{padding:"3px 10px",borderRadius:14,fontSize:10,fontWeight:600,color:locFilter===l?T.cOnT:T.mut,background:locFilter===l?T.cOn:T.inp,border:"1px solid "+T.brd,cursor:"pointer"}} onClick={()=>setLocFilter(locFilter===l?null:l)}>{l}</button>)}</>}
+    {isTask&&[{k:"today",l:"今日中"},{k:"3days",l:"3日以内"},{k:"week",l:"今週中"}].map(f=>(<button key={f.k} style={{padding:"4px 9px",borderRadius:6,border:"1px dashed "+(dlFilt===f.k?"#ff3b30":T.fBrd),fontSize:10,fontWeight:600,whiteSpace:"nowrap",background:dlFilt===f.k?"rgba(255,59,48,0.1)":"transparent",color:dlFilt===f.k?"#ff3b30":T.fOffT,cursor:"pointer"}} onClick={()=>setDlFilt(dlFilt===f.k?null:f.k)}>{f.l}</button>))}
   </div>
+  {locs.length>0&&isTask&&<div style={{display:"flex",gap:4,marginBottom:6,alignItems:"center"}}><span style={{fontSize:12,color:T.mut}}>📍</span>{locs.map(l=><button key={l} style={{padding:"3px 10px",borderRadius:14,fontSize:10,fontWeight:600,color:locFilter===l?T.cOnT:T.mut,background:locFilter===l?T.cOn:T.inp,border:"1px solid "+T.brd,cursor:"pointer"}} onClick={()=>setLocFilter(locFilter===l?null:l)}>{l}</button>)}</div>}
   {showSearch&&<input className="form-slide" style={{width:"100%",padding:"10px 12px",background:T.inp,border:"1px solid "+T.brd,borderRadius:9,color:T.text,fontSize:14,outline:"none",marginBottom:8}} placeholder="検索..." value={searchQ} onChange={e=>setSearchQ(e.target.value)} autoFocus/>}
 </>}
 
@@ -298,7 +298,7 @@ return(<div style={{position:“relative”,overflow:“hidden”,borderRadius:1
 {isW&&<div style={{position:“absolute”,left:0,top:“50%”,transform:“translateY(-50%)”,width:3,height:“60%”,background:”#c084fc”,borderRadius:“0 3px 3px 0”}}/>}
 <div style={{display:“flex”,alignItems:“center”,justifyContent:“space-between”,width:“100%”}}>
 <div style={{display:“flex”,alignItems:“center”,gap:8,flex:1,minWidth:0}}>
-<button className={“ne”+(checkAnim?” check-anim”:””)} style={{width:20,height:20,borderRadius:5,border:“2px solid “+(task.done?”#ff3b30”:T.chk),background:task.done?”#ff3b30”:“transparent”,display:“flex”,alignItems:“center”,justifyContent:“center”,cursor:“pointer”,flexShrink:0,color:”#fff”,fontSize:10,fontWeight:700}} onClick={e=>{e.stopPropagation();onToggleDone()}}>{task.done&&“✓”}</button>
+<button key={task.done?“d”:“u”+(checkAnim?“a”:””)} className={“ne”+(checkAnim?” check-anim”:””)} style={{width:20,height:20,borderRadius:5,border:“2px solid “+(task.done?”#4ade80”:T.chk),background:task.done?”#4ade80”:“transparent”,display:“flex”,alignItems:“center”,justifyContent:“center”,cursor:“pointer”,flexShrink:0,color:task.done?”#000”:”#fff”,fontSize:10,fontWeight:700}} onClick={e=>{e.stopPropagation();onToggleDone()}}>{task.done&&“✓”}</button>
 {(task.icon||isW)&&<div style={{fontSize:Math.max(14,20-pr),flexShrink:0,width:Math.max(18,26-pr),textAlign:“center”}}>{task.icon||(isW?“⭐”:””)}</div>}
 <div style={{flex:1,minWidth:0}}>
 <div style={{fontSize:ts.fs,fontWeight:ts.fw,color:ts.tc,whiteSpace:“nowrap”,overflow:“hidden”,textOverflow:“ellipsis”,textDecoration:task.done?“line-through”:“none”}}>{task.title}</div>
