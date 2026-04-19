@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from “react”;
-const VER = “3.1.0”;
+const VER = “3.2.0”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
@@ -51,7 +51,7 @@ if(so===“impGroup”||so===“weightGroup”)return tierN(task.importance,task
 return 5;
 }
 
-const SK=“task-queue-v1”,SOK=“task-queue-sort”,DK=“task-queue-defaults”,THK=“task-queue-theme”,TRK=“task-queue-trash”,HRK=“task-queue-habits”,DRK=“task-queue-dayreset”,LEK=“task-queue-locemojis”;
+const SK=“task-queue-v1”,SOK=“task-queue-sort”,DK=“task-queue-defaults”,THK=“task-queue-theme”,TRK=“task-queue-trash”,HRK=“task-queue-habits”,DRK=“task-queue-dayreset”,LEK=“task-queue-locemojis”,LXK=“task-queue-lastexport”,TPK=“task-queue-todaypicks”,TDK=“task-queue-todaypickday”;
 const DD={importance:2,weight:2,hasDeadline:true,recurrence:“none”,location:””};
 function ld(k,d){try{const r=localStorage.getItem(k);return r?JSON.parse(r):d}catch{return d}}
 function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
@@ -83,6 +83,11 @@ const[editHabitId,setEditHabitId]=useState(null);
 const[topIdx,setTopIdx]=useState(0);const[topSwipeOff,setTopSwipeOff]=useState(0);
 const[draggingId,setDraggingId]=useState(null);
 const[openGroup,setOpenGroup]=useState(null);
+const[rouletteId,setRouletteId]=useState(null);
+const[particles,setParticles]=useState([]);
+const[showBackupNudge,setShowBackupNudge]=useState(false);
+const[todayPicks,setTodayPicks]=useState(()=>ld(TPK,[]));
+const[showPicker,setShowPicker]=useState(false);
 const ur=useRef(null);const fr=useRef(null);const formRef=useRef(null);
 const topSwipeStart=useRef(0);const dragStartY=useRef(0);const dragType=useRef(null);
 const T=isDark?TH.dark:TH.light;
@@ -91,6 +96,20 @@ useEffect(()=>{sv(SK,tasks)},[tasks]);
 useEffect(()=>{sv(HRK,habits)},[habits]);
 useEffect(()=>{sv(TRK,trash)},[trash]);
 useEffect(()=>{sv(LEK,locEmojis)},[locEmojis]);
+useEffect(()=>{sv(TPK,todayPicks)},[todayPicks]);
+useEffect(()=>{
+const d=new Date();if(d.getHours()<dayReset)d.setDate(d.getDate()-1);
+const today=d.toISOString().slice(0,10);const lastDay=ld(TDK,””);
+if(lastDay!==today){setTodayPicks([]);sv(TDK,today);
+const activeCount=tasks.filter(t=>!t.done&&t.type!==“wish”).length;
+if(activeCount>=3)setTimeout(()=>setShowPicker(true),400)}
+// eslint-disable-next-line
+},[dayReset]);
+useEffect(()=>{
+const last=ld(LXK,0);const days=(Date.now()-last)/(24*36e5);
+if(tasks.length>=5&&days>=7)setTimeout(()=>setShowBackupNudge(true),800);
+// eslint-disable-next-line
+},[]);
 useEffect(()=>{localStorage.setItem(SOK,sortOrder)},[sortOrder]);
 useEffect(()=>{sv(DK,defaults)},[defaults]);
 useEffect(()=>{localStorage.setItem(THK,isDark?“dark”:“light”);document.body.style.background=T.bg},[isDark,T.bg]);
@@ -116,12 +135,23 @@ resetForm()
 },[title,importance,weight,deadline,hasDeadline,memo,location,recurrence,icon,editId,resetForm,mode,locEmojis]);
 
 const showUndo=useCallback((ts,a)=>{if(ur.current)clearTimeout(ur.current);setUndoData({tasks:ts,action:a});ur.current=setTimeout(()=>setUndoData(null),5000)},[]);
-const togDone=useCallback(id=>{setTasks(prev=>{const t=prev.find(x=>x.id===id);if(!t)return prev;if(!t.done&&t.recurrence&&t.recurrence!==“none”&&t.deadline){const nt={…t,id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),deadline:advRec(t.deadline,t.recurrence),done:false,createdAt:Date.now()};return prev.map(x=>x.id===id?{…x,done:true}:x).concat(nt)}return prev.map(x=>x.id===id?{…x,done:!x.done}:x)})},[]);
+const fireParticles=useCallback(imp=>{
+const count=imp===3?22:imp===2?14:8;
+const COL=[”#ff3b30”,”#ff9500”,”#ffcc00”,”#4ade80”,”#06b6d4”,”#a855f7”,”#c084fc”,”#f97316”];
+const id=Date.now();
+const pts=Array.from({length:count},(_,i)=>{
+const a=Math.random()*Math.PI*2;const d=80+Math.random()*(imp===3?140:imp===2?90:60);
+return{id:id+”-”+i,tx:Math.cos(a)*d,ty:Math.sin(a)*d-30,c:COL[Math.floor(Math.random()*COL.length)],r:Math.random()*540-270,sq:Math.random()>0.6}
+});
+setParticles(p=>[…p,…pts]);
+setTimeout(()=>setParticles(p=>p.filter(x=>!x.id.startsWith(id+”-”))),1100);
+},[]);
+const togDone=useCallback(id=>{setTasks(prev=>{const t=prev.find(x=>x.id===id);if(!t)return prev;if(!t.done)fireParticles(t.importance||2);if(!t.done&&t.recurrence&&t.recurrence!==“none”&&t.deadline){const nt={…t,id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),deadline:advRec(t.deadline,t.recurrence),done:false,createdAt:Date.now()};return prev.map(x=>x.id===id?{…x,done:true}:x).concat(nt)}return prev.map(x=>x.id===id?{…x,done:!x.done}:x)})},[fireParticles]);
 const delTask=useCallback(id=>{const t=tasks.find(x=>x.id===id);if(!t)return;setTrash(p=>[…p,{…t,deletedAt:Date.now()}]);showUndo([t],“delete”);setTasks(p=>p.filter(x=>x.id!==id));if(expandedId===id)setExpandedId(null)},[tasks,expandedId,showUndo]);
 const restoreTask=useCallback(id=>{const t=trash.find(x=>x.id===id);if(!t)return;const{deletedAt,…task}=t;setTasks(p=>[…p,task]);setTrash(p=>p.filter(x=>x.id!==id))},[trash]);
 const undo=useCallback(()=>{if(!undoData)return;if(undoData.action===“delete”){setTasks(p=>[…p,…undoData.tasks]);setTrash(p=>p.filter(t=>!undoData.tasks.find(u=>u.id===t.id)))}setUndoData(null);if(ur.current)clearTimeout(ur.current)},[undoData]);
 const startEdit=useCallback(t=>{setTitle(t.title);setImportance(t.importance);setWeight(t.weight);setDeadline(t.deadline||defDl());setHasDeadline(!!t.deadline);setMemo(t.memo||””);setLocation(t.location||””);setRecurrence(t.recurrence||“none”);setIcon(t.icon||””);setIconTouched(!!t.icon);setEditId(t.id);setShowForm(true);setExpandedId(null)},[]);
-const doExport=useCallback(()=>{const b=new Blob([JSON.stringify(tasks,null,2)],{type:“application/json”});const u=URL.createObjectURL(b);const a=document.createElement(“a”);a.href=u;a.download=“task-queue-”+new Date().toISOString().slice(0,10)+”.json”;a.click();URL.revokeObjectURL(u)},[tasks]);
+const doExport=useCallback(()=>{const b=new Blob([JSON.stringify(tasks,null,2)],{type:“application/json”});const u=URL.createObjectURL(b);const a=document.createElement(“a”);a.href=u;a.download=“task-queue-”+new Date().toISOString().slice(0,10)+”.json”;a.click();URL.revokeObjectURL(u);sv(LXK,Date.now())},[tasks]);
 const doImportClick=useCallback(()=>fr.current?.click(),[]);
 const doImport=useCallback(e=>{const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const imp=JSON.parse(ev.target.result);if(!Array.isArray(imp))throw 0;if(confirm(“OK=上書き / キャンセル=追加”)){setTasks(imp)}else{const ids=new Set(tasks.map(t=>t.id));setTasks(p=>[…p,…imp.filter(t=>!ids.has(t.id))])}}catch{alert(“インポート失敗”)}};r.readAsText(f);e.target.value=””},[tasks]);
 
@@ -172,8 +202,13 @@ else if(sortOrder===“created”)r.sort((a,b)=>b.createdAt-a.createdAt);
 }
 // wish mode with deadline: emphasize near-deadline
 if(mode===“wish”&&sortOrder===“deadline”){r.sort((a,b)=>{if(!a.deadline&&!b.deadline)return 0;if(!a.deadline)return 1;if(!b.deadline)return-1;return new Date(a.deadline)-new Date(b.deadline)})}
+// TODAY picks pinned to top (task mode only, not in group mode)
+if(mode===“task”&&todayPicks.length>0&&sortOrder!==“impGroup”&&sortOrder!==“weightGroup”){
+const picks=r.filter(t=>todayPicks.includes(t.id));const rest=r.filter(t=>!todayPicks.includes(t.id));
+r=[…picks,…rest];
+}
 return r
-},[tasks,filter,locFilter,searchQ,sortOrder,mode]);
+},[tasks,filter,locFilter,searchQ,sortOrder,mode,todayPicks]);
 
 const topTasks=useMemo(()=>{
 const a=tasks.filter(t=>!t.done&&t.type!==“wish”).map(t=>({…t,sc:score(t),bd:band(t)}));
@@ -202,12 +237,16 @@ const bannerTs=e=>{topSwipeStart.current=e.touches[0].clientX};
 const bannerTm=e=>{const dx=e.touches[0].clientX-topSwipeStart.current;setTopSwipeOff(dx)};
 const bannerTe=()=>{if(topSwipeOff>50&&topIdx>0)setTopIdx(topIdx-1);else if(topSwipeOff<-50&&topIdx<topTasks.length-1)setTopIdx(topIdx+1);setTopSwipeOff(0)};
 
-const gcss=”@import url(‘https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap’);*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html,body,#root{min-height:100vh}input,select,button,textarea{font-family:‘Noto Sans JP’,sans-serif}@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}@keyframes slideDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}.task-card{animation:fadeIn .3s ease both}.overdue-pulse{animation:pulse 1.5s ease infinite}.form-slide{animation:slideUp .3s ease both}”;
+const gcss=”@import url(‘https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap’);*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html,body,#root{min-height:100vh}input,select,button,textarea{font-family:‘Noto Sans JP’,sans-serif}@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}@keyframes slideDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}@keyframes confetti{0%{transform:translate(0,0) rotate(0deg) scale(1);opacity:1}60%{opacity:1}100%{transform:translate(var(–tx),var(–ty)) rotate(var(–tr)) scale(0.3);opacity:0}}.task-card{animation:fadeIn .3s ease both}.overdue-pulse{animation:pulse 1.5s ease infinite}.form-slide{animation:slideUp .3s ease both}.particle{position:absolute;width:9px;height:9px;animation:confetti 1s cubic-bezier(.2,.6,.4,1) forwards;will-change:transform,opacity}”;
 
 const isTask=mode===“task”,isWish=mode===“wish”,isHabit=mode===“habit”;
 const habitsSorted=useMemo(()=>{const done=habits.filter(h=>h.doneToday);const un=habits.filter(h=>!h.doneToday);return[…un,…done]},[habits]);
 const isGroupMode=(sortOrder===“impGroup”||sortOrder===“weightGroup”)&&isTask;
 const curTop=topTasks[topIdx];
+const wishList=useMemo(()=>tasks.filter(t=>t.type===“wish”&&!t.done),[tasks]);
+const spinRoulette=useCallback(()=>{if(wishList.length===0){setRouletteId(null);return}let next;do{next=wishList[Math.floor(Math.random()*wishList.length)].id}while(wishList.length>1&&next===rouletteId);setRouletteId(next)},[wishList,rouletteId]);
+const rouletteTask=useMemo(()=>wishList.find(w=>w.id===rouletteId),[wishList,rouletteId]);
+useEffect(()=>{if(rouletteId&&!wishList.find(w=>w.id===rouletteId))setRouletteId(null)},[wishList,rouletteId]);
 
 return(<div style={{minHeight:“100vh”,background:T.bg,color:T.text,fontFamily:”‘Noto Sans JP’,sans-serif”,padding:“calc(16px + env(safe-area-inset-top)) 14px calc(80px + env(safe-area-inset-bottom))”,maxWidth:600,margin:“0 auto”}}><style>{gcss+“html,body,#root{background:”+T.bg+”}”}</style>
 
@@ -241,6 +280,20 @@ return(<div style={{minHeight:“100vh”,background:T.bg,color:T.text,fontFamil
   <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,color:T.sub,display:"flex",gap:8}}><span>{fmtDl(curTop.deadline)}</span><span style={{opacity:.3}}>|</span><span>スコア {Math.round(score(curTop))}</span></div>
 </div>
 {topTasks.length>1&&<div style={{display:"flex",justifyContent:"center",gap:6,marginTop:6}}>{topTasks.map((_,i)=><span key={i} onClick={()=>setTopIdx(i)} style={{width:6,height:6,borderRadius:"50%",background:i===topIdx?sLabel(score(curTop)).c:T.dim,cursor:"pointer",transition:"background .2s"}}/>)}</div>}
+</div>)}
+
+{/* Wish roulette banner (C1) */}
+{isWish&&wishList.length>0&&!showForm&&(<div style={{marginBottom:12}}>
+{!rouletteTask?<button style={{width:“100%”,padding:“14px 16px”,background:T.card,border:“1px dashed “+T.brd,borderRadius:14,color:T.text,fontSize:14,fontWeight:700,cursor:“pointer”,display:“flex”,alignItems:“center”,justifyContent:“center”,gap:8,letterSpacing:1}} onClick={spinRoulette}>🎲 何やるルーレット</button>
+:<div style={{background:T.card,border:“1px solid #c084fc”,borderRadius:14,padding:“14px 16px”}}>
+
+<div style={{fontSize:10,fontWeight:700,marginBottom:5,letterSpacing:1,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+<span style={{color:"#c084fc",fontFamily:"JetBrains Mono"}}>🎲 これやる？</span>
+<button style={{background:"none",border:"1px solid "+T.brd,borderRadius:6,color:T.sub,fontSize:14,cursor:"pointer",padding:"2px 8px"}} onClick={spinRoulette}>🎲</button>
+</div>
+<div style={{fontSize:16,fontWeight:700,color:T.text,marginBottom:5}}>{rouletteTask.icon?rouletteTask.icon+" ":"⭐ "}{rouletteTask.title}</div>
+{(rouletteTask.deadline||rouletteTask.memo)&&<div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,color:T.sub,display:"flex",gap:8,flexWrap:"wrap"}}>{rouletteTask.deadline&&<span>⏰ {fmtDl(rouletteTask.deadline)}</span>}{rouletteTask.memo&&<><span style={{opacity:.3}}>|</span><span>{rouletteTask.memo.slice(0,40)}{rouletteTask.memo.length>40?"...":""}</span></>}</div>}
+</div>}
 </div>)}
 
 {/* Filter + Sort */}
@@ -307,7 +360,7 @@ return(<div style={{minHeight:“100vh”,background:T.bg,color:T.text,fontFamil
 {/* TASK/WISH LIST */}
 {!isHabit&&!isGroupMode&&<div style={{display:“flex”,flexDirection:“column”,gap:8}}>
 {sorted.length===0&&<div style={{textAlign:“center”,padding:36,color:T.dim,fontSize:13,fontFamily:”‘JetBrains Mono’,monospace”}}>{searchQ?“検索結果なし”:filter===“done”?“完了タスクなし”:“タスクを追加しましょう”}</div>}
-{sorted.map(task=><TaskCard key={task.id} task={task} T={T} isDark={isDark} sortOrder={sortOrder} expanded={expandedId===task.id} memoExp={memoExpId===task.id} dragging={draggingId===task.id} draggable={isWish} onToggleExpand={()=>{setExpandedId(expandedId===task.id?null:task.id);setMemoExpId(null)}} onToggleMemo={()=>{setMemoExpId(memoExpId===task.id?null:task.id);setExpandedId(null)}} onToggleDone={()=>togDone(task.id)} onEdit={()=>startEdit(task)} onDelete={()=>delTask(task.id)} onUpdateSubtasks={s=>upSub(task.id,s)} onUpdateMemo={m=>upMemo(task.id,m)} onQuickUpdate={(f,v)=>quickUpdate(task.id,f,v)} onDragStart={y=>dragStart(task.id,“wish”,y)} onDragMove={dragMove} onDragEnd={dragEnd}/>)}
+{sorted.map(task=><TaskCard key={task.id} task={task} T={T} isDark={isDark} sortOrder={sortOrder} expanded={expandedId===task.id} memoExp={memoExpId===task.id} dragging={draggingId===task.id} draggable={isWish} isToday={todayPicks.includes(task.id)} onToggleExpand={()=>{setExpandedId(expandedId===task.id?null:task.id);setMemoExpId(null)}} onToggleMemo={()=>{setMemoExpId(memoExpId===task.id?null:task.id);setExpandedId(null)}} onToggleDone={()=>togDone(task.id)} onEdit={()=>startEdit(task)} onDelete={()=>delTask(task.id)} onUpdateSubtasks={s=>upSub(task.id,s)} onUpdateMemo={m=>upMemo(task.id,m)} onQuickUpdate={(f,v)=>quickUpdate(task.id,f,v)} onDragStart={y=>dragStart(task.id,“wish”,y)} onDragMove={dragMove} onDragEnd={dragEnd}/>)}
 
 </div>}
 
@@ -321,7 +374,7 @@ return(<div style={{minHeight:“100vh”,background:T.bg,color:T.text,fontFamil
 </button>
 {openGroup===g.k&&<div style={{display:“flex”,flexDirection:“column”,gap:6,marginTop:6,marginBottom:4,paddingLeft:6}}>
 {g.items.length===0&&<div style={{padding:12,color:T.dim,fontSize:11,fontFamily:”‘JetBrains Mono’,monospace”}}>なし</div>}
-{g.items.map(task=><TaskCard key={task.id} task={task} T={T} isDark={isDark} sortOrder={sortOrder} expanded={expandedId===task.id} memoExp={memoExpId===task.id} dragging={false} draggable={false} onToggleExpand={()=>{setExpandedId(expandedId===task.id?null:task.id);setMemoExpId(null)}} onToggleMemo={()=>{setMemoExpId(memoExpId===task.id?null:task.id);setExpandedId(null)}} onToggleDone={()=>togDone(task.id)} onEdit={()=>startEdit(task)} onDelete={()=>delTask(task.id)} onUpdateSubtasks={s=>upSub(task.id,s)} onUpdateMemo={m=>upMemo(task.id,m)} onQuickUpdate={(f,v)=>quickUpdate(task.id,f,v)}/>)}
+{g.items.map(task=><TaskCard key={task.id} task={task} T={T} isDark={isDark} sortOrder={sortOrder} expanded={expandedId===task.id} memoExp={memoExpId===task.id} dragging={false} draggable={false} isToday={todayPicks.includes(task.id)} onToggleExpand={()=>{setExpandedId(expandedId===task.id?null:task.id);setMemoExpId(null)}} onToggleMemo={()=>{setMemoExpId(memoExpId===task.id?null:task.id);setExpandedId(null)}} onToggleDone={()=>togDone(task.id)} onEdit={()=>startEdit(task)} onDelete={()=>delTask(task.id)} onUpdateSubtasks={s=>upSub(task.id,s)} onUpdateMemo={m=>upMemo(task.id,m)} onQuickUpdate={(f,v)=>quickUpdate(task.id,f,v)}/>)}
 </div>}
 
   </div>))}
@@ -344,10 +397,56 @@ return(<div style={{minHeight:“100vh”,background:T.bg,color:T.text,fontFamil
     </div>)}
   </div>
 
+  <div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>今日の3選択</div>
+    <div style={{fontSize:11,color:T.sub,marginBottom:7}}>現在の選択: {todayPicks.length}件</div>
+    <div style={{display:"flex",gap:8}}>
+      <button style={{flex:1,padding:10,borderRadius:9,border:"1px solid "+T.brd,background:T.cOff,color:T.text,fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{setShowSettings(false);setShowPicker(true)}}>選び直す</button>
+      {todayPicks.length>0&&<button style={{flex:1,padding:10,borderRadius:9,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setTodayPicks([])}>クリア</button>}
+    </div>
+  </div>
+
   <div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>データ</div><div style={{display:"flex",gap:8}}><button style={{flex:1,padding:10,borderRadius:9,border:"1px solid "+T.brd,background:T.cOff,color:T.text,fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={doExport}>エクスポート</button><button style={{flex:1,padding:10,borderRadius:9,border:"1px solid "+T.brd,background:T.cOff,color:T.text,fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={doImportClick}>インポート</button><input ref={fr} type="file" accept="application/json" style={{display:"none"}} onChange={doImport}/></div></div>
   <div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>ゴミ箱（{trash.length}件）</div>
     {trash.map(t=><div key={t.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:"1px solid "+(isDark?"#1a1a1a":T.brd)}}><span style={{fontSize:12,color:T.sub}}>{t.icon?t.icon+" ":""}{t.title}</span><button style={{padding:"3px 8px",borderRadius:6,border:"1px solid rgba(34,197,94,0.3)",background:"transparent",color:"#4ade80",fontSize:10,fontWeight:600,cursor:"pointer"}} onClick={()=>restoreTask(t.id)}>復元</button></div>)}
     {trash.length>0&&<button style={{marginTop:8,padding:"6px 12px",borderRadius:8,border:"1px solid rgba(255,59,48,0.3)",background:"transparent",color:"#ff3b30",fontSize:11,fontWeight:600,cursor:"pointer"}} onClick={()=>{if(confirm("ゴミ箱を空にしますか？"))setTrash([])}}>ゴミ箱を空にする</button>}
+  </div>
+</div></div>}
+
+{/* Particles overlay (C2) */}
+{particles.length>0&&<div style={{position:“fixed”,inset:0,pointerEvents:“none”,zIndex:300,overflow:“hidden”}}>
+
+<div style={{position:"absolute",left:"50%",top:"30%"}}>
+{particles.map(p=><span key={p.id} className="particle" style={{["--tx"]:p.tx+"px",["--ty"]:p.ty+"px",["--tr"]:p.r+"deg",background:p.c,borderRadius:p.sq?2:"50%",boxShadow:"0 0 6px "+p.c}}/>)}
+</div></div>}
+
+{/* Backup nudge (C4) */}
+{showBackupNudge&&<div style={{position:“fixed”,top:0,left:0,right:0,bottom:0,background:T.modal,zIndex:250,display:“flex”,alignItems:“center”,justifyContent:“center”,padding:16}} onClick={()=>setShowBackupNudge(false)}><div style={{background:T.card,border:“1px solid “+T.brd,borderRadius:14,padding:20,width:“100%”,maxWidth:360}} onClick={e=>e.stopPropagation()}>
+
+  <div style={{fontSize:16,fontWeight:800,color:T.text,marginBottom:8}}>💾 バックアップしませんか？</div>
+  <div style={{fontSize:12,color:T.sub,marginBottom:16,lineHeight:1.6}}>最後のエクスポートから7日以上経過しています。データを書き出して保管しておきましょう。</div>
+  <div style={{display:"flex",gap:8}}>
+    <button style={{flex:1,padding:11,borderRadius:9,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setShowBackupNudge(false)}>あとで</button>
+    <button style={{flex:1,padding:11,borderRadius:9,border:"none",background:"#ff3b30",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{doExport();setShowBackupNudge(false)}}>エクスポート</button>
+  </div>
+</div></div>}
+
+{/* Morning picker (C5) */}
+{showPicker&&<div style={{position:“fixed”,top:0,left:0,right:0,bottom:0,background:T.modal,zIndex:250,display:“flex”,alignItems:“flex-start”,justifyContent:“center”,padding:“40px 16px 20px”,overflowY:“auto”}}><div style={{background:T.card,border:“1px solid “+T.brd,borderRadius:16,padding:20,width:“100%”,maxWidth:500}}>
+
+  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}><span style={{fontSize:16,fontWeight:800,color:T.text}}>🌅 今日やる3つを選ぼう</span><button style={{background:"none",border:"none",color:T.mut,fontSize:16,cursor:"pointer"}} onClick={()=>setShowPicker(false)}>✕</button></div>
+  <div style={{fontSize:11,color:T.mut,marginBottom:12,fontFamily:"'JetBrains Mono',monospace"}}>選択: {todayPicks.length}/3</div>
+  <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:14,maxHeight:"50vh",overflowY:"auto"}}>
+    {tasks.filter(t=>!t.done&&t.type!=="wish").map(t=>{const on=todayPicks.includes(t.id);const dis=!on&&todayPicks.length>=3;const c=roi(t.importance,t.weight);return<button key={t.id} disabled={dis} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:8,border:"1px solid "+(on?"#4ade80":T.brd),background:on?"rgba(74,222,128,0.12)":T.inp,color:T.text,fontSize:13,cursor:dis?"not-allowed":"pointer",opacity:dis?.4:1,textAlign:"left",width:"100%"}} onClick={()=>setTodayPicks(p=>on?p.filter(x=>x!==t.id):[...p,t.id])}>
+      <span style={{width:16,height:16,borderRadius:4,border:"2px solid "+(on?"#4ade80":T.chk),background:on?"#4ade80":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,color:"#000",fontSize:9,fontWeight:800}}>{on?"✓":""}</span>
+      <span style={{width:3,height:18,background:c,borderRadius:2,flexShrink:0}}/>
+      {t.icon&&<span style={{fontSize:14,flexShrink:0}}>{t.icon}</span>}
+      <span style={{flex:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{t.title}</span>
+      <span style={{fontSize:9,color:T.mut,fontFamily:"'JetBrains Mono',monospace",flexShrink:0}}>{fmtDl(t.deadline)}</span>
+    </button>})}
+  </div>
+  <div style={{display:"flex",gap:8}}>
+    <button style={{flex:1,padding:11,borderRadius:9,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{setTodayPicks([]);setShowPicker(false)}}>スキップ</button>
+    <button style={{flex:1,padding:11,borderRadius:9,border:"none",background:todayPicks.length===0?T.dim:"#4ade80",color:"#000",fontSize:12,fontWeight:800,cursor:"pointer"}} onClick={()=>setShowPicker(false)}>決定 ({todayPicks.length})</button>
   </div>
 </div></div>}
 
@@ -359,7 +458,7 @@ return(<div style={{minHeight:“100vh”,background:T.bg,color:T.text,fontFamil
   </div>)
 }
 
-function TaskCard({task,T,isDark,sortOrder,expanded,memoExp,dragging,draggable,onToggleExpand,onToggleMemo,onToggleDone,onEdit,onDelete,onUpdateSubtasks,onUpdateMemo,onQuickUpdate,onDragStart,onDragMove,onDragEnd}){
+function TaskCard({task,T,isDark,sortOrder,expanded,memoExp,dragging,draggable,isToday,onToggleExpand,onToggleMemo,onToggleDone,onEdit,onDelete,onUpdateSubtasks,onUpdateMemo,onQuickUpdate,onDragStart,onDragMove,onDragEnd}){
 const isW=task.type===“wish”;
 // Near-deadline wish highlight
 const wishUrgent=isW&&task.deadline&&((new Date(task.deadline)-new Date())/36e5)<24&&((new Date(task.deadline)-new Date())/36e5)>=0;
@@ -414,6 +513,7 @@ return(<div style={{position:“relative”,overflow:“hidden”,borderRadius:1
 <span style={{fontSize:13}}>📝</span>
 {task.memo&&<span style={{width:5,height:5,borderRadius:"50%",background:"#4ade80",display:"inline-block"}}/>}
 </button>}
+{isToday&&!task.done&&<span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:ts.bfs,fontWeight:800,letterSpacing:1,padding:ts.bp,borderRadius:5,border:"1px solid #4ade80",background:"rgba(74,222,128,0.15)",color:"#4ade80"}}>TODAY</span>}
 {!task.done&&<span className={isOD?"overdue-pulse":""} style={{fontFamily:"'JetBrains Mono',monospace",fontSize:ts.bfs,fontWeight:700,letterSpacing:1,padding:ts.bp,borderRadius:5,border:"1px solid",background:lb.c+"22",color:lb.c,borderColor:lb.c+"44"}}>{lb.t}</span>}
 {draggable&&<div className="ne" style={{display:"flex",alignItems:"center",justifyContent:"center",width:28,height:28,color:T.dim,cursor:"grab",touchAction:"none",marginLeft:2}} onTouchStart={e=>{e.stopPropagation();onDragStart(e.touches[0].clientY)}} onTouchMove={e=>{e.stopPropagation();if(onDragMove)onDragMove(e.touches[0].clientY)}} onTouchEnd={e=>{e.stopPropagation();onDragEnd()}} onClick={e=>e.stopPropagation()}><Grip/></div>}
 </div>
