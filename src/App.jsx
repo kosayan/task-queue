@@ -1,263 +1,339 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from “react”;
-
-const APP_VERSION = “2.6.0”;
-const IMPORTANCE = [{ value: 3, label: “高”, color: “#ff3b30” }, { value: 2, label: “中”, color: “#ff9500” }, { value: 1, label: “低”, color: “#8e8e93” }];
-const WEIGHT_INFO = [{ value: 3, label: “重い”, hours: “4h+”, barWidth: 6, barHeight: 100 }, { value: 2, label: “普通”, hours: “1-4h”, barWidth: 4, barHeight: 75 }, { value: 1, label: “軽い”, hours: “~1h”, barWidth: 3, barHeight: 55 }, { value: 0, label: “超軽い”, hours: “~10m”, barWidth: 2, barHeight: 40 }];
-const RECURRENCE = [{ value: “none”, label: “なし” }, { value: “daily”, label: “毎日” }, { value: “weekly”, label: “毎週” }, { value: “monthly”, label: “毎月” }];
-const SORT_OPTIONS = [{ value: “smart”, label: “スマート順” }, { value: “deadline”, label: “締切順” }, { value: “heavy”, label: “重い順” }, { value: “light”, label: “軽い順” }, { value: “created”, label: “作成日順” }];
-
-const THEMES = {
-dark: { bg: “#0a0a0a”, card: “#111”, text: “#fff”, textSub: “#aaa”, textMuted: “#888”, textDim: “#555”, border: “#333”, borderLight: “#2a2a2a”, inputBg: “#1a1a1a”, chipOff: “#1a1a1a”, chipOffText: “#888”, chipOn: “#fff”, chipOnText: “#000”, iconBg: “#1a1a1a”, iconBorder: “#333”, iconColor: “#ccc”, filterBorder: “#444”, filterOffText: “#999”, modalBg: “rgba(0,0,0,0.7)”, toastBg: “#1a1a1a”, memoOverlay: “#0a0a0a”, memoBorder: “#2a2a2a”, shadow: “rgba(0,0,0,0.4)”, checkBorder: “#555”, addBorder: “#555”, addColor: “#aaa”, scheme: “dark” },
-light: { bg: “#f8f7f4”, card: “#fff”, text: “#222”, textSub: “#666”, textMuted: “#999”, textDim: “#bbb”, border: “#d5d3ce”, borderLight: “#e5e3de”, inputBg: “#f0efec”, chipOff: “#f0efec”, chipOffText: “#888”, chipOn: “#222”, chipOnText: “#fff”, iconBg: “#fff”, iconBorder: “#ddd”, iconColor: “#666”, filterBorder: “#d5d3ce”, filterOffText: “#888”, modalBg: “rgba(0,0,0,0.4)”, toastBg: “#fff”, memoOverlay: “#f0efec”, memoBorder: “#e0e0e0”, shadow: “rgba(0,0,0,0.06)”, checkBorder: “#ccc”, addBorder: “#ccc”, addColor: “#999”, scheme: “light” }
+const VER = “3.0.0”;
+const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
+const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
+const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
+const SORTS = [{ v: “smart”, l: “スマート順” }, { v: “deadline”, l: “締切順” }, { v: “heavy”, l: “重い順” }, { v: “light”, l: “軽い順” }, { v: “created”, l: “作成日順” }];
+const ROI_MAP = {“3-3”:”#f97316”,“3-2”:”#eab308”,“3-1”:”#22c55e”,“3-0”:”#22c55e”,“2-3”:”#3b82f6”,“2-2”:”#06b6d4”,“2-1”:”#14b8a6”,“2-0”:”#14b8a6”,“1-3”:”#a855f7”,“1-2”:”#c084fc”,“1-1”:”#67e8f9”,“1-0”:”#67e8f9”};
+const TIER_MAP = {“3-1”:1,“3-0”:1,“3-2”:2,“3-3”:3,“2-1”:4,“2-0”:4,“2-2”:5,“2-3”:6,“1-1”:7,“1-0”:7,“1-2”:8,“1-3”:9};
+const TIER_STYLES = {
+1:{bg:”#162016”,border:“rgba(34,197,94,0.35)”,shadow:“rgba(34,197,94,0.1)”,fs:16,fw:800,tc:”#fff”,mc:”#ccc”,pad:16,mfs:11,bfs:10,bp:“4px 10px”},
+2:{bg:”#1a1906”,border:“rgba(234,179,8,0.3)”,shadow:“rgba(234,179,8,0.08)”,fs:15,fw:700,tc:”#f5f5f5”,mc:”#bbb”,pad:15,mfs:10.5,bfs:10,bp:“4px 9px”},
+3:{bg:”#1a1208”,border:“rgba(249,115,22,0.25)”,shadow:“rgba(249,115,22,0.06)”,fs:14,fw:700,tc:”#eee”,mc:”#aaa”,pad:14,mfs:10,bfs:9,bp:“3px 9px”},
+4:{bg:”#111413”,border:“rgba(20,184,166,0.22)”,shadow:“rgba(20,184,166,0.05)”,fs:13.5,fw:600,tc:”#e0e0e0”,mc:”#999”,pad:13,mfs:10,bfs:9,bp:“3px 8px”},
+5:{bg:”#101213”,border:“rgba(6,182,212,0.2)”,shadow:“rgba(6,182,212,0.04)”,fs:13,fw:600,tc:”#d0d0d0”,mc:”#999”,pad:12,mfs:9.5,bfs:9,bp:“3px 8px”},
+6:{bg:”#0e0e14”,border:“rgba(59,130,246,0.18)”,shadow:“rgba(59,130,246,0.04)”,fs:12.5,fw:600,tc:”#bbb”,mc:”#888”,pad:11,mfs:9,bfs:8,bp:“3px 7px”},
+7:{bg:”#0c0d0d”,border:“rgba(103,232,249,0.14)”,shadow:“rgba(103,232,249,0.03)”,fs:12,fw:500,tc:”#999”,mc:”#777”,pad:10,mfs:8.5,bfs:8,bp:“2px 6px”},
+8:{bg:”#0c0a0e”,border:“rgba(192,132,252,0.12)”,shadow:“rgba(192,132,252,0.03)”,fs:11.5,fw:500,tc:”#888”,mc:”#666”,pad:9,mfs:8,bfs:7,bp:“2px 5px”},
+9:{bg:”#0a090c”,border:“rgba(168,85,247,0.1)”,shadow:“none”,fs:11,fw:500,tc:”#777”,mc:”#555”,pad:8,mfs:7.5,bfs:7,bp:“2px 5px”},
+};
+const TIER_LIGHT = {
+1:{bg:”#f0fdf4”,border:“rgba(34,197,94,0.4)”,shadow:“rgba(34,197,94,0.08)”,tc:”#111”,mc:”#555”},
+2:{bg:”#fefce8”,border:“rgba(234,179,8,0.35)”,shadow:“rgba(234,179,8,0.06)”,tc:”#222”,mc:”#666”},
+3:{bg:”#fff7ed”,border:“rgba(249,115,22,0.3)”,shadow:“rgba(249,115,22,0.05)”,tc:”#222”,mc:”#666”},
+4:{bg:”#f0fdfa”,border:“rgba(20,184,166,0.3)”,shadow:“rgba(20,184,166,0.04)”,tc:”#333”,mc:”#777”},
+5:{bg:”#fff”,border:“rgba(6,182,212,0.25)”,shadow:“rgba(6,182,212,0.04)”,tc:”#333”,mc:”#777”},
+6:{bg:”#faf9ff”,border:“rgba(59,130,246,0.2)”,shadow:“rgba(59,130,246,0.03)”,tc:”#444”,mc:”#888”},
+7:{bg:”#f8f8f8”,border:“rgba(103,232,249,0.2)”,shadow:“rgba(103,232,249,0.02)”,tc:”#555”,mc:”#999”},
+8:{bg:”#f6f4f9”,border:“rgba(192,132,252,0.18)”,shadow:“rgba(192,132,252,0.02)”,tc:”#666”,mc:”#999”},
+9:{bg:”#f4f3f5”,border:“rgba(168,85,247,0.15)”,shadow:“none”,tc:”#777”,mc:”#aaa”},
+};
+const TH = {
+dark:{bg:”#0a0a0a”,card:”#111”,text:”#fff”,sub:”#aaa”,mut:”#888”,dim:”#555”,brd:”#333”,inp:”#1a1a1a”,cOff:”#1a1a1a”,cOffT:”#888”,cOn:”#fff”,cOnT:”#000”,iBg:”#1a1a1a”,iBrd:”#333”,iC:”#ccc”,fBrd:”#444”,fOffT:”#999”,modal:“rgba(0,0,0,0.7)”,toast:”#1a1a1a”,memo:”#0a0a0a”,memB:”#2a2a2a”,shd:“rgba(0,0,0,0.4)”,chk:”#555”,addB:”#555”,addC:”#aaa”,sch:“dark”},
+light:{bg:”#f8f7f4”,card:”#fff”,text:”#222”,sub:”#666”,mut:”#999”,dim:”#bbb”,brd:”#d5d3ce”,inp:”#f0efec”,cOff:”#f0efec”,cOffT:”#888”,cOn:”#222”,cOnT:”#fff”,iBg:”#fff”,iBrd:”#ddd”,iC:”#666”,fBrd:”#d5d3ce”,fOffT:”#888”,modal:“rgba(0,0,0,0.4)”,toast:”#fff”,memo:”#f0efec”,memB:”#e0e0e0”,shd:“rgba(0,0,0,0.06)”,chk:”#ccc”,addB:”#ccc”,addC:”#999”,sch:“light”}
 };
 
-function getRoiColor(imp, w) {
-const k = imp + “-” + (w >= 3 ? 3 : w >= 2 ? 2 : w >= 1 ? 1 : 0);
-return { “3-3”:”#f97316”,“3-2”:”#eab308”,“3-1”:”#22c55e”,“3-0”:”#22c55e”,“2-3”:”#3b82f6”,“2-2”:”#06b6d4”,“2-1”:”#14b8a6”,“2-0”:”#14b8a6”,“1-3”:”#a855f7”,“1-2”:”#c084fc”,“1-1”:”#67e8f9”,“1-0”:”#67e8f9” }[k] || “#555”;
+function roi(i,w){return ROI_MAP[i+”-”+(w>=3?3:w>=2?2:w>=1?1:0)]||”#555”}
+function tier(i,w){return TIER_MAP[i+”-”+(w>=3?3:w>=2?2:w>=1?1:0)]||5}
+function wDots(w,c){const n=w>=3?3:w>=2?2:w>=1?1:0;const filled=w>=1?n:0;const empty=w<1?1:0;let s=””;for(let x=0;x<filled;x++)s+=“●”;for(let x=0;x<empty;x++)s+=“○”;return {text:s,color:c}}
+function score(t){if(t.done)return-999;if(t.type===“wish”)return-500;if(t.type===“habit”)return-600;if(!t.deadline)return t.importance*15+t.weight*5+5;const h=(new Date(t.deadline).getTime()-Date.now())/36e5;if(h<0)return 1000+t.importance*10;const wh=t.weight===3?6:t.weight===2?3:t.weight===1?1:0.2;const br=h/Math.max(wh,0.1);let u;if(br<1)u=100;else if(br<2)u=80;else if(br<5)u=60;else if(br<24)u=30;else u=Math.max(5,20-br*0.1);return u*0.5+t.importance*15+t.weight*5}
+function band(t){if(t.done)return 5;if(t.type===“wish”||t.type===“habit”)return 6;const s=score(t);return s>=1000?0:s>=80?1:s>=60?2:s>=40?3:4}
+function sLabel(s){return s>=1000?{t:“OVERDUE”,c:”#ff3b30”}:s>=80?{t:“NOW”,c:”#ff3b30”}:s>=60?{t:“SOON”,c:”#ff9500”}:s>=40?{t:“NEXT”,c:”#ffcc00”}:{t:“LATER”,c:”#8e8e93”}}
+function fmtDl(d){if(!d)return”期限なし”;const df=new Date(d)-new Date(),m=Math.round(df/6e4);if(m<0)return”overdue”;if(m<60)return m+“m”;const h=Math.floor(m/60),mm=m%60;if(h<24)return mm>0?h+“h “+mm+“m”:h+“h”;const dd=Math.floor(h/24),hh=h%24;if(dd<7)return hh>0?dd+“d “+hh+“h”:dd+“d”;const dl=new Date(d);return(dl.getMonth()+1)+”/”+dl.getDate()}
+function defDl(){const d=new Date();d.setDate(d.getDate()+1);d.setHours(18,0,0,0);return d.toISOString().slice(0,16)}
+function advRec(dl,r){if(!dl||r===“none”||!r)return dl;const d=new Date(dl);if(r===“daily”)d.setDate(d.getDate()+1);else if(r===“weekly”)d.setDate(d.getDate()+7);else if(r===“monthly”)d.setMonth(d.getMonth()+1);return d.toISOString().slice(0,16)}
+function getSortProminence(task, sortOrder) {
+if (sortOrder === “smart”) return tier(task.importance, task.weight);
+if (sortOrder === “light”) { const w = task.weight >= 3 ? 3 : task.weight >= 2 ? 2 : task.weight >= 1 ? 1 : 0; return [1,2,4,7][w] || 5; }
+if (sortOrder === “heavy”) { const w = task.weight >= 3 ? 3 : task.weight >= 2 ? 2 : task.weight >= 1 ? 1 : 0; return [7,4,2,1][w] || 5; }
+if (sortOrder === “deadline”) { if (!task.deadline) return 8; const h = (new Date(task.deadline).getTime() - Date.now()) / 36e5; if (h < 0) return 1; if (h < 6) return 2; if (h < 24) return 3; if (h < 72) return 5; return 7; }
+if (sortOrder === “created”) return 5;
+return tier(task.importance, task.weight);
 }
 
-function calcPriorityScore(task) {
-if (task.done) return -999; if (task.type === “wish”) return -500;
-if (!task.deadline) return task.importance * 15 + task.weight * 5 + 5;
-const hoursLeft = (new Date(task.deadline).getTime() - Date.now()) / 3600000;
-if (hoursLeft < 0) return 1000 + task.importance * 10;
-const wh = task.weight === 3 ? 6 : task.weight === 2 ? 3 : task.weight === 1 ? 1 : 0.2;
-const br = hoursLeft / Math.max(wh, 0.1);
-let u; if (br < 1) u = 100; else if (br < 2) u = 80; else if (br < 5) u = 60; else if (br < 24) u = 30; else u = Math.max(5, 20 - br * 0.1);
-return u * 0.5 + task.importance * 15 + task.weight * 5;
+const SK=“task-queue-v1”,SOK=“task-queue-sort”,DK=“task-queue-defaults”,THK=“task-queue-theme”,TRK=“task-queue-trash”,HRK=“task-queue-habits”,DRK=“task-queue-dayreset”;
+const DD={importance:2,weight:2,hasDeadline:true,recurrence:“none”,location:””};
+function ld(k,d){try{const r=localStorage.getItem(k);return r?JSON.parse(r):d}catch{return d}}
+function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
+const Refresh=()=>(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:16,height:16}}><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>);
+
+export default function App(){
+const[tasks,setTasks]=useState(()=>ld(SK,[]));
+const[habits,setHabits]=useState(()=>ld(HRK,[]));
+const[trash,setTrash]=useState(()=>ld(TRK,[]));
+const[mode,setMode]=useState(“task”);
+const[showForm,setShowForm]=useState(false);
+const[title,setTitle]=useState(””);const[importance,setImportance]=useState(2);const[weight,setWeight]=useState(2);
+const[deadline,setDeadline]=useState(defDl());const[hasDeadline,setHasDeadline]=useState(true);
+const[memo,setMemo]=useState(””);const[location,setLocation]=useState(””);const[recurrence,setRecurrence]=useState(“none”);
+const[icon,setIcon]=useState(””);
+const[filter,setFilter]=useState(“all”);const[locFilter,setLocFilter]=useState(null);
+const[editId,setEditId]=useState(null);const[expandedId,setExpandedId]=useState(null);
+const[sortOrder,setSortOrder]=useState(()=>localStorage.getItem(SOK)||“smart”);
+const[searchQ,setSearchQ]=useState(””);const[showSearch,setShowSearch]=useState(false);
+const[showSettings,setShowSettings]=useState(false);const[focusMode,setFocusMode]=useState(false);
+const[undoData,setUndoData]=useState(null);const[defaults,setDefaults]=useState(()=>ld(DK,DD));
+const[isDark,setIsDark]=useState(()=>(localStorage.getItem(THK)||“dark”)===“dark”);
+const[dayReset,setDayReset]=useState(()=>ld(DRK,5));
+const[habitTitle,setHabitTitle]=useState(””);const[habitMemo,setHabitMemo]=useState(””);const[habitIcon,setHabitIcon]=useState(””);
+const[showSortDD,setShowSortDD]=useState(false);
+const ur=useRef(null);const fr=useRef(null);
+const T=isDark?TH.dark:TH.light;
+
+useEffect(()=>{sv(SK,tasks)},[tasks]);
+useEffect(()=>{sv(HRK,habits)},[habits]);
+useEffect(()=>{sv(TRK,trash)},[trash]);
+useEffect(()=>{localStorage.setItem(SOK,sortOrder)},[sortOrder]);
+useEffect(()=>{sv(DK,defaults)},[defaults]);
+useEffect(()=>{localStorage.setItem(THK,isDark?“dark”:“light”);document.body.style.background=T.bg},[isDark,T.bg]);
+useEffect(()=>{sv(DRK,dayReset)},[dayReset]);
+
+// Clean trash older than 30 days
+useEffect(()=>{const now=Date.now();setTrash(p=>p.filter(t=>(now-t.deletedAt)<30*24*36e5))},[]);
+
+// Reset habits daily
+useEffect(()=>{
+const now=new Date();const resetH=dayReset;
+const lastReset=ld(“task-queue-lastreset”,0);
+const resetTime=new Date();resetTime.setHours(resetH,0,0,0);
+if(now>resetTime&&lastReset<resetTime.getTime()){
+setHabits(p=>p.map(h=>({…h,doneToday:false})));
+sv(“task-queue-lastreset”,Date.now());
 }
-function getUrgencyBand(task) { if (task.done) return 5; if (task.type === “wish”) return 6; const s = calcPriorityScore(task); if (s >= 1000) return 0; if (s >= 80) return 1; if (s >= 60) return 2; if (s >= 40) return 3; return 4; }
-function getScoreLabel(s) { if (s >= 1000) return { text: “OVERDUE”, color: “#ff3b30” }; if (s >= 80) return { text: “NOW”, color: “#ff3b30” }; if (s >= 60) return { text: “SOON”, color: “#ff9500” }; if (s >= 40) return { text: “NEXT”, color: “#ffcc00” }; return { text: “LATER”, color: “#8e8e93” }; }
-function formatDeadline(d) { if (!d) return “期限なし”; const diff = new Date(d) - new Date(); const tm = Math.round(diff / 60000); if (tm < 0) return “overdue”; if (tm < 60) return tm + “m”; const h = Math.floor(tm / 60), m = tm % 60; if (h < 24) return m > 0 ? h + “h “ + m + “m” : h + “h”; const dd = Math.floor(h / 24), hh = h % 24; if (dd < 7) return hh > 0 ? dd + “d “ + hh + “h” : dd + “d”; const dl = new Date(d); return (dl.getMonth() + 1) + “/” + dl.getDate(); }
-function getDefaultDeadline() { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(18, 0, 0, 0); return d.toISOString().slice(0, 16); }
-function advanceRecurrence(dl, rec) { if (!dl || rec === “none” || !rec) return dl; const d = new Date(dl); if (rec === “daily”) d.setDate(d.getDate() + 1); else if (rec === “weekly”) d.setDate(d.getDate() + 7); else if (rec === “monthly”) d.setMonth(d.getMonth() + 1); return d.toISOString().slice(0, 16); }
+},[dayReset]);
 
-const STORAGE_KEY = “task-queue-v1”, SORT_KEY = “task-queue-sort”, DEFAULTS_KEY = “task-queue-defaults”, THEME_KEY = “task-queue-theme”;
-const DEFAULT_DEFAULTS = { importance: 2, weight: 2, hasDeadline: true, recurrence: “none”, location: “” };
-function loadTasks() { try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : []; } catch { return []; } }
-function saveTasks(t) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(t)); } catch {} }
-function loadDefaults() { try { const r = localStorage.getItem(DEFAULTS_KEY); return r ? { …DEFAULT_DEFAULTS, …JSON.parse(r) } : DEFAULT_DEFAULTS; } catch { return DEFAULT_DEFAULTS; } }
-function saveDefaults(d) { try { localStorage.setItem(DEFAULTS_KEY, JSON.stringify(d)); } catch {} }
+const upSub=useCallback((id,s)=>setTasks(p=>p.map(t=>t.id===id?{…t,subtasks:s}:t)),[]);
+const locs=useMemo(()=>{const s=new Set();tasks.forEach(t=>{if(t.location)s.add(t.location)});return[…s]},[tasks]);
 
-const RefreshIcon = () => (<svg viewBox=“0 0 24 24” fill=“none” stroke=“currentColor” strokeWidth=“2” strokeLinecap=“round” strokeLinejoin=“round” style={{ width: 18, height: 18 }}><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg>);
+const resetForm=useCallback(()=>{setTitle(””);setImportance(defaults.importance);setWeight(defaults.weight);setDeadline(defDl());setHasDeadline(defaults.hasDeadline);setMemo(””);setLocation(defaults.location);setRecurrence(defaults.recurrence);setIcon(””);setShowForm(false);setEditId(null)},[defaults]);
 
-export default function App() {
-const [tasks, setTasks] = useState(() => loadTasks());
-const [showForm, setShowForm] = useState(false); const [showWishForm, setShowWishForm] = useState(false);
-const [title, setTitle] = useState(””); const [importance, setImportance] = useState(2); const [weight, setWeight] = useState(2);
-const [deadline, setDeadline] = useState(getDefaultDeadline()); const [hasDeadline, setHasDeadline] = useState(true);
-const [memo, setMemo] = useState(””); const [location, setLocation] = useState(””); const [recurrence, setRecurrence] = useState(“none”);
-const [filter, setFilter] = useState(“all”); const [locationFilter, setLocationFilter] = useState(null);
-const [editId, setEditId] = useState(null); const [expandedId, setExpandedId] = useState(null);
-const [sortOrder, setSortOrder] = useState(() => localStorage.getItem(SORT_KEY) || “smart”);
-const [searchQuery, setSearchQuery] = useState(””); const [showSearch, setShowSearch] = useState(false);
-const [showSettings, setShowSettings] = useState(false); const [focusMode, setFocusMode] = useState(false);
-const [undoData, setUndoData] = useState(null); const [defaults, setDefaults] = useState(() => loadDefaults());
-const [wishTitle, setWishTitle] = useState(””); const [wishMemo, setWishMemo] = useState(””);
-const [isDark, setIsDark] = useState(() => (localStorage.getItem(THEME_KEY) || “dark”) === “dark”);
-const undoTimerRef = useRef(null); const fileInputRef = useRef(null);
-const T = isDark ? THEMES.dark : THEMES.light;
+const submit=useCallback(()=>{
+if(!title.trim())return;
+const typ=mode===“wish”?“wish”:“task”;
+if(editId){setTasks(p=>p.map(t=>t.id===editId?{…t,title:title.trim(),importance,weight,deadline:hasDeadline?deadline:null,memo:memo.trim(),location:location.trim(),recurrence,icon:icon.trim()}:t))}
+else{setTasks(p=>[…p,{id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),title:title.trim(),importance:typ===“wish”?1:importance,weight:typ===“wish”?1:weight,deadline:typ===“wish”?(hasDeadline?deadline:null):(hasDeadline?deadline:null),memo:memo.trim(),location:location.trim(),recurrence:typ===“wish”?“none”:recurrence,icon:icon.trim(),done:false,createdAt:Date.now(),type:typ}])}
+resetForm()
+},[title,importance,weight,deadline,hasDeadline,memo,location,recurrence,icon,editId,resetForm,mode]);
 
-useEffect(() => { saveTasks(tasks); }, [tasks]);
-useEffect(() => { localStorage.setItem(SORT_KEY, sortOrder); }, [sortOrder]);
-useEffect(() => { saveDefaults(defaults); }, [defaults]);
-useEffect(() => { localStorage.setItem(THEME_KEY, isDark ? “dark” : “light”); document.body.style.background = T.bg; }, [isDark, T.bg]);
+const addHabit=useCallback(()=>{
+if(!habitTitle.trim())return;
+setHabits(p=>[…p,{id:Date.now().toString(36)+Math.random().toString(36).slice(2,4),title:habitTitle.trim(),memo:habitMemo.trim(),icon:habitIcon.trim(),doneToday:false}]);
+setHabitTitle(””);setHabitMemo(””);setHabitIcon(””)
+},[habitTitle,habitMemo,habitIcon]);
 
-const updateSubtasks = useCallback((id, subs) => { setTasks(p => p.map(t => t.id === id ? { …t, subtasks: subs } : t)); }, []);
-const pastLocations = useMemo(() => { const s = new Set(); tasks.forEach(t => { if (t.location) s.add(t.location); }); return Array.from(s); }, [tasks]);
-const resetForm = useCallback(() => { setTitle(””); setImportance(defaults.importance); setWeight(defaults.weight); setDeadline(getDefaultDeadline()); setHasDeadline(defaults.hasDeadline); setMemo(””); setLocation(defaults.location); setRecurrence(defaults.recurrence); setShowForm(false); setEditId(null); }, [defaults]);
+const showUndo=useCallback((ts,a)=>{if(ur.current)clearTimeout(ur.current);setUndoData({tasks:ts,action:a});ur.current=setTimeout(()=>setUndoData(null),5000)},[]);
+const togDone=useCallback(id=>{setTasks(prev=>{const t=prev.find(x=>x.id===id);if(!t)return prev;if(!t.done&&t.recurrence&&t.recurrence!==“none”&&t.deadline){const nt={…t,id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),deadline:advRec(t.deadline,t.recurrence),done:false,createdAt:Date.now()};return prev.map(x=>x.id===id?{…x,done:true}:x).concat(nt)}return prev.map(x=>x.id===id?{…x,done:!x.done}:x)})},[]);
+const delTask=useCallback(id=>{const t=tasks.find(x=>x.id===id);if(!t)return;setTrash(p=>[…p,{…t,deletedAt:Date.now()}]);showUndo([t],“delete”);setTasks(p=>p.filter(x=>x.id!==id));if(expandedId===id)setExpandedId(null)},[tasks,expandedId,showUndo]);
+const undo=useCallback(()=>{if(!undoData)return;if(undoData.action===“delete”){setTasks(p=>[…p,…undoData.tasks]);setTrash(p=>p.filter(t=>!undoData.tasks.find(u=>u.id===t.id)))}setUndoData(null);if(ur.current)clearTimeout(ur.current)},[undoData]);
+const startEdit=useCallback(t=>{setTitle(t.title);setImportance(t.importance);setWeight(t.weight);setDeadline(t.deadline||defDl());setHasDeadline(!!t.deadline);setMemo(t.memo||””);setLocation(t.location||””);setRecurrence(t.recurrence||“none”);setIcon(t.icon||””);setEditId(t.id);setShowForm(true);setExpandedId(null)},[]);
+const doExport=useCallback(()=>{const b=new Blob([JSON.stringify(tasks,null,2)],{type:“application/json”});const u=URL.createObjectURL(b);const a=document.createElement(“a”);a.href=u;a.download=“task-queue-”+new Date().toISOString().slice(0,10)+”.json”;a.click();URL.revokeObjectURL(u)},[tasks]);
+const doImportClick=useCallback(()=>fr.current?.click(),[]);
+const doImport=useCallback(e=>{const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const imp=JSON.parse(ev.target.result);if(!Array.isArray(imp))throw 0;if(confirm(“OK=上書き / キャンセル=追加”)){setTasks(imp)}else{const ids=new Set(tasks.map(t=>t.id));setTasks(p=>[…p,…imp.filter(t=>!ids.has(t.id))])}}catch{alert(“インポート失敗”)}};r.readAsText(f);e.target.value=””},[tasks]);
 
-const handleSubmit = useCallback(() => {
-if (!title.trim()) return;
-if (editId) { setTasks(p => p.map(t => t.id === editId ? { …t, title: title.trim(), importance, weight, deadline: hasDeadline ? deadline : null, memo: memo.trim(), location: location.trim(), recurrence } : t)); }
-else { setTasks(p => […p, { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), title: title.trim(), importance, weight, deadline: hasDeadline ? deadline : null, memo: memo.trim(), location: location.trim(), recurrence, done: false, createdAt: Date.now(), type: “task” }]); }
-resetForm();
-}, [title, importance, weight, deadline, hasDeadline, memo, location, recurrence, editId, resetForm]);
+const sorted=useMemo(()=>{
+let r=tasks.map(t=>({…t,sc:score(t),bd:band(t)}));
+if(filter===“active”)r=r.filter(t=>!t.done&&t.deadline&&t.type!==“wish”);
+else if(filter===“done”)r=r.filter(t=>t.done);
+else if(filter===“noDeadline”)r=r.filter(t=>!t.done&&!t.deadline&&t.type!==“wish”);
+else if(mode===“wish”)r=r.filter(t=>t.type===“wish”&&!t.done);
+else r=r.filter(t=>!t.done);
+if(locFilter!==null)r=r.filter(t=>(t.location||””)===locFilter);
+if(searchQ.trim()){const q=searchQ.toLowerCase();r=r.filter(t=>t.title.toLowerCase().includes(q)||(t.memo||””).toLowerCase().includes(q)||(t.location||””).toLowerCase().includes(q))}
+if(sortOrder===“smart”)r.sort((a,b)=>{if(a.bd!==b.bd)return a.bd-b.bd;if(a.weight!==b.weight)return a.weight-b.weight;return b.importance-a.importance});
+else if(sortOrder===“deadline”)r.sort((a,b)=>{if(!a.deadline&&!b.deadline)return 0;if(!a.deadline)return 1;if(!b.deadline)return-1;return new Date(a.deadline)-new Date(b.deadline)});
+else if(sortOrder===“heavy”)r.sort((a,b)=>b.weight-a.weight);
+else if(sortOrder===“light”)r.sort((a,b)=>a.weight-b.weight);
+else if(sortOrder===“created”)r.sort((a,b)=>b.createdAt-a.createdAt);
+return r
+},[tasks,filter,locFilter,searchQ,sortOrder,mode]);
 
-const handleWishSubmit = useCallback(() => {
-if (!wishTitle.trim()) return;
-setTasks(p => […p, { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), title: wishTitle.trim(), memo: wishMemo.trim(), done: false, createdAt: Date.now(), type: “wish”, importance: 1, weight: 1 }]);
-setWishTitle(””); setWishMemo(””); setShowWishForm(false);
-}, [wishTitle, wishMemo]);
+const topTask=useMemo(()=>{
+const a=tasks.filter(t=>!t.done&&t.type!==“wish”&&t.type!==“habit”).map(t=>({…t,sc:score(t),bd:band(t)}));
+a.sort((x,y)=>{if(x.bd!==y.bd)return x.bd-y.bd;if(x.weight!==y.weight)return x.weight-y.weight;return y.importance-x.importance});return a[0]
+},[tasks]);
 
-const showUndoToast = useCallback((ts, action) => { if (undoTimerRef.current) clearTimeout(undoTimerRef.current); setUndoData({ tasks: ts, action }); undoTimerRef.current = setTimeout(() => setUndoData(null), 5000); }, []);
-const toggleDone = useCallback((id) => { setTasks(prev => { const task = prev.find(t => t.id === id); if (!task) return prev; if (!task.done && task.recurrence && task.recurrence !== “none” && task.deadline) { const nt = { …task, id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), deadline: advanceRecurrence(task.deadline, task.recurrence), done: false, createdAt: Date.now() }; return prev.map(t => t.id === id ? { …t, done: true } : t).concat(nt); } return prev.map(t => t.id === id ? { …t, done: !t.done } : t); }); }, []);
-const deleteTask = useCallback((id) => { const t = tasks.find(x => x.id === id); if (!t) return; showUndoToast([t], “delete”); setTasks(p => p.filter(x => x.id !== id)); if (expandedId === id) setExpandedId(null); }, [tasks, expandedId, showUndoToast]);
-const handleUndo = useCallback(() => { if (!undoData) return; if (undoData.action === “delete”) setTasks(p => […p, …undoData.tasks]); setUndoData(null); if (undoTimerRef.current) clearTimeout(undoTimerRef.current); }, [undoData]);
-const startEdit = useCallback((t) => { setTitle(t.title); setImportance(t.importance); setWeight(t.weight); setDeadline(t.deadline || getDefaultDeadline()); setHasDeadline(!!t.deadline); setMemo(t.memo || “”); setLocation(t.location || “”); setRecurrence(t.recurrence || “none”); setEditId(t.id); setShowForm(true); setExpandedId(null); }, []);
-const handleExport = useCallback(() => { const b = new Blob([JSON.stringify(tasks, null, 2)], { type: “application/json” }); const u = URL.createObjectURL(b); const a = document.createElement(“a”); a.href = u; a.download = “task-queue-” + new Date().toISOString().slice(0, 10) + “.json”; a.click(); URL.revokeObjectURL(u); }, [tasks]);
-const handleImportClick = useCallback(() => { fileInputRef.current?.click(); }, []);
-const handleImportFile = useCallback((e) => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = (ev) => { try { const imp = JSON.parse(ev.target.result); if (!Array.isArray(imp)) throw 0; const choice = confirm(“OK = 上書き / キャンセル = 追加”); if (choice) { setTasks(imp); } else { const ids = new Set(tasks.map(t => t.id)); setTasks(p => […p, …imp.filter(t => !ids.has(t.id))]); } } catch { alert(“インポートに失敗しました。”); } }; r.readAsText(f); e.target.value = “”; }, [tasks]);
+const gcss=”@import url(‘https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap’);*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html,body,#root{min-height:100vh}input,select,button,textarea{font-family:‘Noto Sans JP’,sans-serif}@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}@keyframes slideDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}.task-card{animation:fadeIn .3s ease both}.overdue-pulse{animation:pulse 1.5s ease infinite}.form-slide{animation:slideUp .3s ease both}”;
 
-const sorted = useMemo(() => {
-let r = tasks.map(t => ({ …t, score: calcPriorityScore(t), band: getUrgencyBand(t) }));
-if (filter === “active”) r = r.filter(t => !t.done && t.deadline && t.type !== “wish”);
-else if (filter === “done”) r = r.filter(t => t.done);
-else if (filter === “noDeadline”) r = r.filter(t => !t.done && !t.deadline && t.type !== “wish”);
-else if (filter === “wish”) r = r.filter(t => t.type === “wish” && !t.done);
-else r = r.filter(t => !t.done);
-if (locationFilter !== null) r = r.filter(t => (t.location || “”) === locationFilter);
-if (searchQuery.trim()) { const q = searchQuery.toLowerCase(); r = r.filter(t => t.title.toLowerCase().includes(q) || (t.memo || “”).toLowerCase().includes(q) || (t.location || “”).toLowerCase().includes(q)); }
-if (sortOrder === “smart”) r.sort((a, b) => { if (a.band !== b.band) return a.band - b.band; if (a.weight !== b.weight) return a.weight - b.weight; return b.importance - a.importance; });
-else if (sortOrder === “deadline”) r.sort((a, b) => { if (!a.deadline && !b.deadline) return 0; if (!a.deadline) return 1; if (!b.deadline) return -1; return new Date(a.deadline) - new Date(b.deadline); });
-else if (sortOrder === “heavy”) r.sort((a, b) => b.weight - a.weight);
-else if (sortOrder === “light”) r.sort((a, b) => a.weight - b.weight);
-else if (sortOrder === “created”) r.sort((a, b) => b.createdAt - a.createdAt);
-return r;
-}, [tasks, filter, locationFilter, searchQuery, sortOrder]);
+// Focus mode
+if(focusMode&&topTask){const lb=sLabel(topTask.sc);const rc=roi(topTask.importance,topTask.weight);const wi=WI.find(w=>w.v===topTask.weight);const im=IMP.find(x=>x.v===topTask.importance);
+return(<div style={{minHeight:“100vh”,background:T.bg,color:T.text,display:“flex”,alignItems:“center”,justifyContent:“center”,padding:“calc(24px + env(safe-area-inset-top)) 24px”,position:“relative”,fontFamily:”‘Noto Sans JP’,sans-serif”}} onClick={()=>setFocusMode(false)}><style>{gcss+“html,body,#root{background:”+T.bg+”}”}</style>
+<button style={{position:“absolute”,top:“calc(20px + env(safe-area-inset-top))”,right:20,width:44,height:44,borderRadius:“50%”,background:T.card,border:“1px solid “+T.brd,color:T.mut,fontSize:18,cursor:“pointer”,display:“flex”,alignItems:“center”,justifyContent:“center”}} onClick={()=>setFocusMode(false)}>✕</button>
+<div style={{textAlign:“center”,maxWidth:500}} onClick={e=>e.stopPropagation()}>
+<div style={{display:“inline-block”,fontFamily:”‘JetBrains Mono’,monospace”,fontSize:12,fontWeight:700,letterSpacing:2,padding:“6px 16px”,borderRadius:8,border:“1px solid “+lb.c+“66”,color:lb.c,marginBottom:32}}>{lb.t}</div>
+<div style={{fontSize:36,fontWeight:900,color:T.text,marginBottom:24,lineHeight:1.3}}>{topTask.icon?topTask.icon+” “:””}{topTask.title}</div>
+<div style={{fontSize:16,color:T.sub,marginBottom:12}}><span style={{color:im?.c,fontWeight:700,fontSize:18}}>{im?.icon}</span><span style={{opacity:.3,margin:“0 10px”}}>·</span><span style={{color:rc,fontWeight:600}}>{wDots(topTask.weight,rc).text}</span><span style={{opacity:.3,margin:“0 10px”}}>·</span><span>{fmtDl(topTask.deadline)}</span></div>
+{topTask.memo&&<div style={{fontSize:14,color:T.sub,background:T.card,borderRadius:12,padding:16,marginTop:24,whiteSpace:“pre-wrap”,textAlign:“left”,lineHeight:1.6}}>{topTask.memo}</div>}
+<button style={{marginTop:48,padding:“16px 48px”,background:”#ff3b30”,border:“none”,borderRadius:12,color:”#fff”,fontSize:16,fontWeight:700,cursor:“pointer”}} onClick={()=>{togDone(topTask.id);setFocusMode(false)}}>完了する</button>
+</div></div>)}
 
-const topTask = useMemo(() => {
-const a = tasks.filter(t => !t.done && t.type !== “wish”).map(t => ({ …t, score: calcPriorityScore(t), band: getUrgencyBand(t) }));
-a.sort((x, y) => { if (x.band !== y.band) return x.band - y.band; if (x.weight !== y.weight) return x.weight - y.weight; return y.importance - x.importance; }); return a[0];
-}, [tasks]);
+const isTask=mode===“task”,isWish=mode===“wish”,isHabit=mode===“habit”;
+const habitsSorted=useMemo(()=>[…habits].sort((a,b)=>(a.doneToday?1:0)-(b.doneToday?1:0)),[habits]);
 
-const gcss = “@ import url(‘https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap’);*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html,body,#root{min-height:100vh}input,select,button,textarea{font-family:‘Noto Sans JP’,sans-serif}@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}@keyframes slideDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}.task-card{animation:fadeIn 0.3s ease both}.btn-hover:hover,.btn-icon:hover,.btn-add:hover{filter:brightness(1.1)}.btn-add:hover{border-color:#ff3b30!important;color:#ff3b30!important}.chip:hover{filter:brightness(1.1)}.overdue-pulse{animation:pulse 1.5s ease infinite}.form-slide{animation:slideUp 0.3s ease both}”.replace(”@ import”, “@import”);
-
-if (focusMode && topTask) {
-const label = getScoreLabel(topTask.score); const rc = getRoiColor(topTask.importance, topTask.weight); const wi = WEIGHT_INFO.find(w => w.value === topTask.weight);
-return (<div style={{ minHeight: “100vh”, background: T.bg, color: T.text, display: “flex”, alignItems: “center”, justifyContent: “center”, padding: “calc(24px + env(safe-area-inset-top)) 24px”, position: “relative”, fontFamily: “‘Noto Sans JP’, sans-serif” }} onClick={() => setFocusMode(false)}><style>{gcss}</style><button style={{ position: “absolute”, top: “calc(20px + env(safe-area-inset-top))”, right: 20, width: 44, height: 44, borderRadius: “50%”, background: T.card, border: “1px solid “ + T.border, color: T.textMuted, fontSize: 18, cursor: “pointer”, display: “flex”, alignItems: “center”, justifyContent: “center” }} onClick={() => setFocusMode(false)}>✕</button><div style={{ textAlign: “center”, maxWidth: 500 }} onClick={e => e.stopPropagation()}><div style={{ display: “inline-block”, fontFamily: “‘JetBrains Mono’, monospace”, fontSize: 12, fontWeight: 700, letterSpacing: 2, padding: “6px 16px”, borderRadius: 8, border: “1px solid “ + label.color + “66”, color: label.color, marginBottom: 32 }}>{label.text}</div><div style={{ fontSize: 36, fontWeight: 900, color: T.text, marginBottom: 24, lineHeight: 1.3 }}>{topTask.title}</div><div style={{ fontSize: 16, color: T.textSub, marginBottom: 12 }}><span style={{ color: IMPORTANCE.find(x => x.value === topTask.importance)?.color, fontWeight: 700 }}>{IMPORTANCE.find(x => x.value === topTask.importance)?.label}</span><span style={{ opacity: 0.3, margin: “0 10px” }}>·</span><span style={{ color: rc, fontWeight: 700 }}>{wi?.label}</span><span style={{ opacity: 0.3, margin: “0 10px” }}>·</span><span>{formatDeadline(topTask.deadline)}</span></div>{topTask.location && <div style={{ fontSize: 14, color: T.textMuted, marginBottom: 12 }}>📍 {topTask.location}</div>}{topTask.memo && <div style={{ fontSize: 14, color: T.textSub, background: T.card, borderRadius: 12, padding: 16, marginTop: 24, whiteSpace: “pre-wrap”, textAlign: “left”, lineHeight: 1.6 }}>{topTask.memo}</div>}<button style={{ marginTop: 48, padding: “16px 48px”, background: “#ff3b30”, border: “none”, borderRadius: 12, color: “#fff”, fontSize: 16, fontWeight: 700, cursor: “pointer”, letterSpacing: 1 }} onClick={() => { toggleDone(topTask.id); setFocusMode(false); }}>完了する</button></div></div>);
-}
-
-const isWish = filter === “wish”;
-const s = makeStyles(T);
-
-return (<div style={s.root}><style>{gcss + “ html,body,#root{background:” + T.bg + “}”}</style>
-<div style={s.header}><div><h1 style={s.logo}><span style={{ color: “#ff3b30” }}>▌</span>TASK QUEUE</h1><p style={s.sub}>{tasks.filter(t => !t.done && t.type !== “wish”).length} active<span style={{ opacity: 0.3, margin: “0 8px” }}>|</span>{tasks.filter(t => t.done).length} done</p></div>
-<div style={{ display: “flex”, gap: 5 }}><button className=“btn-icon” style={s.iconBtn} onClick={() => setShowSearch(v => !v)}>{showSearch ? “✕” : “🔍”}</button><button className=“btn-icon” style={s.iconBtn} onClick={() => window.location.reload()}><RefreshIcon /></button><button className=“btn-icon” style={s.iconBtn} onClick={() => setIsDark(v => !v)}>{isDark ? “☀️” : “🌙”}</button><button className=“btn-icon” style={s.iconBtn} onClick={() => setShowSettings(true)}>⚙</button></div></div>
+return(<div style={{minHeight:“100vh”,background:T.bg,color:T.text,fontFamily:”‘Noto Sans JP’,sans-serif”,padding:“calc(16px + env(safe-area-inset-top)) 14px calc(80px + env(safe-area-inset-bottom))”,maxWidth:600,margin:“0 auto”}}><style>{gcss+“html,body,#root{background:”+T.bg+”}”}</style>
 
 ```
-{showSearch && <input className="form-slide" style={{ ...s.input, marginBottom: 12 }} placeholder="検索（タスク・メモ・場所）..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} autoFocus />}
-
-{topTask && !showForm && !showWishForm && !searchQuery && locationFilter === null && !isWish && (
-  <div style={{ ...s.topBanner, borderColor: getScoreLabel(topTask.score).color, cursor: "pointer" }} onClick={() => setFocusMode(true)}>
-    <div style={s.topLabel}><span style={{ color: getScoreLabel(topTask.score).color, fontFamily: "JetBrains Mono" }}>● 今やるべきタスク</span><span style={{ color: T.textDim, fontSize: 9, marginLeft: 8 }}>TAP TO FOCUS</span></div>
-    <div style={s.topTitle}>{topTask.title}</div>
-    <div style={s.topMeta}><span>{formatDeadline(topTask.deadline)}</span><span style={{ opacity: 0.3 }}>|</span><span>スコア {Math.round(topTask.score)}</span></div>
+{/* Header */}
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
+  <div><h1 style={{fontFamily:"'JetBrains Mono',monospace",fontSize:20,fontWeight:800,letterSpacing:2,color:T.text,margin:0}}><span style={{color:"#ff3b30"}}>▌</span>TASK QUEUE</h1>
+  <p style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:T.mut,marginTop:3}}>{tasks.filter(t=>!t.done&&t.type!=="wish").length} active<span style={{opacity:.3,margin:"0 6px"}}>|</span>{tasks.filter(t=>t.done).length} done</p></div>
+  <div style={{display:"flex",gap:5}}>
+    <button style={{width:36,height:36,borderRadius:8,border:"1px solid "+T.iBrd,background:T.iBg,color:T.iC,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} onClick={()=>window.location.reload()}><Refresh/></button>
+    <button style={{width:36,height:36,borderRadius:8,border:"1px solid "+T.iBrd,background:T.iBg,color:T.iC,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} onClick={()=>setIsDark(v=>!v)}>{isDark?"☀️":"🌙"}</button>
+    <button style={{width:36,height:36,borderRadius:8,border:"1px solid "+T.iBrd,background:T.iBg,color:T.iC,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} onClick={()=>setShowSettings(true)}>⚙</button>
   </div>
-)}
+</div>
 
-<div style={s.filterRow}>
-  {[{ key: "all", label: "すべて" }, { key: "noDeadline", label: "期限なし" }, { key: "active", label: "アクティブ" }, { key: "wish", label: "やりたい" }, { key: "done", label: "完了" }].map(f => (
-    <button key={f.key} className="chip" style={{ ...s.filterChip, background: filter === f.key && locationFilter === null ? T.chipOn : "transparent", color: filter === f.key && locationFilter === null ? T.chipOnText : T.filterOffText }} onClick={() => { setFilter(f.key); setLocationFilter(null); }}>{f.label}</button>
+{/* Mode tabs */}
+<div style={{display:"flex",gap:4,marginBottom:8}}>
+  {[{k:"task",l:"タスク"},{k:"wish",l:"やりたい"},{k:"habit",l:"日課"}].map(m=>(
+    <button key={m.k} style={{flex:1,padding:"9px 0",borderRadius:10,fontSize:13,fontWeight:700,textAlign:"center",letterSpacing:1,border:mode===m.k?"none":"1px solid "+T.brd,background:mode===m.k?T.cOn:"transparent",color:mode===m.k?T.cOnT:T.fOffT,cursor:"pointer"}} onClick={()=>{setMode(m.k);setFilter("all");setShowForm(false)}}>{m.l}</button>
   ))}
 </div>
 
-{pastLocations.length > 0 && !isWish && (<div style={s.locationFilterRow}><span style={{ fontSize: 13, color: T.textMuted, marginRight: 4 }}>📍</span>{pastLocations.map(loc => (<button key={loc} className="chip" style={{ ...s.filterChip, background: locationFilter === loc ? T.chipOn : "transparent", color: locationFilter === loc ? T.chipOnText : T.filterOffText }} onClick={() => setLocationFilter(locationFilter === loc ? null : loc)}>{loc}</button>))}</div>)}
-
-{!showForm && !showWishForm && !isWish && <button className="btn-add" style={s.addBtn} onClick={() => { resetForm(); setShowForm(true); }}><span style={{ fontSize: 18, fontWeight: 300 }}>+</span><span>新しいタスク</span></button>}
-{!showForm && !showWishForm && isWish && <button className="btn-add" style={s.addBtn} onClick={() => setShowWishForm(true)}><span style={{ fontSize: 18, fontWeight: 300 }}>+</span><span>やりたいことを追加</span></button>}
-
-{showWishForm && (<div className="form-slide" style={s.form}><div style={s.formHeader}><span style={s.formTitle}>やりたいこと</span><button style={s.closeBtn} onClick={() => { setShowWishForm(false); setWishTitle(""); setWishMemo(""); }}>✕</button></div><input style={s.input} placeholder="やりたいこと..." value={wishTitle} onChange={e => setWishTitle(e.target.value)} autoFocus onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleWishSubmit()} /><div style={s.fieldGroup}><label style={s.fieldLabel}>メモ（任意）</label><textarea style={{ ...s.input, minHeight: 60, resize: "vertical", fontFamily: "inherit" }} placeholder="詳細やメモ..." value={wishMemo} onChange={e => setWishMemo(e.target.value)} /></div><button className="btn-hover" style={s.submitBtn} onClick={handleWishSubmit}>追加する</button></div>)}
-
-{showForm && (<div className="form-slide" style={s.form}><div style={s.formHeader}><span style={s.formTitle}>{editId ? "タスク編集" : "新しいタスク"}</span><button style={s.closeBtn} onClick={resetForm}>✕</button></div>
-  <input style={s.input} placeholder="タスク名..." value={title} onChange={e => setTitle(e.target.value)} autoFocus onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleSubmit()} />
-  <div style={s.fieldGroup}><label style={s.fieldLabel}>重要度</label><div style={s.chipRow}>{IMPORTANCE.map(o => (<button key={o.value} className="chip" style={{ ...s.chip, background: importance === o.value ? o.color : T.chipOff, color: importance === o.value ? "#fff" : T.chipOffText, borderColor: importance === o.value ? o.color : T.border }} onClick={() => setImportance(o.value)}>{o.label}</button>))}</div></div>
-  <div style={s.fieldGroup}><label style={s.fieldLabel}>タスクの重さ</label><div style={s.chipRow}>{WEIGHT_INFO.map(o => { const c = getRoiColor(importance, o.value); return (<button key={o.value} className="chip" style={{ ...s.chip, background: weight === o.value ? c : T.chipOff, color: weight === o.value ? "#000" : T.chipOffText, borderColor: weight === o.value ? c : T.border, fontWeight: weight === o.value ? 700 : 600 }} onClick={() => setWeight(o.value)}>{o.label}<span style={{ fontSize: 10, opacity: 0.6, marginLeft: 4 }}>{o.hours}</span></button>); })}</div></div>
-  <div style={s.fieldGroup}><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}><label style={{ ...s.fieldLabel, marginBottom: 0 }}>締切</label><button className="chip" style={{ ...s.chip, padding: "4px 12px", fontSize: 11, background: hasDeadline ? T.chipOff : T.chipOn, color: hasDeadline ? T.chipOffText : T.chipOnText, borderColor: hasDeadline ? T.border : T.chipOn }} onClick={() => setHasDeadline(v => !v)}>{hasDeadline ? "なしに変更" : "期限なし"}</button></div>{hasDeadline && <input type="datetime-local" style={{ ...s.input, colorScheme: T.scheme }} value={deadline} onChange={e => setDeadline(e.target.value)} />}</div>
-  {hasDeadline && <div style={s.fieldGroup}><label style={s.fieldLabel}>繰り返し</label><div style={s.chipRow}>{RECURRENCE.map(o => (<button key={o.value} className="chip" style={{ ...s.chip, background: recurrence === o.value ? T.chipOn : T.chipOff, color: recurrence === o.value ? T.chipOnText : T.chipOffText, borderColor: recurrence === o.value ? T.chipOn : T.border }} onClick={() => setRecurrence(o.value)}>{o.label}</button>))}</div></div>}
-  <div style={s.fieldGroup}><label style={s.fieldLabel}>場所（任意）</label><input style={s.input} placeholder="例: 自宅、オフィス" value={location} onChange={e => setLocation(e.target.value)} list="pl" /><datalist id="pl">{pastLocations.map(l => <option key={l} value={l} />)}</datalist>{pastLocations.length > 0 && <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>{pastLocations.map(l => (<button key={l} className="chip" style={{ ...s.chip, padding: "4px 10px", fontSize: 11, background: location === l ? T.chipOn : T.chipOff, color: location === l ? T.chipOnText : T.chipOffText, borderColor: location === l ? T.chipOn : T.border }} onClick={() => setLocation(l)}>{l}</button>))}</div>}</div>
-  <div style={s.fieldGroup}><label style={s.fieldLabel}>メモ（任意）</label><textarea style={{ ...s.input, minHeight: 80, resize: "vertical", fontFamily: "inherit" }} placeholder="詳細やメモ..." value={memo} onChange={e => setMemo(e.target.value)} /></div>
-  <button className="btn-hover" style={s.submitBtn} onClick={handleSubmit}>{editId ? "更新する" : "追加する"}</button>
-</div>)}
-
-<div style={s.list}>
-  {sorted.length === 0 && <div style={s.empty}>{searchQuery ? "検索結果なし" : filter === "done" ? "完了タスクなし" : filter === "noDeadline" ? "期限なしタスクなし" : filter === "wish" ? "やりたいことを追加しましょう" : "タスクを追加しましょう"}</div>}
-  {sorted.map(task => <TaskCard key={task.id} task={task} T={T} expanded={expandedId === task.id} onToggleExpand={() => setExpandedId(expandedId === task.id ? null : task.id)} onToggleDone={() => toggleDone(task.id)} onEdit={() => startEdit(task)} onDelete={() => deleteTask(task.id)} onUpdateSubtasks={subs => updateSubtasks(task.id, subs)} />)}
-</div>
-
-{showSettings && (<div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: T.modalBg, zIndex: 100, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "60px 16px 20px", overflowY: "auto" }} onClick={() => setShowSettings(false)}><div style={{ background: T.card, border: "1px solid " + T.border, borderRadius: 16, padding: 20, width: "100%", maxWidth: 500 }} onClick={e => e.stopPropagation()}>
-  <div style={s.formHeader}><span style={s.formTitle}>設定</span><button style={s.closeBtn} onClick={() => setShowSettings(false)}>✕</button></div>
-  <div style={s.fieldGroup}><label style={s.fieldLabel}>ソート順</label><div style={{ ...s.chipRow, flexDirection: "column", gap: 6 }}>{SORT_OPTIONS.map(o => (<button key={o.value} className="chip" style={{ ...s.chip, width: "100%", justifyContent: "flex-start", background: sortOrder === o.value ? T.chipOn : T.chipOff, color: sortOrder === o.value ? T.chipOnText : T.chipOffText, borderColor: sortOrder === o.value ? T.chipOn : T.border }} onClick={() => setSortOrder(o.value)}>{o.label}</button>))}</div></div>
-  <div style={{ ...s.fieldGroup, borderTop: "1px solid " + T.border, paddingTop: 16 }}><label style={{ ...s.fieldLabel, fontSize: 12, color: T.textSub, marginBottom: 14 }}>タスクのデフォルト値</label>
-    <div style={s.fieldGroup}><label style={s.fieldLabel}>重要度</label><div style={s.chipRow}>{IMPORTANCE.map(o => (<button key={o.value} className="chip" style={{ ...s.chip, background: defaults.importance === o.value ? o.color : T.chipOff, color: defaults.importance === o.value ? "#fff" : T.chipOffText, borderColor: defaults.importance === o.value ? o.color : T.border }} onClick={() => setDefaults(d => ({ ...d, importance: o.value }))}>{o.label}</button>))}</div></div>
-    <div style={s.fieldGroup}><label style={s.fieldLabel}>重さ</label><div style={s.chipRow}>{WEIGHT_INFO.map(o => { const c = getRoiColor(defaults.importance, o.value); return (<button key={o.value} className="chip" style={{ ...s.chip, background: defaults.weight === o.value ? c : T.chipOff, color: defaults.weight === o.value ? "#000" : T.chipOffText, borderColor: defaults.weight === o.value ? c : T.border }} onClick={() => setDefaults(d => ({ ...d, weight: o.value }))}>{o.label}</button>); })}</div></div>
-    <div style={s.fieldGroup}><label style={s.fieldLabel}>締切</label><div style={s.chipRow}>{[{ value: true, label: "あり" }, { value: false, label: "なし" }].map(o => (<button key={String(o.value)} className="chip" style={{ ...s.chip, background: defaults.hasDeadline === o.value ? T.chipOn : T.chipOff, color: defaults.hasDeadline === o.value ? T.chipOnText : T.chipOffText, borderColor: defaults.hasDeadline === o.value ? T.chipOn : T.border }} onClick={() => setDefaults(d => ({ ...d, hasDeadline: o.value }))}>{o.label}</button>))}</div></div>
-    <div style={s.fieldGroup}><label style={s.fieldLabel}>繰り返し</label><div style={s.chipRow}>{RECURRENCE.map(o => (<button key={o.value} className="chip" style={{ ...s.chip, background: defaults.recurrence === o.value ? T.chipOn : T.chipOff, color: defaults.recurrence === o.value ? T.chipOnText : T.chipOffText, borderColor: defaults.recurrence === o.value ? T.chipOn : T.border }} onClick={() => setDefaults(d => ({ ...d, recurrence: o.value }))}>{o.label}</button>))}</div></div>
+{/* Top banner */}
+{isTask&&topTask&&!showForm&&!searchQ&&locFilter===null&&(
+  <div style={{background:T.card,border:"1px solid "+sLabel(topTask.sc).c,borderRadius:14,padding:"14px 16px",marginBottom:12,cursor:"pointer"}} onClick={()=>setFocusMode(true)}>
+    <div style={{fontSize:10,fontWeight:700,marginBottom:5,letterSpacing:1,display:"flex",alignItems:"center"}}><span style={{color:sLabel(topTask.sc).c,fontFamily:"JetBrains Mono"}}>● 今やるべきタスク</span><span style={{color:T.dim,fontSize:9,marginLeft:8}}>TAP</span></div>
+    <div style={{fontSize:16,fontWeight:700,color:T.text,marginBottom:5}}>{topTask.icon?topTask.icon+" ":""}{topTask.title}</div>
+    <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,color:T.sub,display:"flex",gap:8}}><span>{fmtDl(topTask.deadline)}</span><span style={{opacity:.3}}>|</span><span>スコア {Math.round(topTask.sc)}</span></div>
   </div>
-  <div style={s.fieldGroup}><label style={s.fieldLabel}>データ</label><div style={{ display: "flex", gap: 8 }}><button className="btn-hover" style={{ ...s.submitBtn, background: T.chipOff, border: "1px solid " + T.border, color: T.text, marginTop: 0 }} onClick={handleExport}>エクスポート</button><button className="btn-hover" style={{ ...s.submitBtn, background: T.chipOff, border: "1px solid " + T.border, color: T.text, marginTop: 0 }} onClick={handleImportClick}>インポート</button><input ref={fileInputRef} type="file" accept="application/json" style={{ display: "none" }} onChange={handleImportFile} /></div></div>
-</div></div>)}
+)}
 
-{undoData && <div className="form-slide" style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: T.toastBg, border: "1px solid " + T.border, borderRadius: 10, padding: "12px 18px", display: "flex", alignItems: "center", gap: 16, fontSize: 13, color: T.textSub, zIndex: 200 }}><span>タスクを削除しました</span><button style={{ background: "none", border: "none", color: "#ff3b30", fontWeight: 700, cursor: "pointer", fontSize: 13 }} onClick={handleUndo}>元に戻す</button></div>}
-<div style={{ position: "fixed", bottom: 6, right: 10, fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: T.textDim, userSelect: "none", pointerEvents: "none" }}>v{APP_VERSION}</div>
+{/* Filter + Sort + Search (task/wish modes) */}
+{!isHabit&&<>
+  <div style={{display:"flex",gap:4,marginBottom:6}}>
+    {(isTask?[{k:"all",l:"すべて"},{k:"noDeadline",l:"期限なし"},{k:"active",l:"アクティブ"},{k:"done",l:"完了"}]:[{k:"all",l:"すべて"},{k:"done",l:"完了"}]).map(f=>(
+      <button key={f.k} style={{padding:"4px 9px",borderRadius:6,border:"1px solid "+T.fBrd,fontSize:11,fontWeight:600,whiteSpace:"nowrap",background:filter===f.k&&locFilter===null?T.cOn:"transparent",color:filter===f.k&&locFilter===null?T.cOnT:T.fOffT,cursor:"pointer"}} onClick={()=>{setFilter(f.k);setLocFilter(null)}}>{f.l}</button>
+    ))}
+  </div>
+  <div style={{display:"flex",gap:6,marginBottom:10,alignItems:"center",flexWrap:"wrap",position:"relative"}}>
+    <button style={{display:"flex",alignItems:"center",gap:3,padding:"4px 10px",borderRadius:8,border:"1px solid "+T.fBrd,background:T.inp,fontSize:11,fontWeight:600,color:T.sub,fontFamily:"'JetBrains Mono',monospace",cursor:"pointer"}} onClick={()=>setShowSortDD(v=>!v)}>▼ {SORTS.find(s=>s.v===sortOrder)?.l}</button>
+    {showSortDD&&<div style={{position:"absolute",top:32,left:0,background:T.card,border:"1px solid "+T.brd,borderRadius:10,padding:6,zIndex:50,boxShadow:"0 4px 12px "+T.shd}}>
+      {SORTS.map(s=><button key={s.v} style={{display:"block",width:"100%",textAlign:"left",padding:"8px 12px",borderRadius:6,border:"none",background:sortOrder===s.v?T.cOn:"transparent",color:sortOrder===s.v?T.cOnT:T.sub,fontSize:12,fontWeight:600,cursor:"pointer",marginBottom:2}} onClick={()=>{setSortOrder(s.v);setShowSortDD(false)}}>{s.l}</button>)}
+    </div>}
+    <button style={{display:"flex",alignItems:"center",gap:4,padding:"4px 10px",borderRadius:8,border:"1px solid "+T.fBrd,background:T.inp,fontSize:11,color:T.mut,cursor:"pointer"}} onClick={()=>setShowSearch(v=>!v)}>🔍 検索</button>
+    {locs.length>0&&isTask&&<><span style={{fontSize:12,color:T.mut}}>📍</span>{locs.map(l=><button key={l} style={{padding:"3px 10px",borderRadius:14,fontSize:10,fontWeight:600,color:locFilter===l?T.cOnT:T.mut,background:locFilter===l?T.cOn:T.inp,border:"1px solid "+T.brd,cursor:"pointer"}} onClick={()=>setLocFilter(locFilter===l?null:l)}>{l}</button>)}</>}
+  </div>
+  {showSearch&&<input className="form-slide" style={{width:"100%",padding:"10px 12px",background:T.inp,border:"1px solid "+T.brd,borderRadius:9,color:T.text,fontSize:14,outline:"none",marginBottom:8}} placeholder="検索..." value={searchQ} onChange={e=>setSearchQ(e.target.value)} autoFocus/>}
+</>}
+
+{/* Add button */}
+{!showForm&&!isHabit&&<button style={{width:"100%",padding:13,border:"1.5px dashed "+T.addB,borderRadius:10,color:T.addC,fontSize:13,fontWeight:700,cursor:"pointer",marginBottom:10,display:"flex",alignItems:"center",justifyContent:"center",gap:6,letterSpacing:1,fontFamily:"'JetBrains Mono',monospace",background:"transparent"}} onClick={()=>{resetForm();setShowForm(true)}}>+ {isWish?"やりたいことを追加":"新しいタスク"}</button>}
+
+{/* Task/Wish Form */}
+{showForm&&<div className="form-slide" style={{background:T.card,border:"1px solid "+T.brd,borderRadius:14,padding:18,marginBottom:12}}>
+  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><span style={{fontSize:15,fontWeight:700,color:T.text}}>{editId?"編集":isWish?"やりたいこと":"新しいタスク"}</span><button style={{background:"none",border:"none",color:T.mut,fontSize:16,cursor:"pointer"}} onClick={resetForm}>✕</button></div>
+  <div style={{display:"flex",gap:6,marginBottom:7}}><input style={{width:50,padding:"10px 8px",background:T.inp,border:"1px solid "+T.brd,borderRadius:9,color:T.text,fontSize:18,outline:"none",textAlign:"center"}} placeholder="🔥" value={icon} onChange={e=>setIcon(e.target.value)} maxLength={2}/><input style={{flex:1,padding:"10px 12px",background:T.inp,border:"1px solid "+T.brd,borderRadius:9,color:T.text,fontSize:14,outline:"none"}} placeholder={isWish?"やりたいこと...":"タスク名..."} value={title} onChange={e=>setTitle(e.target.value)} autoFocus onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&submit()}/></div>
+  {!isWish&&<>
+    <div style={{marginBottom:12}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>重要度</div><div style={{display:"flex",gap:7}}>{IMP.map(o=><button key={o.v} style={{padding:"7px 14px",borderRadius:7,border:"1px solid "+(importance===o.v?o.c:T.brd),fontSize:12,fontWeight:600,cursor:"pointer",background:importance===o.v?o.c:T.cOff,color:importance===o.v?"#fff":T.cOffT,display:"flex",alignItems:"center",gap:6}} onClick={()=>setImportance(o.v)}><span style={{fontSize:14,fontWeight:900}}>{o.icon}</span>{o.l}</button>)}</div></div>
+    <div style={{marginBottom:12}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>重さ</div><div style={{display:"flex",gap:7,flexWrap:"wrap"}}>{WI.map(o=>{const c=roi(importance,o.v);return<button key={o.v} style={{padding:"7px 14px",borderRadius:7,border:"1px solid "+(weight===o.v?c:T.brd),fontSize:12,fontWeight:weight===o.v?700:600,cursor:"pointer",background:weight===o.v?c:T.cOff,color:weight===o.v?"#000":T.cOffT,display:"flex",alignItems:"center",gap:4}} onClick={()=>setWeight(o.v)}>{o.l}<span style={{fontSize:10,opacity:.6}}>{o.h}</span></button>})}</div></div>
+  </>}
+  <div style={{marginBottom:12}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7}}><span style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,fontFamily:"'JetBrains Mono',monospace"}}>締切</span><button style={{padding:"3px 10px",borderRadius:7,border:"1px solid "+(hasDeadline?T.brd:T.cOn),fontSize:10,fontWeight:600,cursor:"pointer",background:hasDeadline?T.cOff:T.cOn,color:hasDeadline?T.cOffT:T.cOnT}} onClick={()=>setHasDeadline(v=>!v)}>{hasDeadline?"なしに変更":"期限なし"}</button></div>{hasDeadline&&<input type="datetime-local" style={{width:"100%",padding:"10px 12px",background:T.inp,border:"1px solid "+T.brd,borderRadius:9,color:T.text,fontSize:14,outline:"none",colorScheme:T.sch}} value={deadline} onChange={e=>setDeadline(e.target.value)}/>}</div>
+  {!isWish&&hasDeadline&&<div style={{marginBottom:12}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>繰り返し</div><div style={{display:"flex",gap:7}}>{REC.map(o=><button key={o.v} style={{padding:"7px 14px",borderRadius:7,border:"1px solid "+(recurrence===o.v?T.cOn:T.brd),fontSize:12,fontWeight:600,cursor:"pointer",background:recurrence===o.v?T.cOn:T.cOff,color:recurrence===o.v?T.cOnT:T.cOffT}} onClick={()=>setRecurrence(o.v)}>{o.l}</button>)}</div></div>}
+  {!isWish&&<div style={{marginBottom:12}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>場所</div><input style={{width:"100%",padding:"10px 12px",background:T.inp,border:"1px solid "+T.brd,borderRadius:9,color:T.text,fontSize:14,outline:"none",marginBottom:4}} placeholder="例: 自宅" value={location} onChange={e=>setLocation(e.target.value)} list="pl"/><datalist id="pl">{locs.map(l=><option key={l} value={l}/>)}</datalist>{locs.length>0&&<div style={{display:"flex",gap:5,flexWrap:"wrap",marginTop:4}}>{locs.map(l=><button key={l} style={{padding:"3px 9px",fontSize:10,borderRadius:7,border:"1px solid "+(location===l?T.cOn:T.brd),background:location===l?T.cOn:T.cOff,color:location===l?T.cOnT:T.cOffT,cursor:"pointer"}} onClick={()=>setLocation(l)}>{l}</button>)}</div>}</div>}
+  <div style={{marginBottom:12}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>メモ</div><textarea style={{width:"100%",padding:"10px 12px",background:T.inp,border:"1px solid "+T.brd,borderRadius:9,color:T.text,fontSize:14,outline:"none",minHeight:60,resize:"vertical",fontFamily:"inherit"}} placeholder="メモ..." value={memo} onChange={e=>setMemo(e.target.value)}/></div>
+  <button style={{width:"100%",padding:13,background:"#ff3b30",border:"none",borderRadius:9,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}} onClick={submit}>{editId?"更新する":"追加する"}</button>
+</div>}
+
+{/* HABIT MODE */}
+{isHabit&&<>
+  <div style={{display:"flex",gap:6,marginBottom:10}}>
+    <input style={{width:42,padding:"8px 6px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:16,outline:"none",textAlign:"center"}} placeholder="💧" value={habitIcon} onChange={e=>setHabitIcon(e.target.value)} maxLength={2}/>
+    <input style={{flex:1,padding:"8px 10px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:13,outline:"none"}} placeholder="日課を追加..." value={habitTitle} onChange={e=>setHabitTitle(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addHabit()}/>
+    <button style={{padding:"8px 14px",borderRadius:8,background:"#ff3b30",border:"none",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}} onClick={addHabit}>+</button>
+  </div>
+  {habitsSorted.map(h=>(
+    <div key={h.id} style={{background:T.card,border:"1px solid "+T.brd,borderRadius:10,padding:"12px 14px",marginBottom:6,display:"flex",alignItems:"center",gap:10,opacity:h.doneToday?.4:1,transition:"opacity .2s"}}>
+      <button style={{width:22,height:22,borderRadius:6,border:"2px solid "+(h.doneToday?"#4ade80":T.chk),background:h.doneToday?"#4ade80":"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,color:"#000",fontSize:11,fontWeight:700}} onClick={()=>setHabits(p=>p.map(x=>x.id===h.id?{...x,doneToday:!x.doneToday}:x))}>{h.doneToday&&"✓"}</button>
+      <div style={{fontSize:20,flexShrink:0,width:28,textAlign:"center"}}>{h.icon||"📌"}</div>
+      <div style={{flex:1}}><div style={{fontSize:13,fontWeight:500,color:T.text,textDecoration:h.doneToday?"line-through":"none"}}>{h.title}</div>{h.memo&&<div style={{fontSize:10,color:T.mut,marginTop:2,fontFamily:"'JetBrains Mono',monospace"}}>{h.memo}</div>}</div>
+      <button style={{background:"none",border:"none",color:T.dim,fontSize:12,cursor:"pointer",padding:4}} onClick={()=>setHabits(p=>p.filter(x=>x.id!==h.id))}>✕</button>
+    </div>
+  ))}
+  {habits.length===0&&<div style={{textAlign:"center",padding:36,color:T.dim,fontSize:13,fontFamily:"'JetBrains Mono',monospace"}}>日課を追加しましょう</div>}
+</>}
+
+{/* TASK/WISH LIST */}
+{!isHabit&&<div style={{display:"flex",flexDirection:"column",gap:8}}>
+  {sorted.length===0&&<div style={{textAlign:"center",padding:36,color:T.dim,fontSize:13,fontFamily:"'JetBrains Mono',monospace"}}>{searchQ?"検索結果なし":filter==="done"?"完了タスクなし":"タスクを追加しましょう"}</div>}
+  {sorted.map(task=><TaskCard key={task.id} task={task} T={T} isDark={isDark} sortOrder={sortOrder} expanded={expandedId===task.id} onToggleExpand={()=>setExpandedId(expandedId===task.id?null:task.id)} onToggleDone={()=>togDone(task.id)} onEdit={()=>startEdit(task)} onDelete={()=>delTask(task.id)} onUpdateSubtasks={s=>upSub(task.id,s)}/>)}
+</div>}
+
+{/* Settings */}
+{showSettings&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:T.modal,zIndex:100,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"60px 16px 20px",overflowY:"auto"}} onClick={()=>setShowSettings(false)}><div style={{background:T.card,border:"1px solid "+T.brd,borderRadius:16,padding:20,width:"100%",maxWidth:500}} onClick={e=>e.stopPropagation()}>
+  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><span style={{fontSize:15,fontWeight:700,color:T.text}}>設定</span><button style={{background:"none",border:"none",color:T.mut,fontSize:16,cursor:"pointer"}} onClick={()=>setShowSettings(false)}>✕</button></div>
+  <div style={{marginBottom:14}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>日付変更時刻</div><input type="number" min="0" max="23" style={{width:60,padding:"8px 10px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:14,outline:"none"}} value={dayReset} onChange={e=>setDayReset(parseInt(e.target.value)||0)}/><span style={{fontSize:11,color:T.mut,marginLeft:6}}>時</span></div>
+  <div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}><div style={{fontSize:12,fontWeight:700,color:T.sub,marginBottom:12}}>タスクのデフォルト値</div>
+    <div style={{marginBottom:10}}><div style={{fontSize:10,fontWeight:700,color:T.mut,letterSpacing:1,marginBottom:6,fontFamily:"'JetBrains Mono',monospace"}}>重要度</div><div style={{display:"flex",gap:6}}>{IMP.map(o=><button key={o.v} style={{padding:"6px 12px",borderRadius:7,border:"1px solid "+(defaults.importance===o.v?o.c:T.brd),fontSize:11,fontWeight:600,cursor:"pointer",background:defaults.importance===o.v?o.c:T.cOff,color:defaults.importance===o.v?"#fff":T.cOffT}} onClick={()=>setDefaults(d=>({...d,importance:o.v}))}>{o.l}</button>)}</div></div>
+    <div style={{marginBottom:10}}><div style={{fontSize:10,fontWeight:700,color:T.mut,letterSpacing:1,marginBottom:6,fontFamily:"'JetBrains Mono',monospace"}}>重さ</div><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{WI.map(o=>{const c=roi(defaults.importance,o.v);return<button key={o.v} style={{padding:"6px 12px",borderRadius:7,border:"1px solid "+(defaults.weight===o.v?c:T.brd),fontSize:11,fontWeight:600,cursor:"pointer",background:defaults.weight===o.v?c:T.cOff,color:defaults.weight===o.v?"#000":T.cOffT}} onClick={()=>setDefaults(d=>({...d,weight:o.v}))}>{o.l}</button>})}</div></div>
+  </div>
+  <div style={{marginBottom:14}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>データ</div><div style={{display:"flex",gap:8}}><button style={{flex:1,padding:11,borderRadius:9,border:"1px solid "+T.brd,background:T.cOff,color:T.text,fontSize:13,fontWeight:700,cursor:"pointer"}} onClick={doExport}>エクスポート</button><button style={{flex:1,padding:11,borderRadius:9,border:"1px solid "+T.brd,background:T.cOff,color:T.text,fontSize:13,fontWeight:700,cursor:"pointer"}} onClick={doImportClick}>インポート</button><input ref={fr} type="file" accept="application/json" style={{display:"none"}} onChange={doImport}/></div></div>
+  <div><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>ゴミ箱（{trash.length}件）</div>{trash.length>0&&<button style={{padding:"8px 12px",borderRadius:8,border:"1px solid rgba(255,59,48,0.3)",background:"transparent",color:"#ff3b30",fontSize:12,fontWeight:600,cursor:"pointer"}} onClick={()=>{if(confirm("ゴミ箱を空にしますか？"))setTrash([])}}>ゴミ箱を空にする</button>}</div>
+</div></div>}
+
+{/* Undo toast */}
+{undoData&&<div className="form-slide" style={{position:"fixed",bottom:"calc(24px + env(safe-area-inset-bottom))",left:16,right:16,maxWidth:360,margin:"0 auto",background:T.toast,border:"1px solid "+T.brd,borderRadius:10,padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",fontSize:13,color:T.sub,zIndex:200}}><span>削除しました</span><button style={{background:"none",border:"none",color:"#ff3b30",fontWeight:700,cursor:"pointer",fontSize:13}} onClick={undo}>元に戻す</button></div>}
+<div style={{position:"fixed",bottom:6,right:10,fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:T.dim,userSelect:"none",pointerEvents:"none"}}>v{VER}</div>
 ```
 
-  </div>);
+  </div>)
 }
 
-function TaskCard({ task, T, expanded, onToggleExpand, onToggleDone, onEdit, onDelete, onUpdateSubtasks }) {
-const isWish = task.type === “wish”;
-const label = isWish ? { text: “WISH”, color: “#c084fc” } : getScoreLabel(task.score);
-const isOD = task.score >= 1000;
-const rc = isWish ? “#c084fc” : getRoiColor(task.importance, task.weight);
-const wi = WEIGHT_INFO.find(w => w.value === task.weight);
-const imp = IMPORTANCE.find(x => x.value === task.importance);
-const [ns, setNs] = useState(””);
-const subs = task.subtasks || []; const sd = subs.filter(s => s.done).length; const hs = subs.length > 0;
-const addS = () => { if (!ns.trim()) return; onUpdateSubtasks([…subs, { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 4), title: ns.trim(), done: false }]); setNs(””); };
-const togS = (id) => onUpdateSubtasks(subs.map(s => s.id === id ? { …s, done: !s.done } : s));
-const delS = (id) => onUpdateSubtasks(subs.filter(s => s.id !== id));
-const tsx = useRef(0); const tsy = useRef(0); const [so, setSo] = useState(0); const [sw, setSw] = useState(false);
-const ts = e => { tsx.current = e.touches[0].clientX; tsy.current = e.touches[0].clientY; };
-const tm = e => { const dx = e.touches[0].clientX - tsx.current; if (Math.abs(dx) > 10 && Math.abs(e.touches[0].clientY - tsy.current) < 30) { setSw(true); setSo(dx); } };
-const te = () => { if (so > 100) onToggleDone(); else if (so < -100) onDelete(); setSo(0); setTimeout(() => setSw(false), 100); };
+function TaskCard({task,T,isDark,sortOrder,expanded,onToggleExpand,onToggleDone,onEdit,onDelete,onUpdateSubtasks}){
+const isW=task.type===“wish”;
+const lb=isW?{t:“WISH”,c:”#c084fc”}:sLabel(task.sc);
+const isOD=task.sc>=1000;
+const rc=isW?”#c084fc”:roi(task.importance,task.weight);
+const pr=isW?5:getSortProminence(task,sortOrder);
+const ts=isDark?TIER_STYLES[pr]:({…TIER_STYLES[pr],…TIER_LIGHT[pr]});
+const wi=WI.find(w=>w.v===task.weight);
+const im=IMP.find(x=>x.v===task.importance);
+const[ns,setNs]=useState(””);
+const subs=task.subtasks||[];const sd=subs.filter(s=>s.done).length;const hs=subs.length>0;
+const addS=()=>{if(!ns.trim())return;onUpdateSubtasks([…subs,{id:Date.now().toString(36)+Math.random().toString(36).slice(2,4),title:ns.trim(),done:false}]);setNs(””)};
+const tsx=useRef(0),tsy=useRef(0);const[so,setSo]=useState(0);const[sw,setSw]=useState(false);
+const tts=e=>{tsx.current=e.touches[0].clientX;tsy.current=e.touches[0].clientY};
+const ttm=e=>{const dx=e.touches[0].clientX-tsx.current;if(Math.abs(dx)>10&&Math.abs(e.touches[0].clientY-tsy.current)<30){setSw(true);setSo(dx)}};
+const tte=()=>{if(so>100)onToggleDone();else if(so<-100)onDelete();setSo(0);setTimeout(()=>setSw(false),100)};
+const wd=wDots(task.weight,rc);
 
-return (<div style={{ position: “relative”, overflow: “hidden”, borderRadius: 12 }}>
-{so > 20 && <div style={{ position: “absolute”, top: 0, left: 0, right: 0, bottom: 0, display: “flex”, alignItems: “center”, borderRadius: 12, background: “rgba(74,222,128,0.2)”, justifyContent: “flex-start”, paddingLeft: 20, fontSize: 14 }}><span style={{ color: “#4ade80”, fontWeight: 700 }}>✓ 完了</span></div>}
-{so < -20 && <div style={{ position: “absolute”, top: 0, left: 0, right: 0, bottom: 0, display: “flex”, alignItems: “center”, borderRadius: 12, background: “rgba(255,59,48,0.2)”, justifyContent: “flex-end”, paddingRight: 20, fontSize: 14 }}><span style={{ color: “#ff3b30”, fontWeight: 700 }}>削除 ✕</span></div>}
-<div className=“task-card” style={{ background: T.card, borderRadius: 12, padding: “12px 14px 12px 22px”, transition: sw ? “none” : “all 0.2s”, cursor: “pointer”, position: “relative”, display: “flex”, width: “100%”, opacity: task.done ? 0.4 : 1, flexDirection: expanded ? “column” : “row”, alignItems: expanded ? “stretch” : “center”, transform: “translateX(” + so + “px)”, border: “1px solid “ + rc + “40”, boxShadow: “0 0 10px “ + rc + “1a, 0 1px 3px “ + T.shadow }} onClick={e => { if (sw) return; if (e.target.closest(”.ne”)) return; onToggleExpand(); }} onTouchStart={ts} onTouchMove={tm} onTouchEnd={te}>
-{!isWish && <div style={{ position: “absolute”, left: 0, top: “50%”, transform: “translateY(-50%)”, width: wi?.barWidth || 4, height: (wi?.barHeight || 75) + “%”, background: rc, borderRadius: “0 3px 3px 0” }} />}
-{isWish && <div style={{ position: “absolute”, left: 0, top: “50%”, transform: “translateY(-50%)”, width: 3, height: “60%”, background: “#c084fc”, borderRadius: “0 3px 3px 0” }} />}
-<div style={{ display: “flex”, alignItems: “center”, justifyContent: “space-between”, width: “100%” }}>
-<div style={{ display: “flex”, alignItems: “center”, gap: 10, flex: 1, minWidth: 0 }}>
-<button className=“ne” style={{ width: 20, height: 20, borderRadius: 5, border: “2px solid “ + (task.done ? “#ff3b30” : T.checkBorder), background: task.done ? “#ff3b30” : “transparent”, display: “flex”, alignItems: “center”, justifyContent: “center”, cursor: “pointer”, flexShrink: 0, color: “#fff”, fontSize: 11, fontWeight: 700 }} onClick={e => { e.stopPropagation(); onToggleDone(); }}>{task.done && “✓”}</button>
-<div style={{ flex: 1, minWidth: 0 }}>
-<div style={{ fontSize: 13, fontWeight: 600, color: T.text, whiteSpace: “nowrap”, overflow: “hidden”, textOverflow: “ellipsis”, textDecoration: task.done ? “line-through” : “none” }}>{task.title}</div>
-{!isWish && <div style={{ fontSize: 10.5, color: T.textSub, marginTop: 3, display: “flex”, gap: 5, fontFamily: “‘JetBrains Mono’, monospace”, flexWrap: “wrap” }}><span style={{ color: imp?.color, fontWeight: 600 }}>{imp?.label}</span><span style={{ opacity: 0.3 }}>·</span><span style={{ color: rc, fontWeight: 600 }}>{wi?.label}</span><span style={{ opacity: 0.3 }}>·</span><span style={{ color: isOD ? “#ff3b30” : T.textSub }}>{formatDeadline(task.deadline)}</span>{task.location && <><span style={{ opacity: 0.3 }}>·</span><span>📍{task.location}</span></>}{task.recurrence && task.recurrence !== “none” && <><span style={{ opacity: 0.3 }}>·</span><span>🔁</span></>}{hs && <><span style={{ opacity: 0.3 }}>·</span><span style={{ color: sd === subs.length ? “#4ade80” : T.textSub }}>{sd}/{subs.length}</span></>}</div>}
-{isWish && task.memo && <div style={{ fontSize: 10.5, color: T.textMuted, marginTop: 3, fontFamily: “‘JetBrains Mono’, monospace” }}>{task.memo.slice(0, 40)}{task.memo.length > 40 ? “…” : “”}</div>}
+return(<div style={{position:“relative”,overflow:“hidden”,borderRadius:10}}>
+{so>20&&<div style={{position:“absolute”,top:0,left:0,right:0,bottom:0,display:“flex”,alignItems:“center”,borderRadius:10,background:“rgba(74,222,128,0.2)”,justifyContent:“flex-start”,paddingLeft:20,fontSize:14}}><span style={{color:”#4ade80”,fontWeight:700}}>✓ 完了</span></div>}
+{so<-20&&<div style={{position:“absolute”,top:0,left:0,right:0,bottom:0,display:“flex”,alignItems:“center”,borderRadius:10,background:“rgba(255,59,48,0.2)”,justifyContent:“flex-end”,paddingRight:20,fontSize:14}}><span style={{color:”#ff3b30”,fontWeight:700}}>削除 ✕</span></div>}
+<div className=“task-card” style={{background:isW?T.card:ts.bg,borderRadius:10,padding:ts.pad+“px 14px “+ts.pad+“px “+(ts.pad+8)+“px”,transition:sw?“none”:“all .2s”,cursor:“pointer”,position:“relative”,display:“flex”,width:“100%”,opacity:task.done?.4:1,flexDirection:expanded?“column”:“row”,alignItems:expanded?“stretch”:“center”,transform:“translateX(”+so+“px)”,border:“1px solid “+(isW?“rgba(192,132,252,0.2)”:ts.border),boxShadow:ts.shadow!==“none”?“0 0 10px “+ts.shadow:””}} onClick={e=>{if(sw)return;if(e.target.closest(”.ne”))return;onToggleExpand()}} onTouchStart={tts} onTouchMove={ttm} onTouchEnd={tte}>
+{!isW&&<div style={{position:“absolute”,left:0,top:“50%”,transform:“translateY(-50%)”,width:wi?.bw||4,height:(wi?.bh||75)+”%”,background:rc,borderRadius:“0 3px 3px 0”}}/>}
+{isW&&<div style={{position:“absolute”,left:0,top:“50%”,transform:“translateY(-50%)”,width:3,height:“60%”,background:”#c084fc”,borderRadius:“0 3px 3px 0”}}/>}
+<div style={{display:“flex”,alignItems:“center”,justifyContent:“space-between”,width:“100%”}}>
+<div style={{display:“flex”,alignItems:“center”,gap:Math.max(7,12-pr),flex:1,minWidth:0}}>
+<button className=“ne” style={{width:Math.max(16,22-pr),height:Math.max(16,22-pr),borderRadius:5,border:“2px solid “+(task.done?”#ff3b30”:T.chk),background:task.done?”#ff3b30”:“transparent”,display:“flex”,alignItems:“center”,justifyContent:“center”,cursor:“pointer”,flexShrink:0,color:”#fff”,fontSize:Math.max(8,12-pr),fontWeight:700}} onClick={e=>{e.stopPropagation();onToggleDone()}}>{task.done&&“✓”}</button>
+{(task.icon||isW)&&<div style={{fontSize:Math.max(12,20-pr),flexShrink:0,width:Math.max(16,26-pr),textAlign:“center”}}>{task.icon||(isW?“⭐”:””)}</div>}
+<div style={{flex:1,minWidth:0}}>
+<div style={{fontSize:ts.fs,fontWeight:ts.fw,color:ts.tc,whiteSpace:“nowrap”,overflow:“hidden”,textOverflow:“ellipsis”,textDecoration:task.done?“line-through”:“none”}}>{task.title}</div>
+{!isW&&<div style={{fontSize:ts.mfs,color:ts.mc,marginTop:3,display:“flex”,gap:5,fontFamily:”‘JetBrains Mono’,monospace”,flexWrap:“wrap”,alignItems:“center”}}>
+<span style={{color:im?.c,fontSize:ts.mfs+2,fontWeight:900}}>{im?.icon}</span>
+<span style={{opacity:.3}}>·</span>
+<span style={{color:rc,fontSize:ts.mfs,letterSpacing:1}}>{wd.text}</span>
+<span style={{opacity:.3}}>·</span>
+<span style={{color:isOD?”#ff3b30”:ts.mc}}>{fmtDl(task.deadline)}</span>
+{task.location&&<><span style={{opacity:.3}}>·</span><span>📍{task.location}</span></>}
+{task.recurrence&&task.recurrence!==“none”&&<><span style={{opacity:.3}}>·</span><span>🔁</span></>}
+{hs&&<><span style={{opacity:.3}}>·</span><span style={{color:sd===subs.length?”#4ade80”:ts.mc}}>{sd}/{subs.length}</span></>}
+</div>}
+{isW&&task.memo&&<div style={{fontSize:10,color:T.mut,marginTop:2,fontFamily:”‘JetBrains Mono’,monospace”}}>{task.memo.slice(0,40)}{task.memo.length>40?”…”:””}</div>}
 </div>
 </div>
-<div style={{ flexShrink: 0, marginLeft: 8 }}>{!task.done && <span className={isOD ? “overdue-pulse” : “”} style={{ fontFamily: “‘JetBrains Mono’, monospace”, fontSize: 9, fontWeight: 700, letterSpacing: 1, padding: “3px 8px”, borderRadius: 5, border: “1px solid”, background: isWish ? “rgba(192,132,252,0.13)” : label.color + “22”, color: isWish ? “#c084fc” : label.color, borderColor: isWish ? “rgba(192,132,252,0.27)” : label.color + “44” }}>{label.text}</span>}</div>
+<div style={{flexShrink:0,marginLeft:8}}>{!task.done&&<span className={isOD?“overdue-pulse”:””} style={{fontFamily:”‘JetBrains Mono’,monospace”,fontSize:ts.bfs,fontWeight:700,letterSpacing:1,padding:ts.bp,borderRadius:5,border:“1px solid”,background:isW?“rgba(192,132,252,0.13)”:lb.c+“22”,color:isW?”#c084fc”:lb.c,borderColor:isW?“rgba(192,132,252,0.27)”:lb.c+“44”}}>{lb.t}</span>}</div>
 </div>
-{expanded && <div style={{ marginTop: 12, paddingTop: 12, borderTop: “1px solid “ + T.border, width: “100%”, animation: “slideDown 0.25s ease” }}>
-{!isWish && <><div style={{ display: “flex”, justifyContent: “space-between”, padding: “5px 0”, fontSize: 12 }}><span style={{ color: T.textMuted, fontFamily: “‘JetBrains Mono’, monospace”, fontSize: 10, letterSpacing: 1, textTransform: “uppercase” }}>作成日</span><span style={{ color: T.text }}>{new Date(task.createdAt).toLocaleDateString()}</span></div>{task.deadline && <div style={{ display: “flex”, justifyContent: “space-between”, padding: “5px 0”, fontSize: 12 }}><span style={{ color: T.textMuted, fontFamily: “‘JetBrains Mono’, monospace”, fontSize: 10, letterSpacing: 1, textTransform: “uppercase” }}>締切</span><span style={{ color: T.text }}>{new Date(task.deadline).toLocaleString()}</span></div>}{task.recurrence && task.recurrence !== “none” && <div style={{ display: “flex”, justifyContent: “space-between”, padding: “5px 0”, fontSize: 12 }}><span style={{ color: T.textMuted, fontFamily: “‘JetBrains Mono’, monospace”, fontSize: 10, letterSpacing: 1, textTransform: “uppercase” }}>繰り返し</span><span style={{ color: T.text }}>{RECURRENCE.find(r => r.value === task.recurrence)?.label}</span></div>}</>}
-{task.memo && <div style={{ marginTop: 10, padding: 10, background: T.memoOverlay, border: “1px solid “ + T.memoBorder, borderRadius: 8, fontSize: 12, color: T.textSub, lineHeight: 1.6, whiteSpace: “pre-wrap” }}>{task.memo}</div>}
-<div style={{ marginTop: 12, paddingTop: 8 }}><div style={{ display: “flex”, justifyContent: “space-between”, alignItems: “center”, marginBottom: 6 }}><span style={{ color: T.textMuted, fontFamily: “‘JetBrains Mono’, monospace”, fontSize: 10, letterSpacing: 1, textTransform: “uppercase” }}>サブタスク</span>{hs && <span style={{ fontSize: 10, color: sd === subs.length ? “#4ade80” : T.textSub, fontFamily: “‘JetBrains Mono’, monospace” }}>{sd}/{subs.length}</span>}</div>
-{subs.map(sub => (<div key={sub.id} className=“ne” style={{ display: “flex”, alignItems: “center”, gap: 8, padding: “6px 0”, borderBottom: “1px solid “ + T.borderLight }}><button style={{ width: 16, height: 16, borderRadius: 4, border: “2px solid “ + (sub.done ? “#4ade80” : T.checkBorder), background: sub.done ? “#4ade80” : “transparent”, display: “flex”, alignItems: “center”, justifyContent: “center”, cursor: “pointer”, flexShrink: 0 }} onClick={e => { e.stopPropagation(); togS(sub.id); }}>{sub.done && <span style={{ fontSize: 8, color: “#000” }}>✓</span>}</button><span style={{ fontSize: 12, color: T.textSub, flex: 1, textDecoration: sub.done ? “line-through” : “none”, opacity: sub.done ? 0.5 : 1 }}>{sub.title}</span><button style={{ background: “none”, border: “none”, color: T.textDim, fontSize: 11, cursor: “pointer”, padding: 3 }} onClick={e => { e.stopPropagation(); delS(sub.id); }}>✕</button></div>))}
-<div className=“ne” style={{ display: “flex”, gap: 6, marginTop: 6 }}><input style={{ flex: 1, padding: “7px 9px”, background: T.memoOverlay, border: “1px solid “ + T.border, borderRadius: 6, color: T.text, fontSize: 11, outline: “none” }} placeholder=“サブタスクを追加…” value={ns} onChange={e => setNs(e.target.value)} onKeyDown={e => { if (e.key === “Enter”) { e.stopPropagation(); addS(); } }} onClick={e => e.stopPropagation()} /><button style={{ width: 30, height: 30, borderRadius: 6, border: “1px solid “ + T.border, background: T.chipOff, color: T.textSub, fontSize: 15, cursor: “pointer”, display: “flex”, alignItems: “center”, justifyContent: “center” }} onClick={e => { e.stopPropagation(); addS(); }}>+</button></div>
+{expanded&&<div style={{marginTop:12,paddingTop:12,borderTop:“1px solid “+T.brd,width:“100%”,animation:“slideDown .25s ease”}}>
+{!isW&&<><div style={{display:“flex”,justifyContent:“space-between”,padding:“5px 0”,fontSize:12}}><span style={{color:T.mut,fontFamily:”‘JetBrains Mono’,monospace”,fontSize:10,letterSpacing:1,textTransform:“uppercase”}}>作成日</span><span style={{color:T.text}}>{new Date(task.createdAt).toLocaleDateString()}</span></div>{task.deadline&&<div style={{display:“flex”,justifyContent:“space-between”,padding:“5px 0”,fontSize:12}}><span style={{color:T.mut,fontFamily:”‘JetBrains Mono’,monospace”,fontSize:10,letterSpacing:1,textTransform:“uppercase”}}>締切</span><span style={{color:T.text}}>{new Date(task.deadline).toLocaleString()}</span></div>}{task.recurrence&&task.recurrence!==“none”&&<div style={{display:“flex”,justifyContent:“space-between”,padding:“5px 0”,fontSize:12}}><span style={{color:T.mut,fontFamily:”‘JetBrains Mono’,monospace”,fontSize:10,letterSpacing:1,textTransform:“uppercase”}}>繰り返し</span><span style={{color:T.text}}>{REC.find(r=>r.v===task.recurrence)?.l}</span></div>}</>}
+{task.memo&&<div style={{marginTop:10,padding:10,background:T.memo,border:“1px solid “+T.memB,borderRadius:8,fontSize:12,color:T.sub,lineHeight:1.6,whiteSpace:“pre-wrap”}}>{task.memo}</div>}
+<div style={{marginTop:12,paddingTop:8}}><div style={{display:“flex”,justifyContent:“space-between”,alignItems:“center”,marginBottom:6}}><span style={{color:T.mut,fontFamily:”‘JetBrains Mono’,monospace”,fontSize:10,letterSpacing:1,textTransform:“uppercase”}}>サブタスク</span>{hs&&<span style={{fontSize:10,color:sd===subs.length?”#4ade80”:T.sub,fontFamily:”‘JetBrains Mono’,monospace”}}>{sd}/{subs.length}</span>}</div>
+{subs.map(sub=><div key={sub.id} className=“ne” style={{display:“flex”,alignItems:“center”,gap:8,padding:“6px 0”,borderBottom:“1px solid “+(isDark?”#1a1a1a”:T.brd)}}><button style={{width:16,height:16,borderRadius:4,border:“2px solid “+(sub.done?”#4ade80”:T.chk),background:sub.done?”#4ade80”:“transparent”,display:“flex”,alignItems:“center”,justifyContent:“center”,cursor:“pointer”,flexShrink:0}} onClick={e=>{e.stopPropagation();onUpdateSubtasks(subs.map(s=>s.id===sub.id?{…s,done:!s.done}:s))}}>{sub.done&&<span style={{fontSize:8,color:”#000”}}>✓</span>}</button><span style={{fontSize:12,color:T.sub,flex:1,textDecoration:sub.done?“line-through”:“none”,opacity:sub.done?.5:1}}>{sub.title}</span><button style={{background:“none”,border:“none”,color:T.dim,fontSize:11,cursor:“pointer”,padding:3}} onClick={e=>{e.stopPropagation();onUpdateSubtasks(subs.filter(s=>s.id!==sub.id))}}>✕</button></div>)}
+<div className=“ne” style={{display:“flex”,gap:6,marginTop:6}}><input style={{flex:1,padding:“7px 9px”,background:T.memo,border:“1px solid “+T.brd,borderRadius:6,color:T.text,fontSize:11,outline:“none”}} placeholder=“サブタスクを追加…” value={ns} onChange={e=>setNs(e.target.value)} onKeyDown={e=>{if(e.key===“Enter”){e.stopPropagation();addS()}}} onClick={e=>e.stopPropagation()}/><button style={{width:30,height:30,borderRadius:6,border:“1px solid “+T.brd,background:T.cOff,color:T.sub,fontSize:15,cursor:“pointer”,display:“flex”,alignItems:“center”,justifyContent:“center”}} onClick={e=>{e.stopPropagation();addS()}}>+</button></div>
 </div>
-<div style={{ display: “flex”, gap: 8, marginTop: 12 }}>{!isWish && <button className=“ne” style={{ flex: 1, padding: 9, borderRadius: 8, border: “1px solid “ + T.border, background: “transparent”, color: T.textSub, fontSize: 11, fontWeight: 600, cursor: “pointer” }} onClick={e => { e.stopPropagation(); onEdit(); }}>編集</button>}<button className=“ne” style={{ flex: 1, padding: 9, borderRadius: 8, border: “1px solid rgba(255,59,48,0.3)”, background: “transparent”, color: “#ff3b30”, fontSize: 11, fontWeight: 600, cursor: “pointer” }} onClick={e => { e.stopPropagation(); onDelete(); }}>削除</button></div>
+<div style={{display:“flex”,gap:8,marginTop:12}}>{!isW&&<button className=“ne” style={{flex:1,padding:9,borderRadius:8,border:“1px solid “+T.brd,background:“transparent”,color:T.sub,fontSize:11,fontWeight:600,cursor:“pointer”}} onClick={e=>{e.stopPropagation();onEdit()}}>編集</button>}<button className=“ne” style={{flex:1,padding:9,borderRadius:8,border:“1px solid rgba(255,59,48,0.3)”,background:“transparent”,color:”#ff3b30”,fontSize:11,fontWeight:600,cursor:“pointer”}} onClick={e=>{e.stopPropagation();onDelete()}}>削除</button></div>
 </div>}
 </div>
 
-  </div>);
-}
-
-function makeStyles(T) {
-return {
-root: { minHeight: “100vh”, background: T.bg, color: T.text, fontFamily: “‘Noto Sans JP’, sans-serif”, padding: “calc(16px + env(safe-area-inset-top)) 14px calc(80px + env(safe-area-inset-bottom))”, maxWidth: 600, margin: “0 auto” },
-header: { display: “flex”, justifyContent: “space-between”, alignItems: “flex-start”, marginBottom: 20 },
-logo: { fontFamily: “‘JetBrains Mono’, monospace”, fontSize: 20, fontWeight: 800, letterSpacing: 2, color: T.text, margin: 0 },
-sub: { fontFamily: “‘JetBrains Mono’, monospace”, fontSize: 11, color: T.textMuted, marginTop: 3 },
-iconBtn: { width: 36, height: 36, borderRadius: 8, border: “1px solid “ + T.iconBorder, background: T.iconBg, color: T.iconColor, fontSize: 14, cursor: “pointer”, display: “flex”, alignItems: “center”, justifyContent: “center” },
-topBanner: { background: T.card, border: “1px solid”, borderRadius: 14, padding: “14px 16px”, marginBottom: 16 },
-topLabel: { fontSize: 10, fontWeight: 700, marginBottom: 5, letterSpacing: 1, display: “flex”, alignItems: “center” },
-topTitle: { fontSize: 16, fontWeight: 700, color: T.text, marginBottom: 5 },
-topMeta: { fontFamily: “‘JetBrains Mono’, monospace”, fontSize: 10, color: T.textSub, display: “flex”, gap: 8 },
-form: { background: T.card, border: “1px solid “ + T.border, borderRadius: 14, padding: 18, marginBottom: 16 },
-formHeader: { display: “flex”, justifyContent: “space-between”, alignItems: “center”, marginBottom: 14 },
-formTitle: { fontSize: 15, fontWeight: 700, color: T.text },
-closeBtn: { background: “none”, border: “none”, color: T.textMuted, fontSize: 16, cursor: “pointer” },
-input: { width: “100%”, padding: “10px 12px”, background: T.inputBg, border: “1px solid “ + T.border, borderRadius: 9, color: T.text, fontSize: 14, outline: “none”, marginBottom: 7 },
-fieldGroup: { marginBottom: 12 },
-fieldLabel: { fontSize: 10, fontWeight: 700, color: T.textMuted, textTransform: “uppercase”, letterSpacing: 1, marginBottom: 7, display: “block”, fontFamily: “‘JetBrains Mono’, monospace” },
-chipRow: { display: “flex”, gap: 7, flexWrap: “wrap” },
-chip: { padding: “7px 14px”, borderRadius: 7, border: “1px solid”, fontSize: 12, fontWeight: 600, cursor: “pointer”, transition: “all 0.2s”, display: “flex”, alignItems: “center” },
-submitBtn: { width: “100%”, padding: “13px”, background: “#ff3b30”, border: “none”, borderRadius: 9, color: “#fff”, fontSize: 14, fontWeight: 700, cursor: “pointer”, marginTop: 7 },
-addBtn: { width: “100%”, padding: 14, background: “transparent”, border: “1.5px dashed “ + T.addBorder, borderRadius: 10, color: T.addColor, fontSize: 13, fontWeight: 700, cursor: “pointer”, marginBottom: 10, display: “flex”, alignItems: “center”, justifyContent: “center”, gap: 6, letterSpacing: 1, fontFamily: “‘JetBrains Mono’, monospace” },
-filterRow: { display: “flex”, gap: 4, marginBottom: 8, flexWrap: “nowrap” },
-filterChip: { padding: “4px 9px”, borderRadius: 6, border: “1px solid “ + T.filterBorder, fontSize: 11, fontWeight: 600, cursor: “pointer”, whiteSpace: “nowrap” },
-locationFilterRow: { display: “flex”, gap: 4, marginBottom: 12, flexWrap: “wrap”, alignItems: “center” },
-list: { display: “flex”, flexDirection: “column”, gap: 8 },
-empty: { textAlign: “center”, padding: 36, color: T.textDim, fontSize: 13, fontFamily: “‘JetBrains Mono’, monospace” },
-};
+  </div>)
 }
