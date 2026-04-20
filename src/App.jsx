@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from “react”;
-const VER = “3.4.2”;
+const VER = “3.5.0”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
@@ -58,6 +58,19 @@ function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
 const Refresh=()=>(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:16,height:16}}><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>);
 const Grip=()=>(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:14,height:14}}><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="4" y1="14" x2="20" y2="14"/><line x1="4" y1="18" x2="20" y2="18"/></svg>);
 
+function ScrollTitle({text,style,paused}){
+const wrapRef=useRef(null);const innerRef=useRef(null);
+const[overflow,setOverflow]=useState(false);const[dist,setDist]=useState(0);
+useEffect(()=>{
+if(!wrapRef.current||!innerRef.current)return;
+const wW=wrapRef.current.offsetWidth;const iW=innerRef.current.scrollWidth;
+if(iW>wW+2){setOverflow(true);setDist(iW-wW+24)}else{setOverflow(false);setDist(0)}
+},[text]);
+if(!overflow)return<div ref={wrapRef} style={{…style,whiteSpace:“nowrap”,overflow:“hidden”,textOverflow:“ellipsis”}}><span ref={innerRef}>{text}</span></div>;
+const dur=Math.max(6,Math.min(18,dist/28));
+return(<div ref={wrapRef} style={{…style,whiteSpace:“nowrap”,overflow:“hidden”,maskImage:“linear-gradient(90deg,transparent 0,#000 12px,#000 calc(100% - 12px),transparent 100%)”,WebkitMaskImage:“linear-gradient(90deg,transparent 0,#000 12px,#000 calc(100% - 12px),transparent 100%)”}}><span ref={innerRef} style={{display:“inline-block”,animation:paused?“none”:“titleScroll “+dur+“s linear infinite”,paddingRight:24,[”–d”]:”-”+dist+“px”}}>{text}</span></div>);
+}
+
 export default function App(){
 const[tasks,setTasks]=useState(()=>ld(SK,[]));
 const[habits,setHabits]=useState(()=>ld(HRK,[]));
@@ -81,6 +94,7 @@ const[dayReset,setDayReset]=useState(()=>ld(DRK,5));
 const[showSortDD,setShowSortDD]=useState(false);
 const[editHabitId,setEditHabitId]=useState(null);
 const[habitInput,setHabitInput]=useState(””);
+const[habitIcon,setHabitIcon]=useState(””);
 const[topIdx,setTopIdx]=useState(0);const[topSwipeOff,setTopSwipeOff]=useState(0);
 const[draggingId,setDraggingId]=useState(null);
 const[openGroup,setOpenGroup]=useState(null);
@@ -268,7 +282,7 @@ const bannerTs=e=>{topSwipeStart.current=e.touches[0].clientX};
 const bannerTm=e=>{const dx=e.touches[0].clientX-topSwipeStart.current;setTopSwipeOff(dx)};
 const bannerTe=()=>{if(topSwipeOff>50&&topIdx>0)setTopIdx(topIdx-1);else if(topSwipeOff<-50&&topIdx<topTasks.length-1)setTopIdx(topIdx+1);setTopSwipeOff(0)};
 
-const gcss=”@import url(‘https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap’);*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html,body,#root{min-height:100vh}input,select,button,textarea{font-family:‘Noto Sans JP’,sans-serif}@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}@keyframes slideDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}@keyframes partBurst{0%{transform:translate(0,0) rotate(0deg) scale(.3);opacity:0}8%{opacity:1;transform:translate(calc(var(–tx)*.3),calc(var(–ty)*.3)) rotate(calc(var(–tr)*.2)) scale(1.1)}40%{transform:translate(var(–tx),var(–ty)) rotate(calc(var(–tr)*.7)) scale(1);opacity:1}75%{opacity:1}100%{transform:translate(var(–tx),calc(var(–ty) + var(–gy))) rotate(var(–tr)) scale(.5);opacity:0}}@keyframes shockRing{0%{transform:translate(-50%,-50%) scale(0);opacity:.9;border-width:4px}40%{opacity:.7}100%{transform:translate(-50%,-50%) scale(22);opacity:0;border-width:0}}@keyframes flashPop{0%{transform:translate(-50%,-50%) scale(0);opacity:0}20%{transform:translate(-50%,-50%) scale(1.2);opacity:.65}100%{transform:translate(-50%,-50%) scale(2.4);opacity:0}}.task-card{animation:fadeIn .3s ease both}.overdue-pulse{animation:pulse 1.5s ease infinite}.form-slide{animation:slideUp .3s ease both}.p-burst{position:absolute;left:0;top:0;animation:partBurst var(–dur) cubic-bezier(.15,.7,.4,1) forwards;will-change:transform,opacity}.p-ring{position:absolute;left:0;top:0;border:4px solid;border-radius:50%;width:40px;height:40px;animation:shockRing 1.1s cubic-bezier(.2,.6,.4,1) forwards;will-change:transform,opacity}.p-flash{position:absolute;left:0;top:0;width:100px;height:100px;border-radius:50%;animation:flashPop .75s cubic-bezier(.2,.8,.4,1) forwards;filter:blur(16px);will-change:transform,opacity}”;
+const gcss=”@import url(‘https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap’);*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html,body,#root{min-height:100vh}input,select,button,textarea{font-family:‘Noto Sans JP’,sans-serif}@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}@keyframes slideDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}@keyframes partBurst{0%{transform:translate(0,0) rotate(0deg) scale(.3);opacity:0}8%{opacity:1;transform:translate(calc(var(–tx)*.3),calc(var(–ty)*.3)) rotate(calc(var(–tr)*.2)) scale(1.1)}40%{transform:translate(var(–tx),var(–ty)) rotate(calc(var(–tr)*.7)) scale(1);opacity:1}75%{opacity:1}100%{transform:translate(var(–tx),calc(var(–ty) + var(–gy))) rotate(var(–tr)) scale(.5);opacity:0}}@keyframes shockRing{0%{transform:translate(-50%,-50%) scale(0);opacity:.9;border-width:4px}40%{opacity:.7}100%{transform:translate(-50%,-50%) scale(22);opacity:0;border-width:0}}@keyframes flashPop{0%{transform:translate(-50%,-50%) scale(0);opacity:0}20%{transform:translate(-50%,-50%) scale(1.2);opacity:.65}100%{transform:translate(-50%,-50%) scale(2.4);opacity:0}}@keyframes titleScroll{0%,12%{transform:translateX(0)}88%,100%{transform:translateX(var(–d))}}.task-card{animation:fadeIn .3s ease both}.overdue-pulse{animation:pulse 1.5s ease infinite}.form-slide{animation:slideUp .3s ease both}.p-burst{position:absolute;left:0;top:0;animation:partBurst var(–dur) cubic-bezier(.15,.7,.4,1) forwards;will-change:transform,opacity}.p-ring{position:absolute;left:0;top:0;border:4px solid;border-radius:50%;width:40px;height:40px;animation:shockRing 1.1s cubic-bezier(.2,.6,.4,1) forwards;will-change:transform,opacity}.p-flash{position:absolute;left:0;top:0;width:100px;height:100px;border-radius:50%;animation:flashPop .75s cubic-bezier(.2,.8,.4,1) forwards;filter:blur(16px);will-change:transform,opacity}”;
 
 const isTask=mode===“task”,isWish=mode===“wish”,isHabit=mode===“habit”;
 const habitsSorted=useMemo(()=>{const done=habits.filter(h=>h.doneToday);const un=habits.filter(h=>!h.doneToday);return[…un,…done]},[habits]);
@@ -369,8 +383,9 @@ return(<div style={{minHeight:“100vh”,background:T.bg,color:T.text,fontFamil
 {isHabit&&<>
 
   <div style={{display:"flex",gap:6,marginBottom:10}}>
-    <input style={{flex:1,padding:"8px 10px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:13,outline:"none",minWidth:0}} placeholder="日課を追加..." value={habitInput} onChange={e=>setHabitInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.nativeEvent.isComposing&&habitInput.trim()){setHabits(p=>[...p,{id:Date.now().toString(36)+Math.random().toString(36).slice(2,4),title:habitInput.trim(),memo:"",icon:"",doneToday:false}]);setHabitInput("")}}}/>
-    <button style={{width:40,height:38,borderRadius:8,border:"1px solid "+T.brd,background:habitInput.trim()?T.cOn:T.cOff,color:habitInput.trim()?T.cOnT:T.cOffT,fontSize:18,fontWeight:700,cursor:"pointer",flexShrink:0}} onClick={()=>{if(habitInput.trim()){setHabits(p=>[...p,{id:Date.now().toString(36)+Math.random().toString(36).slice(2,4),title:habitInput.trim(),memo:"",icon:"",doneToday:false}]);setHabitInput("")}}}>+</button>
+    <input style={{width:44,padding:"8px 4px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:16,outline:"none",textAlign:"center",flexShrink:0}} placeholder="📌" value={habitIcon} onChange={e=>setHabitIcon(e.target.value)} maxLength={2}/>
+    <input style={{flex:1,padding:"8px 10px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:13,outline:"none",minWidth:0}} placeholder="日課を追加..." value={habitInput} onChange={e=>setHabitInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.nativeEvent.isComposing&&habitInput.trim()){setHabits(p=>[...p,{id:Date.now().toString(36)+Math.random().toString(36).slice(2,4),title:habitInput.trim(),memo:"",icon:habitIcon.trim(),doneToday:false}]);setHabitInput("");setHabitIcon("")}}}/>
+    <button style={{width:40,height:38,borderRadius:8,border:"1px solid "+T.brd,background:habitInput.trim()?T.cOn:T.cOff,color:habitInput.trim()?T.cOnT:T.cOffT,fontSize:18,fontWeight:700,cursor:"pointer",flexShrink:0}} onClick={()=>{if(habitInput.trim()){setHabits(p=>[...p,{id:Date.now().toString(36)+Math.random().toString(36).slice(2,4),title:habitInput.trim(),memo:"",icon:habitIcon.trim(),doneToday:false}]);setHabitInput("");setHabitIcon("")}}}>+</button>
   </div>
   {habitsSorted.map(h=>(
     <div key={h.id} style={{background:T.card,border:"1px solid "+(editHabitId===h.id?"#ff3b30":T.brd),borderRadius:10,padding:"10px 12px",marginBottom:6,opacity:draggingId===h.id?0.5:(h.doneToday?.4:1),transition:"opacity .2s"}}>
@@ -384,7 +399,7 @@ return(<div style={{minHeight:“100vh”,background:T.bg,color:T.text,fontFamil
       </div>:<div style={{display:"flex",alignItems:"center",gap:8}}>
         <button style={{width:20,height:20,borderRadius:5,border:"2px solid "+(h.doneToday?"#4ade80":T.chk),background:h.doneToday?"#4ade80":"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,color:"#000",fontSize:10,fontWeight:700}} onClick={()=>setHabits(p=>p.map(x=>x.id===h.id?{...x,doneToday:!x.doneToday}:x))}>{h.doneToday&&"✓"}</button>
         <div style={{fontSize:18,flexShrink:0,width:24,textAlign:"center",cursor:"pointer"}} onClick={()=>setEditHabitId(h.id)}>{h.icon||"📌"}</div>
-        <div style={{flex:1,cursor:"pointer",minWidth:0}} onClick={()=>setEditHabitId(h.id)}><div style={{fontSize:13,fontWeight:500,color:T.text,textDecoration:h.doneToday?"line-through":"none",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{h.title}</div>{h.memo&&<div style={{fontSize:10,color:T.mut,marginTop:2,fontFamily:"'JetBrains Mono',monospace",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{h.memo}</div>}</div>
+        <div style={{flex:1,cursor:"pointer",minWidth:0}} onClick={()=>setEditHabitId(h.id)}><ScrollTitle text={h.title} style={{fontSize:13,fontWeight:500,color:T.text,textDecoration:h.doneToday?"line-through":"none"}}/>{h.memo&&<div style={{fontSize:10,color:T.mut,marginTop:2,fontFamily:"'JetBrains Mono',monospace",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{h.memo}</div>}</div>
         <div style={{flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",width:28,height:28,color:T.dim,cursor:"grab",touchAction:"none"}} onTouchStart={e=>{e.stopPropagation();dragStart(h.id,"habit",e.touches[0].clientY)}} onTouchMove={e=>{if(draggingId===h.id){e.stopPropagation();dragMove(e.touches[0].clientY)}}} onTouchEnd={e=>{e.stopPropagation();dragEnd()}} onClick={e=>e.stopPropagation()}><Grip/></div>
         <button style={{background:"none",border:"none",color:T.dim,fontSize:11,cursor:"pointer",padding:4}} onClick={()=>setHabits(p=>p.filter(x=>x.id!==h.id))}>✕</button>
       </div>}
@@ -518,8 +533,13 @@ const wi=WI.find(w=>w.v===task.weight);
 const im=IMP.find(x=>x.v===task.importance);
 const[ns,setNs]=useState(””);
 const[showSubInput,setShowSubInput]=useState(false);
+const[subDragId,setSubDragId]=useState(null);
+const subDragStartY=useRef(0);
 const subs=task.subtasks||[];const sd=subs.filter(s=>s.done).length;const hs=subs.length>0;
 const addS=()=>{if(!ns.trim())return;onUpdateSubtasks([…subs,{id:Date.now().toString(36)+Math.random().toString(36).slice(2,4),title:ns.trim(),done:false}]);setNs(””)};
+const subDragStart=(id,y)=>{setSubDragId(id);subDragStartY.current=y};
+const subDragMove=y=>{if(!subDragId)return;const dy=y-subDragStartY.current;const itemH=36;if(Math.abs(dy)<itemH*0.7)return;const steps=Math.trunc(dy/itemH);if(steps===0)return;const idx=subs.findIndex(s=>s.id===subDragId);if(idx<0)return;const newIdx=Math.max(0,Math.min(subs.length-1,idx+steps));if(newIdx===idx)return;const arr=[…subs];const[item]=arr.splice(idx,1);arr.splice(newIdx,0,item);onUpdateSubtasks(arr);subDragStartY.current+=steps*itemH};
+const subDragEnd=()=>setSubDragId(null);
 const tsx=useRef(0),tsy=useRef(0);const[so,setSo]=useState(0);const[sw,setSw]=useState(false);
 const tts=e=>{tsx.current=e.touches[0].clientX;tsy.current=e.touches[0].clientY};
 const ttm=e=>{const dx=e.touches[0].clientX-tsx.current;if(Math.abs(dx)>10&&Math.abs(e.touches[0].clientY-tsy.current)<30){setSw(true);setSo(dx)}};
@@ -537,7 +557,7 @@ return(<div style={{position:“relative”,overflow:“hidden”,borderRadius:1
 <button className="ne" style={{width:Math.max(16,22-pr),height:Math.max(16,22-pr),borderRadius:5,border:"2px solid "+(task.done?"#ff3b30":T.chk),background:task.done?"#ff3b30":"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,color:"#fff",fontSize:Math.max(8,12-pr),fontWeight:700}} onClick={e=>{e.stopPropagation();onToggleDone()}}>{task.done&&"✓"}</button>
 {(task.icon||isW)&&<div style={{fontSize:Math.max(12,20-pr),flexShrink:0,width:Math.max(16,26-pr),textAlign:"center"}}>{task.icon||(isW?"⭐":"")}</div>}
 <div style={{flex:1,minWidth:0}}>
-<div style={{fontSize:ts.fs,fontWeight:ts.fw,color:ts.tc,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",textDecoration:task.done?"line-through":"none"}}>{task.title}</div>
+<ScrollTitle text={task.title} style={{fontSize:ts.fs,fontWeight:ts.fw,color:ts.tc,textDecoration:task.done?"line-through":"none"}}/>
 {!isW&&<div style={{fontSize:ts.mfs,color:ts.mc,marginTop:3,display:"flex",gap:5,fontFamily:"'JetBrains Mono',monospace",flexWrap:"wrap",alignItems:"center"}}>
 <span style={{color:im?.c,fontSize:ts.mfs+2,fontWeight:900}}>{im?.icon}</span>
 <span style={{opacity:.3}}>·</span>
@@ -580,7 +600,7 @@ return(<div style={{position:“relative”,overflow:“hidden”,borderRadius:1
 {/* Subtasks */}
 <div style={{marginTop:10}}>
 {hs&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}><span style={{color:T.sub,fontFamily:"'JetBrains Mono',monospace",fontSize:10,letterSpacing:1,textTransform:"uppercase",fontWeight:700}}>サブタスク</span><span style={{fontSize:11,color:sd===subs.length?"#4ade80":T.sub,fontFamily:"'JetBrains Mono',monospace",fontWeight:700}}>{sd}/{subs.length}</span></div>}
-{subs.map(sub=><div key={sub.id} className="ne" style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:"1px solid "+(isDark?"#1a1a1a":T.brd)}}><button style={{width:16,height:16,borderRadius:4,border:"2px solid "+(sub.done?"#4ade80":T.chk),background:sub.done?"#4ade80":"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}} onClick={e=>{e.stopPropagation();onUpdateSubtasks(subs.map(s=>s.id===sub.id?{...s,done:!s.done}:s))}}>{sub.done&&<span style={{fontSize:9,color:"#000",fontWeight:800}}>✓</span>}</button><span style={{fontSize:13,fontWeight:500,color:T.text,flex:1,textDecoration:sub.done?"line-through":"none",opacity:sub.done?.5:1,lineHeight:1.4}}>{sub.title}</span><button style={{background:"none",border:"none",color:T.dim,fontSize:12,cursor:"pointer",padding:4}} onClick={e=>{e.stopPropagation();onUpdateSubtasks(subs.filter(s=>s.id!==sub.id))}}>✕</button></div>)}
+{subs.map(sub=><div key={sub.id} className="ne" style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:"1px solid "+(isDark?"#1a1a1a":T.brd),opacity:subDragId===sub.id?0.5:1,transition:"opacity .2s"}}><button style={{width:16,height:16,borderRadius:4,border:"2px solid "+(sub.done?"#4ade80":T.chk),background:sub.done?"#4ade80":"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}} onClick={e=>{e.stopPropagation();onUpdateSubtasks(subs.map(s=>s.id===sub.id?{...s,done:!s.done}:s))}}>{sub.done&&<span style={{fontSize:9,color:"#000",fontWeight:800}}>✓</span>}</button><span style={{fontSize:13,fontWeight:500,color:T.text,flex:1,textDecoration:sub.done?"line-through":"none",opacity:sub.done?.5:1,lineHeight:1.4}}>{sub.title}</span><div style={{display:"flex",alignItems:"center",justifyContent:"center",width:26,height:26,color:T.dim,cursor:"grab",touchAction:"none",flexShrink:0}} onTouchStart={e=>{e.stopPropagation();subDragStart(sub.id,e.touches[0].clientY)}} onTouchMove={e=>{if(subDragId===sub.id){e.stopPropagation();subDragMove(e.touches[0].clientY)}}} onTouchEnd={e=>{e.stopPropagation();subDragEnd()}} onClick={e=>e.stopPropagation()}><Grip/></div><button style={{background:"none",border:"none",color:T.dim,fontSize:12,cursor:"pointer",padding:4}} onClick={e=>{e.stopPropagation();onUpdateSubtasks(subs.filter(s=>s.id!==sub.id))}}>✕</button></div>)}
 {(showSubInput||hs)?<div className="ne" style={{display:"flex",gap:6,marginTop:6}}><input style={{flex:1,padding:"8px 10px",background:T.memo,border:"1px solid "+T.brd,borderRadius:6,color:T.text,fontSize:13,outline:"none",minWidth:0}} placeholder="サブタスク追加..." value={ns} onChange={e=>setNs(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.stopPropagation();addS()}}} onClick={e=>e.stopPropagation()}/><button style={{width:30,height:30,borderRadius:6,border:"1px solid "+T.brd,background:T.cOff,color:T.sub,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} onClick={e=>{e.stopPropagation();addS()}}>+</button></div>
 :<button className="ne" style={{marginTop:4,padding:"5px 10px",borderRadius:6,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:11,fontWeight:600,cursor:"pointer"}} onClick={e=>{e.stopPropagation();setShowSubInput(true)}}>+ サブタスク</button>}
 </div>
