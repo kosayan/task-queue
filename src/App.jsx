@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from “react”;
-const VER = “3.5.0”;
+const VER = “3.5.1”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
@@ -117,7 +117,8 @@ useEffect(()=>{sv(TPK,todayPicks)},[todayPicks]);
 useEffect(()=>{sv(BNK,bannerCount)},[bannerCount]);
 useEffect(()=>{
 const d=new Date();if(d.getHours()<dayReset)d.setDate(d.getDate()-1);
-const today=d.toISOString().slice(0,10);const lastDay=ld(TDK,””);
+const today=d.getFullYear()+”-”+String(d.getMonth()+1).padStart(2,“0”)+”-”+String(d.getDate()).padStart(2,“0”);
+const lastDay=ld(TDK,””);
 if(lastDay!==today){setTodayPicks([]);sv(TDK,today);
 const activeCount=tasks.filter(t=>!t.done&&t.type!==“wish”).length;
 if(activeCount>=3)setTimeout(()=>setShowPicker(true),400)}
@@ -161,11 +162,9 @@ const id=Date.now().toString(36)+Math.random().toString(36).slice(2,5);
 const pts=Array.from({length:count},(_,i)=>{
 const a=Math.random()*Math.PI*2;
 const d=140+Math.random()*(imp===3?300:imp===2?220:160);
-const sh=Math.random();
-return{id:id+”-”+i,kind:“p”,tx:Math.cos(a)*d,ty:Math.sin(a)*d-50,gy:200+Math.random()*220,c:COL[Math.floor(Math.random()*COL.length)],r:Math.random()*720-360,shape:sh<0.4?“strip”:sh<0.7?“sq”:“ci”,sz:7+Math.random()*7,dur:(1.3+Math.random()*0.7).toFixed(2)}
+return{id:id+”-”+i,kind:“p”,tx:Math.cos(a)*d,ty:Math.sin(a)*d-50,gy:200+Math.random()*220,c:COL[Math.floor(Math.random()*COL.length)],r:Math.random()*720-360,shape:Math.random()<0.5?“sq”:“ci”,sz:8+Math.random()*6,dur:(1.3+Math.random()*0.7).toFixed(2)}
 });
 pts.push({id:id+”-ring”,kind:“ring”,c:imp===3?”#ff3b30”:imp===2?”#ff9500”:”#4ade80”});
-pts.push({id:id+”-flash”,kind:“flash”,c:imp===3?”#ff3b30”:imp===2?”#fbbf24”:”#4ade80”});
 setParticles(p=>[…p,…pts]);
 if(typeof navigator!==“undefined”&&navigator.vibrate)try{navigator.vibrate(imp===3?[12,25,22,25,40]:imp===2?[18,20,35]:28)}catch{}
 setTimeout(()=>setParticles(p=>p.filter(x=>!x.id.startsWith(id+”-”))),2300);
@@ -282,7 +281,7 @@ const bannerTs=e=>{topSwipeStart.current=e.touches[0].clientX};
 const bannerTm=e=>{const dx=e.touches[0].clientX-topSwipeStart.current;setTopSwipeOff(dx)};
 const bannerTe=()=>{if(topSwipeOff>50&&topIdx>0)setTopIdx(topIdx-1);else if(topSwipeOff<-50&&topIdx<topTasks.length-1)setTopIdx(topIdx+1);setTopSwipeOff(0)};
 
-const gcss=”@import url(‘https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap’);*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html,body,#root{min-height:100vh}input,select,button,textarea{font-family:‘Noto Sans JP’,sans-serif}@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}@keyframes slideDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}@keyframes partBurst{0%{transform:translate(0,0) rotate(0deg) scale(.3);opacity:0}8%{opacity:1;transform:translate(calc(var(–tx)*.3),calc(var(–ty)*.3)) rotate(calc(var(–tr)*.2)) scale(1.1)}40%{transform:translate(var(–tx),var(–ty)) rotate(calc(var(–tr)*.7)) scale(1);opacity:1}75%{opacity:1}100%{transform:translate(var(–tx),calc(var(–ty) + var(–gy))) rotate(var(–tr)) scale(.5);opacity:0}}@keyframes shockRing{0%{transform:translate(-50%,-50%) scale(0);opacity:.9;border-width:4px}40%{opacity:.7}100%{transform:translate(-50%,-50%) scale(22);opacity:0;border-width:0}}@keyframes flashPop{0%{transform:translate(-50%,-50%) scale(0);opacity:0}20%{transform:translate(-50%,-50%) scale(1.2);opacity:.65}100%{transform:translate(-50%,-50%) scale(2.4);opacity:0}}@keyframes titleScroll{0%,12%{transform:translateX(0)}88%,100%{transform:translateX(var(–d))}}.task-card{animation:fadeIn .3s ease both}.overdue-pulse{animation:pulse 1.5s ease infinite}.form-slide{animation:slideUp .3s ease both}.p-burst{position:absolute;left:0;top:0;animation:partBurst var(–dur) cubic-bezier(.15,.7,.4,1) forwards;will-change:transform,opacity}.p-ring{position:absolute;left:0;top:0;border:4px solid;border-radius:50%;width:40px;height:40px;animation:shockRing 1.1s cubic-bezier(.2,.6,.4,1) forwards;will-change:transform,opacity}.p-flash{position:absolute;left:0;top:0;width:100px;height:100px;border-radius:50%;animation:flashPop .75s cubic-bezier(.2,.8,.4,1) forwards;filter:blur(16px);will-change:transform,opacity}”;
+const gcss=”@import url(‘https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap’);*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html,body,#root{min-height:100vh}input,select,button,textarea{font-family:‘Noto Sans JP’,sans-serif}@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}@keyframes slideDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}@keyframes partBurst{0%{transform:translate(0,0) rotate(0deg) scale(.3);opacity:0}8%{opacity:1;transform:translate(calc(var(–tx)*.3),calc(var(–ty)*.3)) rotate(calc(var(–tr)*.2)) scale(1.1)}40%{transform:translate(var(–tx),var(–ty)) rotate(calc(var(–tr)*.7)) scale(1);opacity:1}75%{opacity:1}100%{transform:translate(var(–tx),calc(var(–ty) + var(–gy))) rotate(var(–tr)) scale(.5);opacity:0}}@keyframes shockRing{0%{transform:translate(-50%,-50%) scale(0);opacity:.9;border-width:4px}40%{opacity:.7}100%{transform:translate(-50%,-50%) scale(22);opacity:0;border-width:0}}@keyframes titleScroll{0%,12%{transform:translateX(0)}88%,100%{transform:translateX(var(–d))}}.task-card{animation:fadeIn .3s ease both}.overdue-pulse{animation:pulse 1.5s ease infinite}.form-slide{animation:slideUp .3s ease both}.p-burst{position:absolute;left:0;top:0;animation:partBurst var(–dur) cubic-bezier(.15,.7,.4,1) forwards;will-change:transform,opacity}.p-ring{position:absolute;left:0;top:0;border:4px solid;border-radius:50%;width:40px;height:40px;animation:shockRing 1.1s cubic-bezier(.2,.6,.4,1) forwards;will-change:transform,opacity}”;
 
 const isTask=mode===“task”,isWish=mode===“wish”,isHabit=mode===“habit”;
 const habitsSorted=useMemo(()=>{const done=habits.filter(h=>h.doneToday);const un=habits.filter(h=>!h.doneToday);return[…un,…done]},[habits]);
@@ -473,10 +472,9 @@ return(<div style={{minHeight:“100vh”,background:T.bg,color:T.text,fontFamil
 
 <div style={{position:"absolute",left:"50%",top:"45%"}}>
 {particles.map(p=>{
-if(p.kind==="flash")return<span key={p.id} className="p-flash" style={{background:"radial-gradient(circle,"+p.c+" 0%,"+p.c+"88 40%,transparent 75%)"}}/>;
 if(p.kind==="ring")return<span key={p.id} className="p-ring" style={{borderColor:p.c,boxShadow:"0 0 20px "+p.c+",inset 0 0 12px "+p.c+"88"}}/>;
-const w=p.shape==="strip"?4:p.sz;const h=p.shape==="strip"?p.sz+4:p.sz;const br=p.shape==="ci"?"50%":p.shape==="strip"?1:2;
-return<span key={p.id} className="p-burst" style={{["--tx"]:p.tx+"px",["--ty"]:p.ty+"px",["--tr"]:p.r+"deg",["--gy"]:p.gy+"px",["--dur"]:p.dur+"s",width:w,height:h,background:p.c,borderRadius:br,boxShadow:"0 0 8px "+p.c+",0 0 3px #fff8"}}/>;
+const br=p.shape==="ci"?"50%":"2px";
+return<span key={p.id} className="p-burst" style={{["--tx"]:p.tx+"px",["--ty"]:p.ty+"px",["--tr"]:p.r+"deg",["--gy"]:p.gy+"px",["--dur"]:p.dur+"s",width:p.sz,height:p.sz,background:p.c,borderRadius:br,boxShadow:"0 0 6px "+p.c}}/>;
 })}
 </div></div>}
 
