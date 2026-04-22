@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from “react”;
-const VER = “3.5.1”;
+const VER = “3.5.2”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
@@ -57,6 +57,32 @@ function ld(k,d){try{const r=localStorage.getItem(k);return r?JSON.parse(r):d}ca
 function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
 const Refresh=()=>(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:16,height:16}}><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>);
 const Grip=()=>(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:14,height:14}}><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="4" y1="14" x2="20" y2="14"/><line x1="4" y1="18" x2="20" y2="18"/></svg>);
+
+function Particle({p}){
+const ref=useRef(null);
+useEffect(()=>{
+if(!ref.current)return;
+if(p.kind===“ring”){
+ref.current.animate([
+{transform:“translate(-50%,-50%) scale(0)”,opacity:0.9,borderWidth:“4px”},
+{transform:“translate(-50%,-50%) scale(9)”,opacity:0.7,offset:0.4},
+{transform:“translate(-50%,-50%) scale(22)”,opacity:0,borderWidth:“0px”}
+],{duration:1100,easing:“cubic-bezier(.2,.6,.4,1)”,fill:“forwards”});
+return;
+}
+const tx=p.tx,ty=p.ty,gy=p.gy,r=p.r;
+ref.current.animate([
+{transform:“translate(0,0) rotate(0deg) scale(.3)”,opacity:0},
+{transform:“translate(”+(tx*.3)+“px,”+(ty*.3)+“px) rotate(”+(r*.2)+“deg) scale(1.1)”,opacity:1,offset:0.08},
+{transform:“translate(”+tx+“px,”+ty+“px) rotate(”+(r*.7)+“deg) scale(1)”,opacity:1,offset:0.4},
+{transform:“translate(”+tx+“px,”+ty+“px) rotate(”+(r*.85)+“deg) scale(1)”,opacity:1,offset:0.75},
+{transform:“translate(”+tx+“px,”+(ty+gy)+“px) rotate(”+r+“deg) scale(.5)”,opacity:0}
+],{duration:parseFloat(p.dur)*1000,easing:“cubic-bezier(.15,.7,.4,1)”,fill:“forwards”});
+// eslint-disable-next-line
+},[]);
+if(p.kind===“ring”)return<span ref={ref} style={{position:“absolute”,left:0,top:0,border:“4px solid “+p.c,borderRadius:“50%”,width:40,height:40,boxShadow:“0 0 20px “+p.c+”,inset 0 0 12px “+p.c+“88”,willChange:“transform,opacity”}}/>;
+return<span ref={ref} style={{position:“absolute”,left:0,top:0,width:p.sz,height:p.sz,background:p.c,borderRadius:p.shape===“ci”?“50%”:“2px”,boxShadow:“0 0 6px “+p.c,willChange:“transform,opacity”}}/>;
+}
 
 function ScrollTitle({text,style,paused}){
 const wrapRef=useRef(null);const innerRef=useRef(null);
@@ -281,7 +307,7 @@ const bannerTs=e=>{topSwipeStart.current=e.touches[0].clientX};
 const bannerTm=e=>{const dx=e.touches[0].clientX-topSwipeStart.current;setTopSwipeOff(dx)};
 const bannerTe=()=>{if(topSwipeOff>50&&topIdx>0)setTopIdx(topIdx-1);else if(topSwipeOff<-50&&topIdx<topTasks.length-1)setTopIdx(topIdx+1);setTopSwipeOff(0)};
 
-const gcss=”@import url(‘https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap’);*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html,body,#root{min-height:100vh}input,select,button,textarea{font-family:‘Noto Sans JP’,sans-serif}@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}@keyframes slideDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}@keyframes partBurst{0%{transform:translate(0,0) rotate(0deg) scale(.3);opacity:0}8%{opacity:1;transform:translate(calc(var(–tx)*.3),calc(var(–ty)*.3)) rotate(calc(var(–tr)*.2)) scale(1.1)}40%{transform:translate(var(–tx),var(–ty)) rotate(calc(var(–tr)*.7)) scale(1);opacity:1}75%{opacity:1}100%{transform:translate(var(–tx),calc(var(–ty) + var(–gy))) rotate(var(–tr)) scale(.5);opacity:0}}@keyframes shockRing{0%{transform:translate(-50%,-50%) scale(0);opacity:.9;border-width:4px}40%{opacity:.7}100%{transform:translate(-50%,-50%) scale(22);opacity:0;border-width:0}}@keyframes titleScroll{0%,12%{transform:translateX(0)}88%,100%{transform:translateX(var(–d))}}.task-card{animation:fadeIn .3s ease both}.overdue-pulse{animation:pulse 1.5s ease infinite}.form-slide{animation:slideUp .3s ease both}.p-burst{position:absolute;left:0;top:0;animation:partBurst var(–dur) cubic-bezier(.15,.7,.4,1) forwards;will-change:transform,opacity}.p-ring{position:absolute;left:0;top:0;border:4px solid;border-radius:50%;width:40px;height:40px;animation:shockRing 1.1s cubic-bezier(.2,.6,.4,1) forwards;will-change:transform,opacity}”;
+const gcss=”@import url(‘https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap’);*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html,body,#root{min-height:100vh}input,select,button,textarea{font-family:‘Noto Sans JP’,sans-serif}@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}@keyframes slideDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}@keyframes titleScroll{0%,12%{transform:translateX(0)}88%,100%{transform:translateX(var(–d))}}.task-card{animation:fadeIn .3s ease both}.overdue-pulse{animation:pulse 1.5s ease infinite}.form-slide{animation:slideUp .3s ease both}”;
 
 const isTask=mode===“task”,isWish=mode===“wish”,isHabit=mode===“habit”;
 const habitsSorted=useMemo(()=>{const done=habits.filter(h=>h.doneToday);const un=habits.filter(h=>!h.doneToday);return[…un,…done]},[habits]);
@@ -471,11 +497,7 @@ return(<div style={{minHeight:“100vh”,background:T.bg,color:T.text,fontFamil
 {particles.length>0&&<div style={{position:“fixed”,inset:0,pointerEvents:“none”,zIndex:300,overflow:“hidden”}}>
 
 <div style={{position:"absolute",left:"50%",top:"45%"}}>
-{particles.map(p=>{
-if(p.kind==="ring")return<span key={p.id} className="p-ring" style={{borderColor:p.c,boxShadow:"0 0 20px "+p.c+",inset 0 0 12px "+p.c+"88"}}/>;
-const br=p.shape==="ci"?"50%":"2px";
-return<span key={p.id} className="p-burst" style={{["--tx"]:p.tx+"px",["--ty"]:p.ty+"px",["--tr"]:p.r+"deg",["--gy"]:p.gy+"px",["--dur"]:p.dur+"s",width:p.sz,height:p.sz,background:p.c,borderRadius:br,boxShadow:"0 0 6px "+p.c}}/>;
-})}
+{particles.map(p=><Particle key={p.id} p={p}/>)}
 </div></div>}
 
 {/* Backup nudge (C4) */}
