@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from “react”;
-const VER = “3.5.2”;
+const VER = “3.6.1”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
@@ -41,7 +41,7 @@ function band(t){if(t.done)return 5;if(t.type===“wish”)return 6;const s=scor
 function sLabel(s){return s>=1000?{t:“OVERDUE”,c:”#ff3b30”}:s>=80?{t:“NOW”,c:”#ff3b30”}:s>=60?{t:“SOON”,c:”#ff9500”}:s>=40?{t:“NEXT”,c:”#ffcc00”}:{t:“LATER”,c:”#8e8e93”}}
 function fmtDl(d){if(!d)return”期限なし”;const df=new Date(d)-new Date(),m=Math.round(df/6e4);if(m<0)return”overdue”;if(m<60)return m+“m”;const h=Math.floor(m/60),mm=m%60;if(h<24)return mm>0?h+“h “+mm+“m”:h+“h”;const dd=Math.floor(h/24),hh=h%24;if(dd<7)return hh>0?dd+“d “+hh+“h”:dd+“d”;const dl=new Date(d);return(dl.getMonth()+1)+”/”+dl.getDate()}
 function defDl(){const d=new Date();d.setDate(d.getDate()+1);d.setHours(18,0,0,0);return d.toISOString().slice(0,16)}
-function advRec(dl,r){if(!dl||r===“none”||!r)return dl;const d=new Date(dl);if(r===“daily”)d.setDate(d.getDate()+1);else if(r===“weekly”)d.setDate(d.getDate()+7);else if(r===“monthly”)d.setMonth(d.getMonth()+1);return d.toISOString().slice(0,16)}
+function advRec(dl,r){if(!dl||r===“none”||!r)return dl;const d=new Date(dl);const now=new Date();let guard=0;do{if(r===“daily”)d.setDate(d.getDate()+1);else if(r===“weekly”)d.setDate(d.getDate()+7);else if(r===“monthly”)d.setMonth(d.getMonth()+1);else break;guard++}while(d<=now&&guard<400);return d.toISOString().slice(0,16)}
 function sortProm(task,so){
 if(so===“smart”)return tierN(task.importance,task.weight);
 if(so===“light”){const w=task.weight>=3?3:task.weight>=2?2:task.weight>=1?1:0;return[1,2,4,7][w]||5}
@@ -54,7 +54,8 @@ return 5;
 const SK=“task-queue-v1”,SOK=“task-queue-sort”,DK=“task-queue-defaults”,THK=“task-queue-theme”,TRK=“task-queue-trash”,HRK=“task-queue-habits”,DRK=“task-queue-dayreset”,LEK=“task-queue-locemojis”,LXK=“task-queue-lastexport”,TPK=“task-queue-todaypicks”,TDK=“task-queue-todaypickday”,BNK=“task-queue-bannercount”;
 const DD={importance:2,weight:2,hasDeadline:true,recurrence:“none”,location:””};
 function ld(k,d){try{const r=localStorage.getItem(k);return r?JSON.parse(r):d}catch{return d}}
-function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
+let _quotaWarned=false;
+function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){if(!_quotaWarned&&(e.name===“QuotaExceededError”||e.code===22||e.code===1014)){_quotaWarned=true;try{window.dispatchEvent(new CustomEvent(“tq-quota-exceeded”))}catch{}}}}
 const Refresh=()=>(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:16,height:16}}><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>);
 const Grip=()=>(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:14,height:14}}><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="4" y1="14" x2="20" y2="14"/><line x1="4" y1="18" x2="20" y2="18"/></svg>);
 
@@ -84,7 +85,7 @@ if(p.kind===“ring”)return<span ref={ref} style={{position:“absolute”,lef
 return<span ref={ref} style={{position:“absolute”,left:0,top:0,width:p.sz,height:p.sz,background:p.c,borderRadius:p.shape===“ci”?“50%”:“2px”,boxShadow:“0 0 6px “+p.c,willChange:“transform,opacity”}}/>;
 }
 
-function ScrollTitle({text,style,paused}){
+function ScrollTitle({text,style}){
 const wrapRef=useRef(null);const innerRef=useRef(null);
 const[overflow,setOverflow]=useState(false);const[dist,setDist]=useState(0);
 useEffect(()=>{
@@ -94,7 +95,7 @@ if(iW>wW+2){setOverflow(true);setDist(iW-wW+24)}else{setOverflow(false);setDist(
 },[text]);
 if(!overflow)return<div ref={wrapRef} style={{…style,whiteSpace:“nowrap”,overflow:“hidden”,textOverflow:“ellipsis”}}><span ref={innerRef}>{text}</span></div>;
 const dur=Math.max(6,Math.min(18,dist/28));
-return(<div ref={wrapRef} style={{…style,whiteSpace:“nowrap”,overflow:“hidden”,maskImage:“linear-gradient(90deg,transparent 0,#000 12px,#000 calc(100% - 12px),transparent 100%)”,WebkitMaskImage:“linear-gradient(90deg,transparent 0,#000 12px,#000 calc(100% - 12px),transparent 100%)”}}><span ref={innerRef} style={{display:“inline-block”,animation:paused?“none”:“titleScroll “+dur+“s linear infinite”,paddingRight:24,[”–d”]:”-”+dist+“px”}}>{text}</span></div>);
+return(<div ref={wrapRef} style={{…style,whiteSpace:“nowrap”,overflow:“hidden”,maskImage:“linear-gradient(90deg,transparent 0,#000 12px,#000 calc(100% - 12px),transparent 100%)”,WebkitMaskImage:“linear-gradient(90deg,transparent 0,#000 12px,#000 calc(100% - 12px),transparent 100%)”}}><span ref={innerRef} style={{display:“inline-block”,animation:“titleScroll “+dur+“s linear infinite”,paddingRight:24,[”–d”]:”-”+dist+“px”}}>{text}</span></div>);
 }
 
 export default function App(){
@@ -130,11 +131,17 @@ const[showBackupNudge,setShowBackupNudge]=useState(false);
 const[todayPicks,setTodayPicks]=useState(()=>ld(TPK,[]));
 const[showPicker,setShowPicker]=useState(false);
 const[bannerCount,setBannerCount]=useState(()=>ld(BNK,5));
+const[showQuotaWarn,setShowQuotaWarn]=useState(false);
+const[tick,setTick]=useState(0);
+const[quickInput,setQuickInput]=useState(””);
+const[quickIcon,setQuickIcon]=useState(””);
 const ur=useRef(null);const fr=useRef(null);const formRef=useRef(null);
 const topSwipeStart=useRef(0);const dragStartY=useRef(0);const dragType=useRef(null);
 const sortDDRef=useRef(null);
 const T=isDark?TH.dark:TH.light;
 
+useEffect(()=>{const h=()=>setShowQuotaWarn(true);window.addEventListener(“tq-quota-exceeded”,h);return()=>window.removeEventListener(“tq-quota-exceeded”,h)},[]);
+useEffect(()=>{const iv=setInterval(()=>setTick(t=>t+1),60000);const vis=()=>{if(document.visibilityState===“visible”)setTick(t=>t+1)};document.addEventListener(“visibilitychange”,vis);return()=>{clearInterval(iv);document.removeEventListener(“visibilitychange”,vis)}},[]);
 useEffect(()=>{sv(SK,tasks)},[tasks]);
 useEffect(()=>{sv(HRK,habits)},[habits]);
 useEffect(()=>{sv(TRK,trash)},[trash]);
@@ -151,7 +158,9 @@ if(activeCount>=3)setTimeout(()=>setShowPicker(true),400)}
 // eslint-disable-next-line
 },[dayReset]);
 useEffect(()=>{
-const last=ld(LXK,0);const days=(Date.now()-last)/(24*36e5);
+const last=ld(LXK,0);
+if(last===0){sv(LXK,Date.now());return}
+const days=(Date.now()-last)/(24*36e5);
 if(tasks.length>=5&&days>=7)setTimeout(()=>setShowBackupNudge(true),800);
 // eslint-disable-next-line
 },[]);
@@ -160,6 +169,9 @@ useEffect(()=>{sv(DK,defaults)},[defaults]);
 useEffect(()=>{localStorage.setItem(THK,isDark?“dark”:“light”);document.body.style.background=T.bg},[isDark,T.bg]);
 useEffect(()=>{sv(DRK,dayReset)},[dayReset]);
 useEffect(()=>{const now=Date.now();setTrash(p=>p.filter(t=>(now-t.deletedAt)<30*24*36e5))},[]);
+useEffect(()=>{const now=Date.now();const cutoff=30*24*36e5;const old=tasks.filter(t=>t.done&&t.completedAt&&(now-t.completedAt)>cutoff);if(old.length>0){setTrash(p=>[…p,…old.map(t=>({…t,deletedAt:now}))]);setTasks(p=>p.filter(t=>!old.find(o=>o.id===t.id)))}
+// eslint-disable-next-line
+},[]);
 useEffect(()=>{const now=new Date();const lr=ld(“task-queue-lastreset”,0);const rt=new Date();rt.setHours(dayReset,0,0,0);if(now>rt&&lr<rt.getTime()){setHabits(p=>p.map(h=>({…h,doneToday:false})));sv(“task-queue-lastreset”,Date.now())}},[dayReset]);
 useEffect(()=>{if(showForm&&formRef.current)formRef.current.scrollIntoView({behavior:“smooth”,block:“center”})},[showForm]);
 useEffect(()=>{if(!showSortDD)return;const h=e=>{if(sortDDRef.current&&!sortDDRef.current.contains(e.target))setShowSortDD(false)};document.addEventListener(“mousedown”,h);document.addEventListener(“touchstart”,h);return()=>{document.removeEventListener(“mousedown”,h);document.removeEventListener(“touchstart”,h)}},[showSortDD]);
@@ -180,50 +192,78 @@ else{setTasks(p=>[…p,{id:Date.now().toString(36)+Math.random().toString(36).sl
 resetForm()
 },[title,importance,weight,deadline,hasDeadline,memo,location,recurrence,icon,editId,resetForm,mode,locEmojis]);
 
+const quickAdd=useCallback(()=>{
+if(!quickInput.trim())return;
+const typ=mode===“wish”?“wish”:“task”;
+const loc=(defaults.location||””).trim();
+const finalIcon=quickIcon.trim()||(locEmojis[loc]||””);
+setTasks(p=>[…p,{id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),title:quickInput.trim(),importance:typ===“wish”?1:defaults.importance,weight:typ===“wish”?1:defaults.weight,deadline:null,memo:””,location:loc,recurrence:“none”,icon:finalIcon,done:false,createdAt:Date.now(),type:typ}]);
+setQuickInput(””);setQuickIcon(””)
+},[quickInput,quickIcon,mode,defaults,locEmojis]);
+
 const showUndo=useCallback((ts,a)=>{if(ur.current)clearTimeout(ur.current);setUndoData({tasks:ts,action:a});ur.current=setTimeout(()=>setUndoData(null),5000)},[]);
+
+const *vibrateRef=useRef(0);
 const fireParticles=useCallback(imp=>{
 const count=imp===3?80:imp===2?50:30;
 const COL=[”#ff3b30”,”#ff9500”,”#ffcc00”,”#4ade80”,”#22c55e”,”#06b6d4”,”#0ea5e9”,”#a855f7”,”#c084fc”,”#f97316”,”#ec4899”,”#fbbf24”];
 const id=Date.now().toString(36)+Math.random().toString(36).slice(2,5);
-const pts=Array.from({length:count},(_,i)=>{
+const pts=Array.from({length:count},(*,i)=>{
 const a=Math.random()*Math.PI*2;
 const d=140+Math.random()*(imp===3?300:imp===2?220:160);
 return{id:id+”-”+i,kind:“p”,tx:Math.cos(a)*d,ty:Math.sin(a)*d-50,gy:200+Math.random()*220,c:COL[Math.floor(Math.random()*COL.length)],r:Math.random()*720-360,shape:Math.random()<0.5?“sq”:“ci”,sz:8+Math.random()*6,dur:(1.3+Math.random()*0.7).toFixed(2)}
 });
 pts.push({id:id+”-ring”,kind:“ring”,c:imp===3?”#ff3b30”:imp===2?”#ff9500”:”#4ade80”});
 setParticles(p=>[…p,…pts]);
-if(typeof navigator!==“undefined”&&navigator.vibrate)try{navigator.vibrate(imp===3?[12,25,22,25,40]:imp===2?[18,20,35]:28)}catch{}
+const now=Date.now();
+if(typeof navigator!==“undefined”&&navigator.vibrate&&(now-_vibrateRef.current)>300){_vibrateRef.current=now;try{navigator.vibrate(imp===3?[12,25,22,25,40]:imp===2?[18,20,35]:28)}catch{}}
 setTimeout(()=>setParticles(p=>p.filter(x=>!x.id.startsWith(id+”-”))),2300);
 },[]);
-const togDone=useCallback(id=>{setTasks(prev=>{const t=prev.find(x=>x.id===id);if(!t)return prev;if(!t.done)fireParticles(t.importance||2);if(!t.done&&t.recurrence&&t.recurrence!==“none”&&t.deadline){const nt={…t,id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),deadline:advRec(t.deadline,t.recurrence),done:false,createdAt:Date.now()};return prev.map(x=>x.id===id?{…x,done:true}:x).concat(nt)}return prev.map(x=>x.id===id?{…x,done:!x.done}:x)})},[fireParticles]);
+const togDone=useCallback(id=>{setTasks(prev=>{const t=prev.find(x=>x.id===id);if(!t)return prev;if(!t.done)fireParticles(t.importance||2);if(!t.done&&t.recurrence&&t.recurrence!==“none”&&t.deadline){const nt={…t,id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),deadline:advRec(t.deadline,t.recurrence),done:false,createdAt:Date.now(),completedAt:null};return prev.map(x=>x.id===id?{…x,done:true,completedAt:Date.now()}:x).concat(nt)}return prev.map(x=>x.id===id?{…x,done:!x.done,completedAt:!x.done?Date.now():null}:x)})},[fireParticles]);
 const delTask=useCallback(id=>{const t=tasks.find(x=>x.id===id);if(!t)return;setTrash(p=>[…p,{…t,deletedAt:Date.now()}]);showUndo([t],“delete”);setTasks(p=>p.filter(x=>x.id!==id));if(expandedId===id)setExpandedId(null)},[tasks,expandedId,showUndo]);
-const restoreTask=useCallback(id=>{const t=trash.find(x=>x.id===id);if(!t)return;const{deletedAt,…task}=t;setTasks(p=>[…p,task]);setTrash(p=>p.filter(x=>x.id!==id))},[trash]);
+const restoreTask=useCallback(id=>{const t=trash.find(x=>x.id===id);if(!t)return;const{deletedAt,…task}=t;setTasks(p=>[…p,{…task,done:false,completedAt:null}]);setTrash(p=>p.filter(x=>x.id!==id))},[trash]);
 const undo=useCallback(()=>{if(!undoData)return;if(undoData.action===“delete”){setTasks(p=>[…p,…undoData.tasks]);setTrash(p=>p.filter(t=>!undoData.tasks.find(u=>u.id===t.id)))}setUndoData(null);if(ur.current)clearTimeout(ur.current)},[undoData]);
 const startEdit=useCallback(t=>{setTitle(t.title);setImportance(t.importance);setWeight(t.weight);setDeadline(t.deadline||defDl());setHasDeadline(!!t.deadline);setMemo(t.memo||””);setLocation(t.location||””);setRecurrence(t.recurrence||“none”);setIcon(t.icon||””);setIconTouched(!!t.icon);setEditId(t.id);setShowForm(true);setExpandedId(null)},[]);
 const doExport=useCallback(()=>{
-const payload={version:VER,exportedAt:new Date().toISOString(),tasks,habits,locEmojis};
+const settings={sortOrder,defaults,dayReset,isDark,bannerCount};
+const payload={version:VER,exportedAt:new Date().toISOString(),tasks,habits,trash,locEmojis,settings,todayPicks};
 const b=new Blob([JSON.stringify(payload,null,2)],{type:“application/json”});
 const u=URL.createObjectURL(b);const a=document.createElement(“a”);a.href=u;a.download=“task-queue-”+new Date().toISOString().slice(0,10)+”.json”;a.click();URL.revokeObjectURL(u);sv(LXK,Date.now())
-},[tasks,habits,locEmojis]);
+},[tasks,habits,trash,locEmojis,sortOrder,defaults,dayReset,isDark,bannerCount,todayPicks]);
 const doImportClick=useCallback(()=>fr.current?.click(),[]);
+const validateTask=t=>t&&typeof t.id===“string”&&typeof t.title===“string”&&t.title.trim();
 const doImport=useCallback(e=>{const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{
 const imp=JSON.parse(ev.target.result);
-// Normalize: legacy (array) = tasks only, new (object) = full payload
-const impTasks=Array.isArray(imp)?imp:(imp.tasks||[]);
-const impHabits=Array.isArray(imp)?null:(imp.habits||null);
-const impLocE=Array.isArray(imp)?null:(imp.locEmojis||null);
-if(!Array.isArray(impTasks))throw 0;
-const msg=impHabits?“OK=上書き（タスク・日課・場所すべて） / キャンセル=追加マージ”:“OK=上書き / キャンセル=追加”;
+const impTasks=(Array.isArray(imp)?imp:(imp.tasks||[])).filter(validateTask);
+const impHabits=Array.isArray(imp)?null:(Array.isArray(imp.habits)?imp.habits.filter(h=>h&&h.id&&h.title):null);
+const impTrash=Array.isArray(imp)?null:(Array.isArray(imp.trash)?imp.trash.filter(validateTask):null);
+const impLocE=Array.isArray(imp)?null:(imp.locEmojis&&typeof imp.locEmojis===“object”?imp.locEmojis:null);
+const impSettings=Array.isArray(imp)?null:(imp.settings&&typeof imp.settings===“object”?imp.settings:null);
+const impPicks=Array.isArray(imp)?null:(Array.isArray(imp.todayPicks)?imp.todayPicks:null);
+if(impTasks.length===0&&!impHabits){alert(“有効なデータが見つかりません”);return}
+const hasFullBackup=!!(impHabits||impSettings||impLocE);
+const msg=hasFullBackup?“OK=完全上書き（すべて置換）\nキャンセル=追加マージ（重複ID除く）”:“OK=タスク上書き\nキャンセル=タスク追加”;
 if(confirm(msg)){
 setTasks(impTasks);
 if(impHabits)setHabits(impHabits);
+if(impTrash)setTrash(impTrash);
 if(impLocE)setLocEmojis(impLocE);
+if(impSettings){
+if(typeof impSettings.sortOrder===“string”)setSortOrder(impSettings.sortOrder);
+if(impSettings.defaults)setDefaults(impSettings.defaults);
+if(typeof impSettings.dayReset===“number”)setDayReset(impSettings.dayReset);
+if(typeof impSettings.isDark===“boolean”)setIsDark(impSettings.isDark);
+if(typeof impSettings.bannerCount===“number”)setBannerCount(impSettings.bannerCount);
+}
+if(impPicks)setTodayPicks(impPicks);
+alert(“インポート完了: タスク”+impTasks.length+“件”+(impHabits?”、日課”+impHabits.length+“件”:””))
 }else{
-const ids=new Set(tasks.map(t=>t.id));setTasks(p=>[…p,…impTasks.filter(t=>!ids.has(t.id))]);
+const ids=new Set(tasks.map(t=>t.id));const added=impTasks.filter(t=>!ids.has(t.id));setTasks(p=>[…p,…added]);
 if(impHabits){const hids=new Set(habits.map(h=>h.id));setHabits(p=>[…p,…impHabits.filter(h=>!hids.has(h.id))])}
 if(impLocE)setLocEmojis(p=>({…impLocE,…p}));
+alert(“マージ完了: タスク”+added.length+“件追加”)
 }
-}catch{alert(“インポート失敗”)}};r.readAsText(f);e.target.value=””},[tasks,habits]);
+}catch(err){alert(“インポート失敗: “+err.message)}};r.readAsText(f);e.target.value=””},[tasks,habits]);
 
 // Drag handlers
 const dragStart=useCallback((id,type,clientY)=>{setDraggingId(id);dragType.current=type;dragStartY.current=clientY},[]);
@@ -272,19 +312,19 @@ else if(sortOrder===“created”)r.sort((a,b)=>b.createdAt-a.createdAt);
 }
 // wish mode with deadline: emphasize near-deadline
 if(mode===“wish”&&sortOrder===“deadline”){r.sort((a,b)=>{if(!a.deadline&&!b.deadline)return 0;if(!a.deadline)return 1;if(!b.deadline)return-1;return new Date(a.deadline)-new Date(b.deadline)})}
-// TODAY picks pinned to top (task mode only, not in group mode)
+// TODAY picks pinned to top (task mode only, not in group mode, only if incomplete)
 if(mode===“task”&&todayPicks.length>0&&sortOrder!==“impGroup”&&sortOrder!==“weightGroup”){
-const picks=r.filter(t=>todayPicks.includes(t.id));const rest=r.filter(t=>!todayPicks.includes(t.id));
+const picks=r.filter(t=>todayPicks.includes(t.id)&&!t.done);const rest=r.filter(t=>!(todayPicks.includes(t.id)&&!t.done));
 r=[…picks,…rest];
 }
 return r
-},[tasks,filter,locFilter,searchQ,sortOrder,mode,todayPicks]);
+},[tasks,filter,locFilter,searchQ,sortOrder,mode,todayPicks,tick]);
 
 const topTasks=useMemo(()=>{
 const a=tasks.filter(t=>!t.done&&t.type!==“wish”).map(t=>({…t,sc:score(t),bd:band(t)}));
 a.sort((x,y)=>{if(x.bd!==y.bd)return x.bd-y.bd;if(x.weight!==y.weight)return x.weight-y.weight;return y.importance-x.importance});
 return a.slice(0,bannerCount)
-},[tasks,bannerCount]);
+},[tasks,bannerCount,tick]);
 useEffect(()=>{if(topIdx>=topTasks.length&&topTasks.length>0)setTopIdx(0)},[topTasks.length,topIdx]);
 
 const groups=useMemo(()=>{
@@ -314,17 +354,50 @@ const habitsSorted=useMemo(()=>{const done=habits.filter(h=>h.doneToday);const u
 const isGroupMode=(sortOrder===“impGroup”||sortOrder===“weightGroup”)&&isTask;
 const curTop=topTasks[topIdx];
 const wishList=useMemo(()=>tasks.filter(t=>t.type===“wish”&&!t.done),[tasks]);
+const stats=useMemo(()=>{
+const now=new Date();const todayStart=new Date(now);todayStart.setHours(0,0,0,0);
+const weekStart=new Date(todayStart);weekStart.setDate(weekStart.getDate()-6);
+let todayDone=0,weekDone=0;
+tasks.forEach(t=>{if(!t.completedAt)return;const c=new Date(t.completedAt);if(c>=todayStart)todayDone++;if(c>=weekStart)weekDone++});
+return{todayDone,weekDone}
+},[tasks,tick]);
+const overdueCount=useMemo(()=>tasks.filter(t=>!t.done&&t.type!==“wish”&&t.deadline&&new Date(t.deadline)<new Date()).length,[tasks,tick]);
+const rescheduleOverdue=useCallback(()=>{
+if(!confirm(“期限切れのタスクを全て明日18:00に延期しますか？”))return;
+const d=new Date();d.setDate(d.getDate()+1);d.setHours(18,0,0,0);const newDl=d.toISOString().slice(0,16);
+setTasks(p=>p.map(t=>(!t.done&&t.type!==“wish”&&t.deadline&&new Date(t.deadline)<new Date())?{…t,deadline:newDl}:t));
+},[]);
+const giveUpOverdue=useCallback(()=>{
+if(!confirm(“期限切れを全て諦めて削除しますか？（30日間ゴミ箱に保持）”))return;
+const now=Date.now();const overdue=tasks.filter(t=>!t.done&&t.type!==“wish”&&t.deadline&&new Date(t.deadline)<new Date());
+setTrash(p=>[…p,…overdue.map(t=>({…t,deletedAt:now}))]);
+setTasks(p=>p.filter(t=>!overdue.find(o=>o.id===t.id)));
+},[tasks]);
+const renameLocation=useCallback((oldName,newName)=>{
+const trimmed=(newName||””).trim();if(!trimmed||trimmed===oldName)return;
+const existing=new Set(tasks.map(t=>t.location).filter(Boolean));
+if(existing.has(trimmed)){if(!confirm(”「”+trimmed+”」は既に存在します。統合しますか？”))return}
+setTasks(p=>p.map(t=>t.location===oldName?{…t,location:trimmed}:t));
+setLocEmojis(p=>{const c={…p};if(c[oldName]&&!c[trimmed]){c[trimmed]=c[oldName]}delete c[oldName];return c});
+if(locFilter===oldName)setLocFilter(trimmed);
+},[locFilter,tasks]);
+const deleteLocation=useCallback(name=>{
+if(!confirm(“場所「”+name+”」を削除しますか？（タスクは残ります、場所情報のみクリア）”))return;
+setTasks(p=>p.map(t=>t.location===name?{…t,location:””}:t));
+setLocEmojis(p=>{const c={…p};delete c[name];return c});
+if(locFilter===name)setLocFilter(null);
+},[locFilter]);
 const spinRoulette=useCallback(()=>{if(wishList.length===0){setRouletteId(null);return}let next;do{next=wishList[Math.floor(Math.random()*wishList.length)].id}while(wishList.length>1&&next===rouletteId);setRouletteId(next)},[wishList,rouletteId]);
 const rouletteTask=useMemo(()=>wishList.find(w=>w.id===rouletteId),[wishList,rouletteId]);
 useEffect(()=>{if(rouletteId&&!wishList.find(w=>w.id===rouletteId))setRouletteId(null)},[wishList,rouletteId]);
 
-return(<div style={{minHeight:“100vh”,background:T.bg,color:T.text,fontFamily:”‘Noto Sans JP’,sans-serif”,padding:“calc(16px + env(safe-area-inset-top)) 14px calc(80px + env(safe-area-inset-bottom))”,maxWidth:600,margin:“0 auto”}}><style>{gcss+“html,body,#root{background:”+T.bg+”}”}</style>
+return(<div style={{minHeight:“100dvh”,background:T.bg,color:T.text,fontFamily:”‘Noto Sans JP’,sans-serif”,padding:“calc(16px + env(safe-area-inset-top)) 14px calc(80px + env(safe-area-inset-bottom))”,maxWidth:600,margin:“0 auto”}}><style>{gcss+“html,body,#root{background:”+T.bg+”}”}</style>
 
 {/* Header */}
 
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
   <div><h1 style={{fontFamily:"'JetBrains Mono',monospace",fontSize:20,fontWeight:800,letterSpacing:2,color:T.text,margin:0}}><span style={{color:"#ff3b30"}}>▌</span>TASK QUEUE</h1>
-  <p style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:T.mut,marginTop:3}}>{tasks.filter(t=>!t.done&&t.type!=="wish").length} active<span style={{opacity:.3,margin:"0 6px"}}>|</span>{tasks.filter(t=>t.done).length} done<span style={{opacity:.3,margin:"0 6px"}}>|</span>{tasks.filter(t=>!t.done&&t.type==="wish").length} wish<span style={{opacity:.3,margin:"0 6px"}}>|</span>{habits.length} daily</p></div>
+  <p style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:T.mut,marginTop:3}}>{tasks.filter(t=>!t.done&&t.type!=="wish").length}件<span style={{opacity:.3,margin:"0 6px"}}>|</span><span style={{color:stats.todayDone>0?"#4ade80":T.mut}}>今日 ✓{stats.todayDone}</span><span style={{opacity:.3,margin:"0 6px"}}>|</span>週{stats.weekDone}<span style={{opacity:.3,margin:"0 6px"}}>|</span>{tasks.filter(t=>!t.done&&t.type==="wish").length}やりたい</p></div>
   <div style={{display:"flex",gap:5}}>
     <button style={{width:36,height:36,borderRadius:8,border:"1px solid "+T.iBrd,background:T.iBg,color:T.iC,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} onClick={()=>window.location.reload()}><Refresh/></button>
     <button style={{width:36,height:36,borderRadius:8,border:"1px solid "+T.iBrd,background:T.iBg,color:T.iC,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} onClick={()=>setIsDark(v=>!v)}>{isDark?"☀️":"🌙"}</button>
@@ -337,6 +410,24 @@ return(<div style={{minHeight:“100vh”,background:T.bg,color:T.text,fontFamil
 <div style={{display:"flex",gap:4,marginBottom:8}}>
   {[{k:"task",l:"タスク"},{k:"wish",l:"やりたい"},{k:"habit",l:"日課"}].map(m=>(<button key={m.k} style={{flex:1,padding:"9px 0",borderRadius:10,fontSize:13,fontWeight:700,textAlign:"center",letterSpacing:1,border:mode===m.k?"none":"1px solid "+T.brd,background:mode===m.k?T.cOn:"transparent",color:mode===m.k?T.cOnT:T.fOffT,cursor:"pointer"}} onClick={()=>{setMode(m.k);setFilter("all");setShowForm(false);setExpandedId(null);setMemoExpId(null)}}>{m.l}</button>))}
 </div>
+
+{/* Quick capture (task/wish only, hidden when form open) */}
+{!isHabit&&!showForm&&<div style={{display:“flex”,gap:6,marginBottom:10}}>
+<input style={{width:40,padding:“8px 4px”,background:T.inp,border:“1px solid “+T.brd,borderRadius:8,color:T.text,fontSize:15,outline:“none”,textAlign:“center”,flexShrink:0}} placeholder=“📌” value={quickIcon} onChange={e=>setQuickIcon(e.target.value)} maxLength={2} aria-label=“アイコン”/>
+<input style={{flex:1,padding:“8px 10px”,background:T.inp,border:“1px solid “+T.brd,borderRadius:8,color:T.text,fontSize:13,outline:“none”,minWidth:0}} placeholder={isWish?“やりたいことを素早く追加…”:“タスクを素早く追加…”} value={quickInput} onChange={e=>setQuickInput(e.target.value)} onKeyDown={e=>{if(e.key===“Enter”&&!e.nativeEvent.isComposing)quickAdd()}} aria-label=“クイック入力”/>
+<button style={{width:40,height:36,borderRadius:8,border:“1px solid “+T.brd,background:quickInput.trim()?T.cOn:T.cOff,color:quickInput.trim()?T.cOnT:T.cOffT,fontSize:18,fontWeight:700,cursor:“pointer”,flexShrink:0}} onClick={quickAdd} aria-label=“追加”>+</button>
+
+</div>}
+
+{/* Overdue banner */}
+{isTask&&overdueCount>=3&&!showForm&&<div style={{marginBottom:10,background:“rgba(255,59,48,0.1)”,border:“1px solid rgba(255,59,48,0.4)”,borderRadius:12,padding:“10px 12px”}}>
+
+  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7,fontSize:11,fontWeight:700}}><span style={{color:"#ff3b30",fontFamily:"'JetBrains Mono',monospace"}}>⚠ 期限切れ {overdueCount}件</span></div>
+  <div style={{display:"flex",gap:6}}>
+    <button style={{flex:1,padding:"7px 10px",borderRadius:7,border:"1px solid rgba(255,149,0,0.5)",background:"rgba(255,149,0,0.12)",color:"#ff9500",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={rescheduleOverdue}>明日に延期</button>
+    <button style={{flex:1,padding:"7px 10px",borderRadius:7,border:"1px solid rgba(255,59,48,0.5)",background:"rgba(255,59,48,0.12)",color:"#ff3b30",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={giveUpOverdue}>諦めて削除</button>
+  </div>
+</div>}
 
 {/* Top banner - swipeable carousel */}
 {isTask&&curTop&&!showForm&&!searchQ&&locFilter===null&&(<div style={{marginBottom:12}}>
@@ -422,9 +513,9 @@ return(<div style={{minHeight:“100vh”,background:T.bg,color:T.text,fontFamil
         </div>
         <textarea style={{width:"100%",padding:"6px 8px",background:T.inp,border:"1px solid "+T.brd,borderRadius:5,color:T.text,fontSize:11,outline:"none",minHeight:40,resize:"vertical",fontFamily:"inherit"}} placeholder="メモ..." value={h.memo||""} onChange={e=>setHabits(p=>p.map(x=>x.id===h.id?{...x,memo:e.target.value}:x))}/>
       </div>:<div style={{display:"flex",alignItems:"center",gap:8}}>
-        <button style={{width:20,height:20,borderRadius:5,border:"2px solid "+(h.doneToday?"#4ade80":T.chk),background:h.doneToday?"#4ade80":"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,color:"#000",fontSize:10,fontWeight:700}} onClick={()=>setHabits(p=>p.map(x=>x.id===h.id?{...x,doneToday:!x.doneToday}:x))}>{h.doneToday&&"✓"}</button>
+        <button style={{width:20,height:20,borderRadius:5,border:"2px solid "+(h.doneToday?"#4ade80":T.chk),background:h.doneToday?"#4ade80":"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,color:"#000",fontSize:10,fontWeight:700}} onClick={()=>{const tdy=new Date();if(tdy.getHours()<dayReset)tdy.setDate(tdy.getDate()-1);const key=tdy.getFullYear()+"-"+String(tdy.getMonth()+1).padStart(2,"0")+"-"+String(tdy.getDate()).padStart(2,"0");const y=new Date(tdy);y.setDate(y.getDate()-1);const yKey=y.getFullYear()+"-"+String(y.getMonth()+1).padStart(2,"0")+"-"+String(y.getDate()).padStart(2,"0");setHabits(p=>p.map(x=>{if(x.id!==h.id)return x;const now=!x.doneToday;if(now){const prev=x.streak||0;const newStreak=x.lastDoneDate===yKey?prev+1:x.lastDoneDate===key?prev:1;fireParticles(1);return{...x,doneToday:true,lastDoneDate:key,streak:newStreak,bestStreak:Math.max(x.bestStreak||0,newStreak)}}return{...x,doneToday:false,lastDoneDate:x.lastDoneDate===key?yKey:x.lastDoneDate,streak:x.lastDoneDate===key?Math.max(0,(x.streak||1)-1):x.streak}}))}}>{h.doneToday&&"✓"}</button>
         <div style={{fontSize:18,flexShrink:0,width:24,textAlign:"center",cursor:"pointer"}} onClick={()=>setEditHabitId(h.id)}>{h.icon||"📌"}</div>
-        <div style={{flex:1,cursor:"pointer",minWidth:0}} onClick={()=>setEditHabitId(h.id)}><ScrollTitle text={h.title} style={{fontSize:13,fontWeight:500,color:T.text,textDecoration:h.doneToday?"line-through":"none"}}/>{h.memo&&<div style={{fontSize:10,color:T.mut,marginTop:2,fontFamily:"'JetBrains Mono',monospace",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{h.memo}</div>}</div>
+        <div style={{flex:1,cursor:"pointer",minWidth:0}} onClick={()=>setEditHabitId(h.id)}><ScrollTitle text={h.title} style={{fontSize:13,fontWeight:500,color:T.text,textDecoration:h.doneToday?"line-through":"none"}}/><div style={{display:"flex",gap:6,alignItems:"center",marginTop:2}}>{h.streak>=2&&<span style={{fontSize:10,color:"#ff9500",fontFamily:"'JetBrains Mono',monospace",fontWeight:700}}>🔥 {h.streak}</span>}{h.memo&&<span style={{fontSize:10,color:T.mut,fontFamily:"'JetBrains Mono',monospace",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0,flex:1}}>{h.memo}</span>}</div></div>
         <div style={{flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",width:28,height:28,color:T.dim,cursor:"grab",touchAction:"none"}} onTouchStart={e=>{e.stopPropagation();dragStart(h.id,"habit",e.touches[0].clientY)}} onTouchMove={e=>{if(draggingId===h.id){e.stopPropagation();dragMove(e.touches[0].clientY)}}} onTouchEnd={e=>{e.stopPropagation();dragEnd()}} onClick={e=>e.stopPropagation()}><Grip/></div>
         <button style={{background:"none",border:"none",color:T.dim,fontSize:11,cursor:"pointer",padding:4}} onClick={()=>setHabits(p=>p.filter(x=>x.id!==h.id))}>✕</button>
       </div>}
@@ -472,9 +563,10 @@ return(<div style={{minHeight:“100vh”,background:T.bg,color:T.text,fontFamil
   <div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}>
     <div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>場所の管理</div>
     {locs.length===0&&<div style={{fontSize:11,color:T.dim,padding:"4px 0"}}>タスクに場所を設定すると、ここで絵文字を管理できます</div>}
-    {locs.map(l=><div key={l} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",borderBottom:"1px solid "+(isDark?"#1a1a1a":T.brd)}}>
-      <span style={{flex:1,fontSize:12,color:T.sub}}>📍 {l}</span>
-      <input style={{width:48,padding:"5px",background:T.inp,border:"1px solid "+T.brd,borderRadius:6,color:T.text,fontSize:14,outline:"none",textAlign:"center"}} placeholder="📌" value={locEmojis[l]||""} onChange={e=>setLocEmojis(prev=>({...prev,[l]:e.target.value}))} maxLength={2}/>
+    {locs.map(l=><div key={l} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 0",borderBottom:"1px solid "+(isDark?"#1a1a1a":T.brd)}}>
+      <input style={{width:42,padding:"5px",background:T.inp,border:"1px solid "+T.brd,borderRadius:6,color:T.text,fontSize:14,outline:"none",textAlign:"center",flexShrink:0}} placeholder="📌" value={locEmojis[l]||""} onChange={e=>setLocEmojis(prev=>({...prev,[l]:e.target.value}))} maxLength={2}/>
+      <input style={{flex:1,padding:"6px 8px",background:T.inp,border:"1px solid "+T.brd,borderRadius:6,color:T.text,fontSize:12,outline:"none",minWidth:0}} defaultValue={l} onBlur={e=>renameLocation(l,e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.nativeEvent.isComposing){e.target.blur()}}}/>
+      <button style={{width:28,height:28,borderRadius:6,border:"1px solid rgba(255,59,48,0.3)",background:"transparent",color:"#ff3b30",fontSize:11,cursor:"pointer",flexShrink:0}} onClick={()=>deleteLocation(l)} aria-label="削除">✕</button>
     </div>)}
   </div>
 
@@ -490,6 +582,17 @@ return(<div style={{minHeight:“100vh”,background:T.bg,color:T.text,fontFamil
   <div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>ゴミ箱（{trash.length}件）</div>
     {trash.map(t=><div key={t.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:"1px solid "+(isDark?"#1a1a1a":T.brd)}}><span style={{fontSize:12,color:T.sub}}>{t.icon?t.icon+" ":""}{t.title}</span><button style={{padding:"3px 8px",borderRadius:6,border:"1px solid rgba(34,197,94,0.3)",background:"transparent",color:"#4ade80",fontSize:10,fontWeight:600,cursor:"pointer"}} onClick={()=>restoreTask(t.id)}>復元</button></div>)}
     {trash.length>0&&<button style={{marginTop:8,padding:"6px 12px",borderRadius:8,border:"1px solid rgba(255,59,48,0.3)",background:"transparent",color:"#ff3b30",fontSize:11,fontWeight:600,cursor:"pointer"}} onClick={()=>{if(confirm("ゴミ箱を空にしますか？"))setTrash([])}}>ゴミ箱を空にする</button>}
+  </div>
+</div></div>}
+
+{/* Quota warning (data full) */}
+{showQuotaWarn&&<div style={{position:“fixed”,top:0,left:0,right:0,bottom:0,background:T.modal,zIndex:260,display:“flex”,alignItems:“center”,justifyContent:“center”,padding:16}}><div style={{background:T.card,border:“1px solid #ff3b30”,borderRadius:14,padding:20,width:“100%”,maxWidth:360}}>
+
+  <div style={{fontSize:16,fontWeight:800,color:"#ff3b30",marginBottom:8}}>⚠ 保存容量がいっぱいです</div>
+  <div style={{fontSize:12,color:T.sub,marginBottom:16,lineHeight:1.6}}>新しい変更が保存できていません。完了タスクや古いゴミ箱を整理するか、データをエクスポートしてバックアップしてください。</div>
+  <div style={{display:"flex",gap:8}}>
+    <button style={{flex:1,padding:11,borderRadius:9,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setShowQuotaWarn(false)}>閉じる</button>
+    <button style={{flex:1,padding:11,borderRadius:9,border:"none",background:"#ff3b30",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{doExport();setShowQuotaWarn(false)}}>エクスポート</button>
   </div>
 </div></div>}
 
@@ -563,11 +666,11 @@ const subDragEnd=()=>setSubDragId(null);
 const tsx=useRef(0),tsy=useRef(0);const[so,setSo]=useState(0);const[sw,setSw]=useState(false);
 const tts=e=>{tsx.current=e.touches[0].clientX;tsy.current=e.touches[0].clientY};
 const ttm=e=>{const dx=e.touches[0].clientX-tsx.current;if(Math.abs(dx)>10&&Math.abs(e.touches[0].clientY-tsy.current)<30){setSw(true);setSo(dx)}};
-const tte=()=>{if(so>100)onToggleDone();else if(so<-100)onDelete();setSo(0);setTimeout(()=>setSw(false),100)};
+const tte=()=>{if(so>180)onToggleDone();else if(so<-180)onDelete();setSo(0);setTimeout(()=>setSw(false),100)};
 
 return(<div style={{position:“relative”,overflow:“hidden”,borderRadius:10,opacity:dragging?0.5:1}}>
-{so>20&&<div style={{position:“absolute”,top:0,left:0,right:0,bottom:0,display:“flex”,alignItems:“center”,borderRadius:10,background:“rgba(74,222,128,0.2)”,justifyContent:“flex-start”,paddingLeft:20,fontSize:14}}><span style={{color:”#4ade80”,fontWeight:700}}>✓ 完了</span></div>}
-{so<-20&&<div style={{position:“absolute”,top:0,left:0,right:0,bottom:0,display:“flex”,alignItems:“center”,borderRadius:10,background:“rgba(255,59,48,0.2)”,justifyContent:“flex-end”,paddingRight:20,fontSize:14}}><span style={{color:”#ff3b30”,fontWeight:700}}>削除 ✕</span></div>}
+{so>20&&<div style={{position:“absolute”,top:0,left:0,right:0,bottom:0,display:“flex”,alignItems:“center”,borderRadius:10,background:so>180?“rgba(74,222,128,0.4)”:“rgba(74,222,128,0.15)”,justifyContent:“flex-start”,paddingLeft:20,fontSize:14,transition:“background .15s”}}><span style={{color:”#22c55e”,fontWeight:700}}>{so>180?“✓ 離して完了”:“→ “}</span></div>}
+{so<-20&&<div style={{position:“absolute”,top:0,left:0,right:0,bottom:0,display:“flex”,alignItems:“center”,borderRadius:10,background:so<-180?“rgba(255,59,48,0.4)”:“rgba(255,59,48,0.15)”,justifyContent:“flex-end”,paddingRight:20,fontSize:14,transition:“background .15s”}}><span style={{color:”#ff3b30”,fontWeight:700}}>{so<-180?“離して削除 ✕”:“← “}</span></div>}
 
 <div className="task-card" style={{background:isW?T.card:ts.bg,borderRadius:10,padding:ts.pad+"px 14px "+ts.pad+"px "+(ts.pad+8)+"px",transition:sw?"none":"all .2s",cursor:"pointer",position:"relative",display:"flex",width:"100%",opacity:task.done?.4:1,flexDirection:expanded||memoExp?"column":"row",alignItems:expanded||memoExp?"stretch":"center",transform:"translateX("+so+"px)",border:"1px solid "+(isW?(wishOver?"rgba(255,59,48,0.4)":wishUrgent?"rgba(255,149,0,0.4)":"rgba(192,132,252,0.2)"):ts.border),boxShadow:ts.shadow!=="none"?"0 0 10px "+ts.shadow:""}} onClick={e=>{if(sw)return;if(e.target.closest(".ne"))return;onToggleExpand()}} onTouchStart={tts} onTouchMove={ttm} onTouchEnd={tte}>
 {!isW&&<div style={{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",width:wi?.bw||4,height:(wi?.bh||75)+"%",background:rc,borderRadius:"0 3px 3px 0"}}/>}
