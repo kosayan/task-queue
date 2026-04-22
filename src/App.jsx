@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from “react”;
-const VER = “3.6.1”;
+const VER = “3.6.2”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
@@ -54,8 +54,8 @@ return 5;
 const SK=“task-queue-v1”,SOK=“task-queue-sort”,DK=“task-queue-defaults”,THK=“task-queue-theme”,TRK=“task-queue-trash”,HRK=“task-queue-habits”,DRK=“task-queue-dayreset”,LEK=“task-queue-locemojis”,LXK=“task-queue-lastexport”,TPK=“task-queue-todaypicks”,TDK=“task-queue-todaypickday”,BNK=“task-queue-bannercount”;
 const DD={importance:2,weight:2,hasDeadline:true,recurrence:“none”,location:””};
 function ld(k,d){try{const r=localStorage.getItem(k);return r?JSON.parse(r):d}catch{return d}}
-let _quotaWarned=false;
-function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){if(!_quotaWarned&&(e.name===“QuotaExceededError”||e.code===22||e.code===1014)){_quotaWarned=true;try{window.dispatchEvent(new CustomEvent(“tq-quota-exceeded”))}catch{}}}}
+let quotaWarnedFlag=false;
+function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){if(!quotaWarnedFlag&&(e.name===“QuotaExceededError”||e.code===22||e.code===1014)){quotaWarnedFlag=true;try{window.dispatchEvent(new CustomEvent(“tq-quota-exceeded”))}catch{}}}}
 const Refresh=()=>(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:16,height:16}}><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>);
 const Grip=()=>(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:14,height:14}}><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="4" y1="14" x2="20" y2="14"/><line x1="4" y1="18" x2="20" y2="18"/></svg>);
 
@@ -203,12 +203,12 @@ setQuickInput(””);setQuickIcon(””)
 
 const showUndo=useCallback((ts,a)=>{if(ur.current)clearTimeout(ur.current);setUndoData({tasks:ts,action:a});ur.current=setTimeout(()=>setUndoData(null),5000)},[]);
 
-const *vibrateRef=useRef(0);
+const lastVibrateRef=useRef(0);
 const fireParticles=useCallback(imp=>{
 const count=imp===3?80:imp===2?50:30;
 const COL=[”#ff3b30”,”#ff9500”,”#ffcc00”,”#4ade80”,”#22c55e”,”#06b6d4”,”#0ea5e9”,”#a855f7”,”#c084fc”,”#f97316”,”#ec4899”,”#fbbf24”];
 const id=Date.now().toString(36)+Math.random().toString(36).slice(2,5);
-const pts=Array.from({length:count},(*,i)=>{
+const pts=Array.from({length:count},(_,i)=>{
 const a=Math.random()*Math.PI*2;
 const d=140+Math.random()*(imp===3?300:imp===2?220:160);
 return{id:id+”-”+i,kind:“p”,tx:Math.cos(a)*d,ty:Math.sin(a)*d-50,gy:200+Math.random()*220,c:COL[Math.floor(Math.random()*COL.length)],r:Math.random()*720-360,shape:Math.random()<0.5?“sq”:“ci”,sz:8+Math.random()*6,dur:(1.3+Math.random()*0.7).toFixed(2)}
@@ -216,7 +216,7 @@ return{id:id+”-”+i,kind:“p”,tx:Math.cos(a)*d,ty:Math.sin(a)*d-50,gy:200+
 pts.push({id:id+”-ring”,kind:“ring”,c:imp===3?”#ff3b30”:imp===2?”#ff9500”:”#4ade80”});
 setParticles(p=>[…p,…pts]);
 const now=Date.now();
-if(typeof navigator!==“undefined”&&navigator.vibrate&&(now-_vibrateRef.current)>300){_vibrateRef.current=now;try{navigator.vibrate(imp===3?[12,25,22,25,40]:imp===2?[18,20,35]:28)}catch{}}
+if(typeof navigator!==“undefined”&&navigator.vibrate&&(now-lastVibrateRef.current)>300){lastVibrateRef.current=now;try{navigator.vibrate(imp===3?[12,25,22,25,40]:imp===2?[18,20,35]:28)}catch{}}
 setTimeout(()=>setParticles(p=>p.filter(x=>!x.id.startsWith(id+”-”))),2300);
 },[]);
 const togDone=useCallback(id=>{setTasks(prev=>{const t=prev.find(x=>x.id===id);if(!t)return prev;if(!t.done)fireParticles(t.importance||2);if(!t.done&&t.recurrence&&t.recurrence!==“none”&&t.deadline){const nt={…t,id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),deadline:advRec(t.deadline,t.recurrence),done:false,createdAt:Date.now(),completedAt:null};return prev.map(x=>x.id===id?{…x,done:true,completedAt:Date.now()}:x).concat(nt)}return prev.map(x=>x.id===id?{…x,done:!x.done,completedAt:!x.done?Date.now():null}:x)})},[fireParticles]);
