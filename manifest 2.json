@@ -1,0 +1,31 @@
+{
+  "name": "TASK QUEUE",
+  "short_name": "TASK QUEUE",
+  "description": "重要度・重さ・締切からスコアを自動計算するタスク管理アプリ",
+  "start_url": "/task-queue/",
+  "scope": "/task-queue/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    {
+      "src": "/task-queue/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/task-queue/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/task-queue/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
