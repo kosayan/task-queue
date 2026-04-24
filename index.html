@@ -1,17 +1,38 @@
 <!DOCTYPE html>
+
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
-    <meta name="theme-color" content="#0a0a0a" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <link rel="apple-touch-icon" href="/task-queue/icon-192.png" />
-    <title>TASK QUEUE</title>
-    <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { background: #0a0a0a; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+
+```
+<!-- App identity -->
+<title>TASK QUEUE</title>
+<meta name="description" content="重要度・重さ・締切からスコアを自動計算するタスク管理アプリ" />
+
+<!-- Theme colors -->
+<meta name="theme-color" content="#0a0a0a" />
+<meta name="background-color" content="#0a0a0a" />
+
+<!-- Favicons -->
+<link rel="icon" type="image/png" sizes="32x32" href="/task-queue/favicon-32.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="/task-queue/icon-192.png" />
+
+<!-- iOS home-screen icon -->
+<link rel="apple-touch-icon" href="/task-queue/apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="TASK QUEUE" />
+
+<!-- PWA manifest -->
+<link rel="manifest" href="/task-queue/manifest.json" />
+
+<!-- Fonts: preconnect + async load for faster startup -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" />
+```
+
   </head>
   <body>
     <div id="root"></div>
