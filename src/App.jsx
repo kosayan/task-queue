@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from “react”;
 
-const VER = “3.10.1”;
+const VER = “3.10.3”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
@@ -20,19 +20,19 @@ const TIER = {
 9:{bg:”#0a090c”,border:“rgba(168,85,247,0.1)”,shadow:“none”,fs:11,fw:500,tc:”#777”,mc:”#555”,pad:8,mfs:7.5,bfs:7,bp:“2px 5px”},
 };
 const TIER_LIGHT = {
-1:{bg:”#bbf7d0”,border:“rgba(22,163,74,0.6)”,shadow:“rgba(22,163,74,0.15)”,tc:”#14532d”,mc:”#166534”},
-2:{bg:”#fde68a”,border:“rgba(202,138,4,0.55)”,shadow:“rgba(202,138,4,0.12)”,tc:”#713f12”,mc:”#854d0e”},
-3:{bg:”#fed7aa”,border:“rgba(234,88,12,0.5)”,shadow:“rgba(234,88,12,0.1)”,tc:”#7c2d12”,mc:”#9a3412”},
-4:{bg:”#a5f3fc”,border:“rgba(14,165,233,0.5)”,shadow:“rgba(14,165,233,0.08)”,tc:”#164e63”,mc:”#155e75”},
-5:{bg:”#dbeafe”,border:“rgba(37,99,235,0.4)”,shadow:“rgba(37,99,235,0.06)”,tc:”#1e3a8a”,mc:”#1e40af”},
-6:{bg:”#ede9fe”,border:“rgba(124,58,237,0.35)”,shadow:“rgba(124,58,237,0.05)”,tc:”#4c1d95”,mc:”#5b21b6”},
-7:{bg:”#fdfcf8”,border:“rgba(161,161,170,0.4)”,shadow:“rgba(0,0,0,0.04)”,tc:”#3f3f46”,mc:”#52525b”},
-8:{bg:”#f5f3ec”,border:“rgba(168,85,247,0.3)”,shadow:“rgba(168,85,247,0.03)”,tc:”#581c87”,mc:”#6b21a8”},
-9:{bg:”#edeae0”,border:“rgba(168,85,247,0.25)”,shadow:“none”,tc:”#6b21a8”,mc:”#7e22ce”},
+1:{bg:”#bbf7d0”,border:“rgba(22,163,74,0.7)”,shadow:“rgba(22,163,74,0.18)”,tc:”#14532d”,mc:”#166534”},
+2:{bg:”#fde68a”,border:“rgba(202,138,4,0.65)”,shadow:“rgba(202,138,4,0.15)”,tc:”#713f12”,mc:”#854d0e”},
+3:{bg:”#fed7aa”,border:“rgba(234,88,12,0.6)”,shadow:“rgba(234,88,12,0.12)”,tc:”#7c2d12”,mc:”#9a3412”},
+4:{bg:”#bae6fd”,border:“rgba(14,165,233,0.55)”,shadow:“rgba(14,165,233,0.1)”,tc:”#164e63”,mc:”#155e75”},
+5:{bg:”#dbeafe”,border:“rgba(37,99,235,0.5)”,shadow:“rgba(37,99,235,0.08)”,tc:”#1e3a8a”,mc:”#1e40af”},
+6:{bg:”#ede9fe”,border:“rgba(124,58,237,0.45)”,shadow:“rgba(124,58,237,0.06)”,tc:”#4c1d95”,mc:”#5b21b6”},
+7:{bg:”#fafafa”,border:“rgba(82,82,82,0.5)”,shadow:“rgba(0,0,0,0.06)”,tc:”#404040”,mc:”#525252”},
+8:{bg:”#f0f0f0”,border:“rgba(82,82,82,0.4)”,shadow:“rgba(0,0,0,0.04)”,tc:”#525252”,mc:”#737373”},
+9:{bg:”#e5e5e5”,border:“rgba(82,82,82,0.35)”,shadow:“none”,tc:”#737373”,mc:”#737373”},
 };
 const TH = {
 dark:{bg:”#0a0a0a”,card:”#111”,text:”#fff”,sub:”#aaa”,mut:”#888”,dim:”#555”,brd:”#333”,inp:”#1a1a1a”,cOff:”#1a1a1a”,cOffT:”#888”,cOn:”#fff”,cOnT:”#000”,iBg:”#1a1a1a”,iBrd:”#333”,iC:”#ccc”,fBrd:”#444”,fOffT:”#999”,modal:“rgba(0,0,0,0.7)”,toast:”#1a1a1a”,memo:”#0a0a0a”,memB:”#2a2a2a”,shd:“rgba(0,0,0,0.4)”,chk:”#555”,addB:”#555”,addC:”#aaa”,sch:“dark”},
-light:{bg:”#e8e5dc”,card:”#fdfcf8”,text:”#18181b”,sub:”#3f3f46”,mut:”#52525b”,dim:”#a1a1aa”,brd:”#c4c0b3”,inp:”#f5f3ec”,cOff:”#f5f3ec”,cOffT:”#52525b”,cOn:”#18181b”,cOnT:”#fff”,iBg:”#fdfcf8”,iBrd:”#c4c0b3”,iC:”#3f3f46”,fBrd:”#b8b4a7”,fOffT:”#52525b”,modal:“rgba(24,24,27,0.5)”,toast:”#fdfcf8”,memo:”#f5f3ec”,memB:”#b8b4a7”,shd:“rgba(0,0,0,0.1)”,chk:”#a1a1aa”,addB:”#a1a1aa”,addC:”#52525b”,sch:“light”}
+light:{bg:”#e5e5e5”,card:”#ffffff”,text:”#0a0a0a”,sub:”#404040”,mut:”#525252”,dim:”#a3a3a3”,brd:”#737373”,inp:”#fafafa”,cOff:”#f5f5f5”,cOffT:”#404040”,cOn:”#0a0a0a”,cOnT:”#ffffff”,iBg:”#ffffff”,iBrd:”#525252”,iC:”#0a0a0a”,fBrd:”#525252”,fOffT:”#404040”,modal:“rgba(0,0,0,0.5)”,toast:”#ffffff”,memo:”#fafafa”,memB:”#a3a3a3”,shd:“rgba(0,0,0,0.15)”,chk:”#737373”,addB:”#525252”,addC:”#0a0a0a”,sch:“light”}
 };
 
 let COLOR_BLIND_MODE = false;
@@ -615,7 +615,7 @@ return(<div style={{minHeight:“100dvh”,background:T.bg,color:T.text,fontFami
 {showSearch&&<input className="form-slide" style={{width:"100%",padding:"10px 12px",background:T.inp,border:"1px solid "+T.brd,borderRadius:9,color:T.text,fontSize:14,outline:"none",marginBottom:8}} placeholder="検索..." value={searchQ} onChange={e=>setSearchQ(e.target.value)} autoFocus/>}
 </>}
 
-{!showForm&&!isHabit&&<button style={{width:“100%”,padding:13,border:“1.5px dashed “+T.addB,borderRadius:10,color:T.addC,fontSize:13,fontWeight:700,cursor:“pointer”,marginBottom:10,display:“flex”,alignItems:“center”,justifyContent:“center”,gap:6,letterSpacing:1,fontFamily:”‘JetBrains Mono’,monospace”,background:“transparent”}} onClick={()=>{resetForm();setShowForm(true)}}>+ {isWish?“やりたいことを追加”:“新しいタスク”}</button>}
+{!showForm&&!isHabit&&null}
 
 {showForm&&<div ref={formRef} className=“form-slide” style={{background:T.card,border:“1px solid “+T.brd,borderRadius:14,padding:16,marginBottom:12,maxWidth:“100%”,overflow:“hidden”}}>
 
@@ -857,6 +857,8 @@ return(<div style={{minHeight:“100dvh”,background:T.bg,color:T.text,fontFami
 
 {undoData&&<div className=“form-slide” style={{position:“fixed”,bottom:“calc(24px + env(safe-area-inset-bottom))”,left:16,right:16,maxWidth:360,margin:“0 auto”,background:T.toast,border:“1px solid “+T.brd,borderRadius:10,padding:“12px 16px”,display:“flex”,alignItems:“center”,justifyContent:“space-between”,fontSize:13,color:T.sub,zIndex:200}}><span>削除しました</span><button style={{background:“none”,border:“none”,color:”#ff3b30”,fontWeight:700,cursor:“pointer”,fontSize:13}} onClick={undo}>元に戻す</button></div>}
 
+{!showForm&&!isHabit&&!focusTaskId&&!showSettings&&!showPicker&&!showWeekReport&&!showMonthReset&&!showQuotaWarn&&!showBackupNudge&&<button style={{position:“fixed”,bottom:“calc(80px + env(safe-area-inset-bottom))”,right:20,width:56,height:56,borderRadius:“50%”,border:“none”,background:”#ff3b30”,color:”#fff”,fontSize:32,fontWeight:300,cursor:“pointer”,boxShadow:“0 4px 16px rgba(255,59,48,0.35),0 2px 6px rgba(0,0,0,0.2)”,display:“flex”,alignItems:“center”,justifyContent:“center”,zIndex:150,padding:0,lineHeight:1,touchAction:“manipulation”}} onClick={()=>{resetForm();setShowForm(true)}} aria-label={isWish?“やりたいことを追加”:“新しいタスク”}>+</button>}
+
 <div style={{position:"fixed",bottom:6,right:10,fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:T.dim,userSelect:"none",pointerEvents:"none"}}>v{VER}</div>
 </div>)
 }
@@ -940,7 +942,7 @@ const ts=task.done?DONE_TIER:(isDark?TIER[pr]:{…TIER[pr],…TIER_LIGHT[pr]});
 const displayRc=task.done?(isDark?”#555”:”#a1a1aa”):rc;
 const changeIcon=e=>{e.stopPropagation();const current=task.icon||””;const v=prompt(“アイコン(絵文字1-2文字)”,current);if(v===null)return;onQuickUpdate(“icon”,v.slice(0,2))};
 
-return(<div style={{position:“relative”,overflow:“hidden”,borderRadius:10,opacity:dragging?0.5:1}}>
+return(<div style={{position:“relative”,overflow:“hidden”,borderRadius:10,opacity:dragging?0.5:1,touchAction:“pan-y”}}>
 {swipeOffset!==0&&!task.done&&<div style={{position:“absolute”,inset:0,borderRadius:10,display:“flex”,alignItems:“center”,justifyContent:swipeOffset>0?“flex-start”:“flex-end”,padding:“0 24px”,background:swipeOffset>0?(swipeReady?”#4ade80”:“rgba(74,222,128,”+(0.2+swipeProgress*0.5)+”)”):(swipeReady?”#ff3b30”:“rgba(255,59,48,”+(0.2+swipeProgress*0.5)+”)”),pointerEvents:“none”,transition:swipeReleasing?“background .18s”:“none”}}>
 <span style={{fontSize:24+swipeProgress*8,color:swipeReady?”#000”:”#fff”,fontWeight:800,transform:“scale(”+(0.6+swipeProgress*0.4)+”)”,transition:“transform .1s”}}>{swipeOffset>0?“✓”:“🗑”}</span>
 
@@ -960,7 +962,7 @@ return(<div style={{position:“relative”,overflow:“hidden”,borderRadius:1
 </div>
 </div>
 </div>}
-<div className="task-card" style={{background:isW?T.card:ts.bg,borderRadius:10,padding:ts.pad+"px 14px "+ts.pad+"px "+(ts.pad+8)+"px",transition:swipeReleasing?"transform .18s cubic-bezier(.2,.8,.4,1)":(swipeOffset!==0?"none":"all .2s"),cursor:"pointer",position:"relative",display:"flex",width:"100%",flexDirection:expanded||memoExp?"column":"row",alignItems:expanded||memoExp?"stretch":"center",border:"1px solid "+(isLatestDone?"rgba(74,222,128,0.5)":isW?(wishOver?"rgba(255,59,48,0.4)":wishUrgent?"rgba(255,149,0,0.4)":"rgba(192,132,252,0.2)"):ts.border),boxShadow:isLatestDone?"0 0 8px rgba(74,222,128,0.2)":ts.shadow!=="none"?"0 0 10px "+ts.shadow:"",transform:"translateX("+swipeOffset+"px)",userSelect:"none",WebkitUserSelect:"none",WebkitTouchCallout:"none"}} onClick={e=>{if(e.target.closest(".ne")||Math.abs(swipeOffset)>5)return;onToggleExpand()}} onTouchStart={tts} onTouchMove={ttm} onTouchEnd={tte} onTouchCancel={tte}>
+<div className="task-card" style={{background:isW?T.card:ts.bg,borderRadius:10,padding:ts.pad+"px 14px "+ts.pad+"px "+(ts.pad+8)+"px",transition:swipeReleasing?"transform .18s cubic-bezier(.2,.8,.4,1)":(swipeOffset!==0?"none":"all .2s"),cursor:"pointer",position:"relative",display:"flex",width:"100%",flexDirection:expanded||memoExp?"column":"row",alignItems:expanded||memoExp?"stretch":"center",border:"1px solid "+(isLatestDone?"rgba(74,222,128,0.5)":isW?(wishOver?"rgba(255,59,48,0.4)":wishUrgent?"rgba(255,149,0,0.4)":"rgba(192,132,252,0.2)"):ts.border),boxShadow:isLatestDone?"0 0 8px rgba(74,222,128,0.2)":ts.shadow!=="none"?"0 0 10px "+ts.shadow:"",transform:"translateX("+swipeOffset+"px)",userSelect:"none",WebkitUserSelect:"none",WebkitTouchCallout:"none",touchAction:"pan-y"}} onClick={e=>{if(e.target.closest(".ne")||Math.abs(swipeOffset)>5)return;onToggleExpand()}} onTouchStart={tts} onTouchMove={ttm} onTouchEnd={tte} onTouchCancel={tte}>
 {!isW&&!task.done&&<div style={{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",width:wi?.bw||4,height:(wi?.bh||75)+"%",background:displayRc,borderRadius:"0 3px 3px 0"}}/>}
 {isW&&<div style={{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",width:3,height:"60%",background:rc,borderRadius:"0 3px 3px 0"}}/>}
 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%"}}>
