@@ -917,7 +917,7 @@ return(<div style={{position:“relative”,overflow:“visible”,borderRadius:
 <button className="ne" style={{width:20,height:20,borderRadius:5,border:"2px solid "+(task.done?"#4ade80":T.chk),background:task.done?"#4ade80":"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#000",fontSize:11,fontWeight:800}} onClick={e=>{e.stopPropagation();onToggleDone()}}>{task.done&&"✓"}</button>
 </div>
 <div style={{flex:1,minWidth:0,paddingTop:2}}>
-<ScrollTitle text={task.title} style={{fontSize:ts.fs,fontWeight:ts.fw,color:ts.tc}}/>
+{expanded||memoExp?<div style={{fontSize:ts.fs,fontWeight:ts.fw,color:ts.tc,wordBreak:"break-word",lineHeight:1.4}}>{task.title}</div>:<ScrollTitle text={task.title} style={{fontSize:ts.fs,fontWeight:ts.fw,color:ts.tc}}/>}
 {!isW&&!task.done&&<div style={{fontSize:ts.mfs,color:ts.mc,marginTop:3,display:"flex",gap:5,fontFamily:"'JetBrains Mono',monospace",flexWrap:"wrap",alignItems:"center"}}>
 <span style={{color:im?.c,fontSize:ts.mfs+2,fontWeight:900}}>{im?.icon}</span>
 <span style={{opacity:.3}}>·</span>
