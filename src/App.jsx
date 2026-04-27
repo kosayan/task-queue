@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from “react”;
 
-const VER = “3.10.0”;
+const VER = “3.10.1”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
@@ -882,18 +882,71 @@ const subDragMove=y=>{if(!subDragId)return;const dy=y-subDragStartY.current;cons
 const subDragEnd=()=>setSubDragId(null);
 const[showQuickMenu,setShowQuickMenu]=useState(false);
 const longPressTimer=useRef(null);
-const tts=e=>{if(task.done)return;longPressTimer.current=setTimeout(()=>{setShowQuickMenu(true);if(navigator.vibrate)try{navigator.vibrate(30)}catch{}},500)};
-const ttm=()=>{if(longPressTimer.current){clearTimeout(longPressTimer.current);longPressTimer.current=null}};
-const tte=()=>{if(longPressTimer.current){clearTimeout(longPressTimer.current);longPressTimer.current=null}};
+const swipeStartX=useRef(0);const swipeStartY=useRef(0);
+const swipeAxis=useRef(null);
+const[swipeOffset,setSwipeOffset]=useState(0);
+const[swipeReleasing,setSwipeReleasing]=useState(false);
+const SWIPE_THRESHOLD=120;
+const tts=e=>{
+if(task.done||expanded||memoExp)return;
+swipeStartX.current=e.touches[0].clientX;
+swipeStartY.current=e.touches[0].clientY;
+swipeAxis.current=null;
+longPressTimer.current=setTimeout(()=>{setShowQuickMenu(true);if(navigator.vibrate)try{navigator.vibrate(30)}catch{}},500)
+};
+const ttm=e=>{
+if(task.done||expanded||memoExp)return;
+const dx=e.touches[0].clientX-swipeStartX.current;
+const dy=e.touches[0].clientY-swipeStartY.current;
+if(swipeAxis.current===null){
+if(Math.abs(dx)>8||Math.abs(dy)>8){
+swipeAxis.current=Math.abs(dx)>Math.abs(dy)?“x”:“y”;
+if(longPressTimer.current){clearTimeout(longPressTimer.current);longPressTimer.current=null}
+}
+}
+if(swipeAxis.current===“x”){
+let off=dx;
+if(Math.abs(off)>SWIPE_THRESHOLD){
+const excess=Math.abs(off)-SWIPE_THRESHOLD;
+off=Math.sign(off)*(SWIPE_THRESHOLD+excess*0.4);
+}
+setSwipeOffset(off);
+}
+};
+const tte=()=>{
+if(longPressTimer.current){clearTimeout(longPressTimer.current);longPressTimer.current=null}
+if(swipeAxis.current===“x”){
+const off=swipeOffset;
+if(off<=-SWIPE_THRESHOLD){
+setSwipeReleasing(true);
+setSwipeOffset(-600);
+setTimeout(()=>{onDelete();setSwipeOffset(0);setSwipeReleasing(false)},180);
+}else if(off>=SWIPE_THRESHOLD){
+setSwipeReleasing(true);
+setSwipeOffset(600);
+setTimeout(()=>{onToggleDone();setSwipeOffset(0);setSwipeReleasing(false)},180);
+}else{
+setSwipeReleasing(true);
+setSwipeOffset(0);
+setTimeout(()=>setSwipeReleasing(false),200);
+}
+}
+swipeAxis.current=null;
+};
+const swipeProgress=Math.min(1,Math.abs(swipeOffset)/SWIPE_THRESHOLD);
+const swipeReady=Math.abs(swipeOffset)>=SWIPE_THRESHOLD;
 const DONE_TIER={bg:isDark?”#0a0a0a”:”#f5f3ec”,border:isDark?“rgba(136,136,136,0.15)”:“rgba(161,161,170,0.3)”,shadow:“none”,fs:13,fw:500,tc:isDark?”#777”:”#52525b”,mc:isDark?”#555”:”#71717a”,pad:10,mfs:9,bfs:8,bp:“2px 6px”};
 const ts=task.done?DONE_TIER:(isDark?TIER[pr]:{…TIER[pr],…TIER_LIGHT[pr]});
 const displayRc=task.done?(isDark?”#555”:”#a1a1aa”):rc;
 const changeIcon=e=>{e.stopPropagation();const current=task.icon||””;const v=prompt(“アイコン(絵文字1-2文字)”,current);if(v===null)return;onQuickUpdate(“icon”,v.slice(0,2))};
 
-return(<div style={{position:“relative”,overflow:“visible”,borderRadius:10,opacity:dragging?0.5:1}}>
-{showQuickMenu&&<div style={{position:“fixed”,top:0,left:0,right:0,bottom:0,background:“rgba(0,0,0,0.6)”,zIndex:200,display:“flex”,alignItems:“center”,justifyContent:“center”,padding:16}} onClick={()=>setShowQuickMenu(false)}>
+return(<div style={{position:“relative”,overflow:“hidden”,borderRadius:10,opacity:dragging?0.5:1}}>
+{swipeOffset!==0&&!task.done&&<div style={{position:“absolute”,inset:0,borderRadius:10,display:“flex”,alignItems:“center”,justifyContent:swipeOffset>0?“flex-start”:“flex-end”,padding:“0 24px”,background:swipeOffset>0?(swipeReady?”#4ade80”:“rgba(74,222,128,”+(0.2+swipeProgress*0.5)+”)”):(swipeReady?”#ff3b30”:“rgba(255,59,48,”+(0.2+swipeProgress*0.5)+”)”),pointerEvents:“none”,transition:swipeReleasing?“background .18s”:“none”}}>
+<span style={{fontSize:24+swipeProgress*8,color:swipeReady?”#000”:”#fff”,fontWeight:800,transform:“scale(”+(0.6+swipeProgress*0.4)+”)”,transition:“transform .1s”}}>{swipeOffset>0?“✓”:“🗑”}</span>
 
-<div style={{background:T.card,border:"1px solid "+T.brd,borderRadius:14,padding:14,minWidth:240,maxWidth:320}} onClick={e=>e.stopPropagation()}>
+</div>}
+{showQuickMenu&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.6)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setShowQuickMenu(false)}>
+<div style={{background:T.card,border:"1px solid "+T.brd,borderRadius:14,padding:14,minWidth:240,maxWidth:320,userSelect:"none",WebkitUserSelect:"none",WebkitTouchCallout:"none"}} onClick={e=>e.stopPropagation()}>
 <div style={{fontSize:12,color:T.mut,marginBottom:10,fontFamily:"'JetBrains Mono',monospace",textAlign:"center"}}>クイック操作</div>
 <div style={{fontSize:14,fontWeight:700,color:T.text,marginBottom:12,textAlign:"center",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{task.icon?task.icon+" ":""}{task.title}</div>
 <div style={{display:"flex",flexDirection:"column",gap:6}}>
@@ -907,7 +960,7 @@ return(<div style={{position:“relative”,overflow:“visible”,borderRadius:
 </div>
 </div>
 </div>}
-<div className="task-card" style={{background:isW?T.card:ts.bg,borderRadius:10,padding:ts.pad+"px 14px "+ts.pad+"px "+(ts.pad+8)+"px",transition:"all .2s",cursor:"pointer",position:"relative",display:"flex",width:"100%",flexDirection:expanded||memoExp?"column":"row",alignItems:expanded||memoExp?"stretch":"center",border:"1px solid "+(isLatestDone?"rgba(74,222,128,0.5)":isW?(wishOver?"rgba(255,59,48,0.4)":wishUrgent?"rgba(255,149,0,0.4)":"rgba(192,132,252,0.2)"):ts.border),boxShadow:isLatestDone?"0 0 8px rgba(74,222,128,0.2)":ts.shadow!=="none"?"0 0 10px "+ts.shadow:""}} onClick={e=>{if(e.target.closest(".ne"))return;onToggleExpand()}} onTouchStart={tts} onTouchMove={ttm} onTouchEnd={tte} onTouchCancel={tte}>
+<div className="task-card" style={{background:isW?T.card:ts.bg,borderRadius:10,padding:ts.pad+"px 14px "+ts.pad+"px "+(ts.pad+8)+"px",transition:swipeReleasing?"transform .18s cubic-bezier(.2,.8,.4,1)":(swipeOffset!==0?"none":"all .2s"),cursor:"pointer",position:"relative",display:"flex",width:"100%",flexDirection:expanded||memoExp?"column":"row",alignItems:expanded||memoExp?"stretch":"center",border:"1px solid "+(isLatestDone?"rgba(74,222,128,0.5)":isW?(wishOver?"rgba(255,59,48,0.4)":wishUrgent?"rgba(255,149,0,0.4)":"rgba(192,132,252,0.2)"):ts.border),boxShadow:isLatestDone?"0 0 8px rgba(74,222,128,0.2)":ts.shadow!=="none"?"0 0 10px "+ts.shadow:"",transform:"translateX("+swipeOffset+"px)",userSelect:"none",WebkitUserSelect:"none",WebkitTouchCallout:"none"}} onClick={e=>{if(e.target.closest(".ne")||Math.abs(swipeOffset)>5)return;onToggleExpand()}} onTouchStart={tts} onTouchMove={ttm} onTouchEnd={tte} onTouchCancel={tte}>
 {!isW&&!task.done&&<div style={{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",width:wi?.bw||4,height:(wi?.bh||75)+"%",background:displayRc,borderRadius:"0 3px 3px 0"}}/>}
 {isW&&<div style={{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",width:3,height:"60%",background:rc,borderRadius:"0 3px 3px 0"}}/>}
 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%"}}>
@@ -917,7 +970,7 @@ return(<div style={{position:“relative”,overflow:“visible”,borderRadius:
 <button className="ne" style={{width:20,height:20,borderRadius:5,border:"2px solid "+(task.done?"#4ade80":T.chk),background:task.done?"#4ade80":"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#000",fontSize:11,fontWeight:800}} onClick={e=>{e.stopPropagation();onToggleDone()}}>{task.done&&"✓"}</button>
 </div>
 <div style={{flex:1,minWidth:0,paddingTop:2}}>
-{expanded||memoExp?<div style={{fontSize:ts.fs,fontWeight:ts.fw,color:ts.tc,wordBreak:"break-word",lineHeight:1.4}}>{task.title}</div>:<ScrollTitle text={task.title} style={{fontSize:ts.fs,fontWeight:ts.fw,color:ts.tc}}/>}
+<ScrollTitle text={task.title} style={{fontSize:ts.fs,fontWeight:ts.fw,color:ts.tc}}/>
 {!isW&&!task.done&&<div style={{fontSize:ts.mfs,color:ts.mc,marginTop:3,display:"flex",gap:5,fontFamily:"'JetBrains Mono',monospace",flexWrap:"wrap",alignItems:"center"}}>
 <span style={{color:im?.c,fontSize:ts.mfs+2,fontWeight:900}}>{im?.icon}</span>
 <span style={{opacity:.3}}>·</span>
