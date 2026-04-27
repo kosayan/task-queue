@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from “react”;
 
-const VER = “3.10.5”;
+const VER = “3.10.6-debug”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
@@ -36,6 +36,8 @@ light:{bg:”#e5e5e5”,card:”#ffffff”,text:”#0a0a0a”,sub:”#404040”,
 };
 
 let COLOR_BLIND_MODE = false;
+let DEBUG_LOG_LINES=[];
+function dbg(msg){const t=new Date().toLocaleTimeString().slice(-5)+”:”+String(Date.now()%1000).padStart(3,“0”);DEBUG_LOG_LINES.unshift(”[”+t+”] “+msg);if(DEBUG_LOG_LINES.length>15)DEBUG_LOG_LINES.length=15;try{window.dispatchEvent(new CustomEvent(“tq-dbg”))}catch{}}
 
 function roi(i,w){const m=COLOR_BLIND_MODE?ROI_MAP_CV:ROI_MAP;return m[i+”-”+(w>=3?3:w>=2?2:w>=1?1:0)]||”#555”}
 function tierN(i,w){return TIER_MAP[i+”-”+(w>=3?3:w>=2?2:w>=1?1:0)]||5}
@@ -157,6 +159,8 @@ const[colorBlindMode,setColorBlindMode]=useState(()=>ld(CBK,false));
 const[focusTaskId,setFocusTaskId]=useState(null);
 const[showWeekReport,setShowWeekReport]=useState(false);
 const[showMonthReset,setShowMonthReset]=useState(false);
+const[dbgLog,setDbgLog]=useState([]);const[dbgVisible,setDbgVisible]=useState(true);
+useEffect(()=>{const h=()=>setDbgLog([…DEBUG_LOG_LINES]);window.addEventListener(“tq-dbg”,h);return()=>window.removeEventListener(“tq-dbg”,h)},[]);
 
 useEffect(()=>{COLOR_BLIND_MODE=colorBlindMode;sv(CBK,colorBlindMode)},[colorBlindMode]);
 
@@ -863,6 +867,19 @@ return(<div style={{minHeight:“100dvh”,background:T.bg,color:T.text,fontFami
 
 {!showForm&&!isHabit&&!focusTaskId&&!showSettings&&!showPicker&&!showWeekReport&&!showMonthReset&&!showQuotaWarn&&!showBackupNudge&&!expandedId&&!memoExpId&&<button style={{position:“fixed”,bottom:“calc(52px + env(safe-area-inset-bottom))”,right:20,width:56,height:56,borderRadius:“50%”,border:“none”,background:”#ff3b30”,color:”#fff”,fontSize:32,fontWeight:300,cursor:“pointer”,boxShadow:“0 4px 16px rgba(255,59,48,0.35),0 2px 6px rgba(0,0,0,0.2)”,display:“flex”,alignItems:“center”,justifyContent:“center”,zIndex:150,padding:0,lineHeight:1,touchAction:“manipulation”}} onClick={()=>{resetForm();setShowForm(true)}} aria-label={isWish?“やりたいことを追加”:“新しいタスク”}>+</button>}
 
+{dbgVisible&&<div style={{position:“fixed”,top:“calc(env(safe-area-inset-top) + 4px)”,left:8,right:8,maxHeight:“40vh”,overflow:“auto”,background:“rgba(0,0,0,0.85)”,border:“1px solid #4ade80”,borderRadius:6,padding:“4px 8px”,fontFamily:”‘JetBrains Mono’,monospace”,fontSize:9,color:”#4ade80”,zIndex:9999,pointerEvents:“auto”}}>
+
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:2,borderBottom:"1px solid #4ade80",paddingBottom:2}}>
+<span style={{fontWeight:800}}>SWIPE DEBUG (v{VER})</span>
+<div style={{display:"flex",gap:4}}>
+<button style={{background:"none",border:"1px solid #4ade80",color:"#4ade80",fontSize:8,padding:"1px 4px",borderRadius:3,cursor:"pointer"}} onClick={()=>{DEBUG_LOG_LINES=[];setDbgLog([])}}>CLR</button>
+<button style={{background:"none",border:"1px solid #4ade80",color:"#4ade80",fontSize:8,padding:"1px 4px",borderRadius:3,cursor:"pointer"}} onClick={()=>setDbgVisible(false)}>HIDE</button>
+</div>
+</div>
+{dbgLog.length===0?<div style={{opacity:.5}}>no events yet — try swiping a card</div>:dbgLog.map((line,i)=><div key={i} style={{whiteSpace:"pre-wrap",lineHeight:1.4}}>{line}</div>)}
+</div>}
+{!dbgVisible&&<button style={{position:"fixed",top:"calc(env(safe-area-inset-top) + 4px)",right:8,background:"rgba(0,0,0,0.7)",border:"1px solid #4ade80",color:"#4ade80",fontSize:9,padding:"3px 6px",borderRadius:4,zIndex:9999,fontFamily:"'JetBrains Mono',monospace",cursor:"pointer"}} onClick={()=>setDbgVisible(true)}>DBG</button>}
+
 <div style={{position:"fixed",bottom:6,right:10,fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:T.dim,userSelect:"none",pointerEvents:"none"}}>v{VER}</div>
 </div>)
 }
@@ -896,9 +913,11 @@ const swipeRef=useRef({x:0,y:0,axis:null,off:0});
 const cbRef=useRef({});
 useEffect(()=>{cbRef.current={done:task.done,expanded,memoExp,onDelete,onToggleDone}});
 useEffect(()=>{
-const el=cardRef.current;if(!el)return;
+const el=cardRef.current;if(!el){dbg(“el=null:”+task.title.slice(0,8));return}
 const onStart=e=>{
-const cb=cbRef.current;if(cb.done||cb.expanded||cb.memoExp)return;
+const cb=cbRef.current;
+dbg(“start “+task.title.slice(0,6)+” done=”+cb.done+” exp=”+cb.expanded);
+if(cb.done||cb.expanded||cb.memoExp)return;
 swipeRef.current={x:e.touches[0].clientX,y:e.touches[0].clientY,axis:null,off:0};
 longPressTimer.current=setTimeout(()=>{setShowQuickMenu(true);if(navigator.vibrate)try{navigator.vibrate(30)}catch{}},500)
 };
@@ -910,6 +929,7 @@ const dy=e.touches[0].clientY-s.y;
 if(s.axis===null){
 if(Math.abs(dx)>8||Math.abs(dy)>8){
 s.axis=Math.abs(dx)>Math.abs(dy)?“x”:“y”;
+dbg(“axis=”+s.axis+” dx=”+Math.round(dx)+” dy=”+Math.round(dy)+” cancelable=”+e.cancelable);
 if(longPressTimer.current){clearTimeout(longPressTimer.current);longPressTimer.current=null}
 }
 }
@@ -945,6 +965,7 @@ if(longPressTimer.current){clearTimeout(longPressTimer.current);longPressTimer.c
 const s=swipeRef.current;const cb=cbRef.current;
 if(s.axis===“x”){
 const off=s.off;
+dbg(“end off=”+Math.round(off));
 el.style.transition=“transform .18s cubic-bezier(.2,.8,.4,1)”;
 if(off<=-SWIPE_THRESHOLD){
 el.style.transform=“translateX(-600px)”;
@@ -963,6 +984,7 @@ if(bgRef.current)bgRef.current.style.display=“none”;
 }
 s.axis=null;
 };
+dbg(“attached “+task.title.slice(0,8));
 el.addEventListener(“touchstart”,onStart,{passive:true});
 el.addEventListener(“touchmove”,onMove,{passive:false});
 el.addEventListener(“touchend”,onEnd,{passive:true});
