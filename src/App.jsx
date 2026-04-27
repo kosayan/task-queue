@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from “react”;
 
-const VER = “3.10.3”;
+const VER = “3.10.4”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
@@ -857,7 +857,7 @@ return(<div style={{minHeight:“100dvh”,background:T.bg,color:T.text,fontFami
 
 {undoData&&<div className=“form-slide” style={{position:“fixed”,bottom:“calc(24px + env(safe-area-inset-bottom))”,left:16,right:16,maxWidth:360,margin:“0 auto”,background:T.toast,border:“1px solid “+T.brd,borderRadius:10,padding:“12px 16px”,display:“flex”,alignItems:“center”,justifyContent:“space-between”,fontSize:13,color:T.sub,zIndex:200}}><span>削除しました</span><button style={{background:“none”,border:“none”,color:”#ff3b30”,fontWeight:700,cursor:“pointer”,fontSize:13}} onClick={undo}>元に戻す</button></div>}
 
-{!showForm&&!isHabit&&!focusTaskId&&!showSettings&&!showPicker&&!showWeekReport&&!showMonthReset&&!showQuotaWarn&&!showBackupNudge&&<button style={{position:“fixed”,bottom:“calc(80px + env(safe-area-inset-bottom))”,right:20,width:56,height:56,borderRadius:“50%”,border:“none”,background:”#ff3b30”,color:”#fff”,fontSize:32,fontWeight:300,cursor:“pointer”,boxShadow:“0 4px 16px rgba(255,59,48,0.35),0 2px 6px rgba(0,0,0,0.2)”,display:“flex”,alignItems:“center”,justifyContent:“center”,zIndex:150,padding:0,lineHeight:1,touchAction:“manipulation”}} onClick={()=>{resetForm();setShowForm(true)}} aria-label={isWish?“やりたいことを追加”:“新しいタスク”}>+</button>}
+{!showForm&&!isHabit&&!focusTaskId&&!showSettings&&!showPicker&&!showWeekReport&&!showMonthReset&&!showQuotaWarn&&!showBackupNudge&&!expandedId&&!memoExpId&&<button style={{position:“fixed”,bottom:“calc(52px + env(safe-area-inset-bottom))”,right:20,width:56,height:56,borderRadius:“50%”,border:“none”,background:”#ff3b30”,color:”#fff”,fontSize:32,fontWeight:300,cursor:“pointer”,boxShadow:“0 4px 16px rgba(255,59,48,0.35),0 2px 6px rgba(0,0,0,0.2)”,display:“flex”,alignItems:“center”,justifyContent:“center”,zIndex:150,padding:0,lineHeight:1,touchAction:“manipulation”}} onClick={()=>{resetForm();setShowForm(true)}} aria-label={isWish?“やりたいことを追加”:“新しいタスク”}>+</button>}
 
 <div style={{position:"fixed",bottom:6,right:10,fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:T.dim,userSelect:"none",pointerEvents:"none"}}>v{VER}</div>
 </div>)
@@ -884,57 +884,71 @@ const subDragMove=y=>{if(!subDragId)return;const dy=y-subDragStartY.current;cons
 const subDragEnd=()=>setSubDragId(null);
 const[showQuickMenu,setShowQuickMenu]=useState(false);
 const longPressTimer=useRef(null);
-const swipeStartX=useRef(0);const swipeStartY=useRef(0);
-const swipeAxis=useRef(null);
 const[swipeOffset,setSwipeOffset]=useState(0);
 const[swipeReleasing,setSwipeReleasing]=useState(false);
 const SWIPE_THRESHOLD=120;
-const tts=e=>{
-if(task.done||expanded||memoExp)return;
-swipeStartX.current=e.touches[0].clientX;
-swipeStartY.current=e.touches[0].clientY;
-swipeAxis.current=null;
+const cardRef=useRef(null);
+const swipeRef=useRef({x:0,y:0,axis:null,off:0});
+const cbRef=useRef({});
+useEffect(()=>{cbRef.current={done:task.done,expanded,memoExp,onDelete,onToggleDone}});
+useEffect(()=>{
+const el=cardRef.current;if(!el)return;
+const onStart=e=>{
+const cb=cbRef.current;if(cb.done||cb.expanded||cb.memoExp)return;
+swipeRef.current={x:e.touches[0].clientX,y:e.touches[0].clientY,axis:null,off:0};
 longPressTimer.current=setTimeout(()=>{setShowQuickMenu(true);if(navigator.vibrate)try{navigator.vibrate(30)}catch{}},500)
 };
-const ttm=e=>{
-if(task.done||expanded||memoExp)return;
-const dx=e.touches[0].clientX-swipeStartX.current;
-const dy=e.touches[0].clientY-swipeStartY.current;
-if(swipeAxis.current===null){
+const onMove=e=>{
+const cb=cbRef.current;if(cb.done||cb.expanded||cb.memoExp)return;
+const s=swipeRef.current;
+const dx=e.touches[0].clientX-s.x;
+const dy=e.touches[0].clientY-s.y;
+if(s.axis===null){
 if(Math.abs(dx)>8||Math.abs(dy)>8){
-swipeAxis.current=Math.abs(dx)>Math.abs(dy)?“x”:“y”;
+s.axis=Math.abs(dx)>Math.abs(dy)?“x”:“y”;
 if(longPressTimer.current){clearTimeout(longPressTimer.current);longPressTimer.current=null}
 }
 }
-if(swipeAxis.current===“x”){
+if(s.axis===“x”){
+if(e.cancelable)e.preventDefault();
 let off=dx;
 if(Math.abs(off)>SWIPE_THRESHOLD){
 const excess=Math.abs(off)-SWIPE_THRESHOLD;
 off=Math.sign(off)*(SWIPE_THRESHOLD+excess*0.4);
 }
+s.off=off;
 setSwipeOffset(off);
 }
 };
-const tte=()=>{
+const onEnd=()=>{
 if(longPressTimer.current){clearTimeout(longPressTimer.current);longPressTimer.current=null}
-if(swipeAxis.current===“x”){
-const off=swipeOffset;
+const s=swipeRef.current;const cb=cbRef.current;
+if(s.axis===“x”){
+const off=s.off;
 if(off<=-SWIPE_THRESHOLD){
-setSwipeReleasing(true);
-setSwipeOffset(-600);
-setTimeout(()=>{onDelete();setSwipeOffset(0);setSwipeReleasing(false)},180);
+setSwipeReleasing(true);setSwipeOffset(-600);
+setTimeout(()=>{cb.onDelete();setSwipeOffset(0);setSwipeReleasing(false)},180)
 }else if(off>=SWIPE_THRESHOLD){
-setSwipeReleasing(true);
-setSwipeOffset(600);
-setTimeout(()=>{onToggleDone();setSwipeOffset(0);setSwipeReleasing(false)},180);
+setSwipeReleasing(true);setSwipeOffset(600);
+setTimeout(()=>{cb.onToggleDone();setSwipeOffset(0);setSwipeReleasing(false)},180)
 }else{
-setSwipeReleasing(true);
-setSwipeOffset(0);
-setTimeout(()=>setSwipeReleasing(false),200);
+setSwipeReleasing(true);setSwipeOffset(0);
+setTimeout(()=>setSwipeReleasing(false),200)
 }
 }
-swipeAxis.current=null;
+s.axis=null;
 };
+el.addEventListener(“touchstart”,onStart,{passive:true});
+el.addEventListener(“touchmove”,onMove,{passive:false});
+el.addEventListener(“touchend”,onEnd,{passive:true});
+el.addEventListener(“touchcancel”,onEnd,{passive:true});
+return()=>{
+el.removeEventListener(“touchstart”,onStart);
+el.removeEventListener(“touchmove”,onMove);
+el.removeEventListener(“touchend”,onEnd);
+el.removeEventListener(“touchcancel”,onEnd);
+}
+},[]);
 const swipeProgress=Math.min(1,Math.abs(swipeOffset)/SWIPE_THRESHOLD);
 const swipeReady=Math.abs(swipeOffset)>=SWIPE_THRESHOLD;
 const DONE_TIER={bg:isDark?”#0a0a0a”:”#f5f3ec”,border:isDark?“rgba(136,136,136,0.15)”:“rgba(161,161,170,0.3)”,shadow:“none”,fs:13,fw:500,tc:isDark?”#777”:”#52525b”,mc:isDark?”#555”:”#71717a”,pad:10,mfs:9,bfs:8,bp:“2px 6px”};
@@ -962,7 +976,7 @@ return(<div style={{position:“relative”,overflow:“hidden”,borderRadius:1
 </div>
 </div>
 </div>}
-<div className="task-card" style={{background:isW?T.card:ts.bg,borderRadius:10,padding:ts.pad+"px 14px "+ts.pad+"px "+(ts.pad+8)+"px",transition:swipeReleasing?"transform .18s cubic-bezier(.2,.8,.4,1)":(swipeOffset!==0?"none":"all .2s"),cursor:"pointer",position:"relative",display:"flex",width:"100%",flexDirection:expanded||memoExp?"column":"row",alignItems:expanded||memoExp?"stretch":"center",border:"1px solid "+(isLatestDone?"rgba(74,222,128,0.5)":isW?(wishOver?"rgba(255,59,48,0.4)":wishUrgent?"rgba(255,149,0,0.4)":"rgba(192,132,252,0.2)"):ts.border),boxShadow:isLatestDone?"0 0 8px rgba(74,222,128,0.2)":ts.shadow!=="none"?"0 0 10px "+ts.shadow:"",transform:"translateX("+swipeOffset+"px)",userSelect:"none",WebkitUserSelect:"none",WebkitTouchCallout:"none",touchAction:"pan-y"}} onClick={e=>{if(e.target.closest(".ne")||Math.abs(swipeOffset)>5)return;onToggleExpand()}} onTouchStart={tts} onTouchMove={ttm} onTouchEnd={tte} onTouchCancel={tte}>
+<div ref={cardRef} className="task-card" style={{background:isW?T.card:ts.bg,borderRadius:10,padding:ts.pad+"px 14px "+ts.pad+"px "+(ts.pad+8)+"px",transition:swipeReleasing?"transform .18s cubic-bezier(.2,.8,.4,1)":(swipeOffset!==0?"none":"all .2s"),cursor:"pointer",position:"relative",display:"flex",width:"100%",flexDirection:expanded||memoExp?"column":"row",alignItems:expanded||memoExp?"stretch":"center",border:"1px solid "+(isLatestDone?"rgba(74,222,128,0.5)":isW?(wishOver?"rgba(255,59,48,0.4)":wishUrgent?"rgba(255,149,0,0.4)":"rgba(192,132,252,0.2)"):ts.border),boxShadow:isLatestDone?"0 0 8px rgba(74,222,128,0.2)":ts.shadow!=="none"?"0 0 10px "+ts.shadow:"",transform:"translateX("+swipeOffset+"px)",userSelect:"none",WebkitUserSelect:"none",WebkitTouchCallout:"none",touchAction:"pan-y"}} onClick={e=>{if(e.target.closest(".ne")||Math.abs(swipeOffset)>5)return;onToggleExpand()}}>
 {!isW&&!task.done&&<div style={{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",width:wi?.bw||4,height:(wi?.bh||75)+"%",background:displayRc,borderRadius:"0 3px 3px 0"}}/>}
 {isW&&<div style={{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",width:3,height:"60%",background:rc,borderRadius:"0 3px 3px 0"}}/>}
 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%"}}>
