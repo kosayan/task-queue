@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from “react”;
 
-const VER = “3.10.4”;
+const VER = “3.10.5”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
@@ -124,6 +124,7 @@ const[title,setTitle]=useState(””);const[importance,setImportance]=useState(
 const[deadline,setDeadline]=useState(defDl());const[hasDeadline,setHasDeadline]=useState(false);
 const[memo,setMemo]=useState(””);const[location,setLocation]=useState(””);const[recurrence,setRecurrence]=useState(“none”);
 const[formSubs,setFormSubs]=useState([]);const[formSubInput,setFormSubInput]=useState(””);
+const[formExpandSubs,setFormExpandSubs]=useState(false);const[formExpandMemo,setFormExpandMemo]=useState(false);
 const[icon,setIcon]=useState(””);const[iconTouched,setIconTouched]=useState(false);
 const[filter,setFilter]=useState(“all”);const[locFilter,setLocFilter]=useState(null);
 const[editId,setEditId]=useState(null);const[expandedId,setExpandedId]=useState(null);
@@ -245,7 +246,7 @@ const upMemo=useCallback((id,m)=>setTasks(p=>p.map(t=>t.id===id?{…t,memo:m}:t)
 
 const locs=useMemo(()=>{const s=new Set();tasks.forEach(t=>{if(t.location)s.add(t.location)});return[…s]},[tasks]);
 
-const resetForm=useCallback(()=>{setTitle(””);setImportance(defaults.importance);setWeight(defaults.weight);setDeadline(defDl());setHasDeadline(defaults.hasDeadline);setMemo(””);setLocation(defaults.location);setRecurrence(defaults.recurrence);setIcon(””);setIconTouched(false);setFormSubs([]);setFormSubInput(””);setShowForm(false);setEditId(null)},[defaults]);
+const resetForm=useCallback(()=>{setTitle(””);setImportance(defaults.importance);setWeight(defaults.weight);setDeadline(defDl());setHasDeadline(defaults.hasDeadline);setMemo(””);setLocation(defaults.location);setRecurrence(defaults.recurrence);setIcon(””);setIconTouched(false);setFormSubs([]);setFormSubInput(””);setFormExpandSubs(false);setFormExpandMemo(false);setShowForm(false);setEditId(null)},[defaults]);
 
 const submit=useCallback(()=>{
 if(!title.trim())return;
@@ -293,7 +294,7 @@ const restoreTask=useCallback(id=>{const t=trash.find(x=>x.id===id);if(!t)return
 
 const undo=useCallback(()=>{if(!undoData)return;if(undoData.action===“delete”){setTasks(p=>[…p,…undoData.tasks]);setTrash(p=>p.filter(t=>!undoData.tasks.find(u=>u.id===t.id)))}setUndoData(null);if(ur.current)clearTimeout(ur.current)},[undoData]);
 
-const startEdit=useCallback(t=>{setTitle(t.title);setImportance(t.importance);setWeight(t.weight);setDeadline(t.deadline||defDl());setHasDeadline(!!t.deadline);setMemo(t.memo||””);setLocation(t.location||””);setRecurrence(t.recurrence||“none”);setIcon(t.icon||””);setIconTouched(!!t.icon);setFormSubs(t.subtasks||[]);setFormSubInput(””);setEditId(t.id);setShowForm(true);setExpandedId(null)},[]);
+const startEdit=useCallback(t=>{setTitle(t.title);setImportance(t.importance);setWeight(t.weight);setDeadline(t.deadline||defDl());setHasDeadline(!!t.deadline);setMemo(t.memo||””);setLocation(t.location||””);setRecurrence(t.recurrence||“none”);setIcon(t.icon||””);setIconTouched(!!t.icon);setFormSubs(t.subtasks||[]);setFormSubInput(””);setFormExpandSubs((t.subtasks||[]).length>0);setFormExpandMemo(!!(t.memo&&t.memo.trim()));setEditId(t.id);setShowForm(true);setExpandedId(null)},[]);
 
 const doExport=useCallback(()=>{
 const settings={sortOrder,defaults,dayReset,isDark,bannerCount};
@@ -629,10 +630,13 @@ return(<div style={{minHeight:“100dvh”,background:T.bg,color:T.text,fontFami
 <div style={{marginBottom:10}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}><span style={{fontSize:9,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,fontFamily:"'JetBrains Mono',monospace"}}>締切</span><button style={{padding:"3px 10px",borderRadius:7,border:"1px solid "+(!hasDeadline?T.cOn:T.brd),fontSize:10,fontWeight:600,cursor:"pointer",background:!hasDeadline?T.cOn:T.cOff,color:!hasDeadline?T.cOnT:T.cOffT}} onClick={()=>setHasDeadline(v=>!v)}>締切なし</button></div>{hasDeadline&&<input type="datetime-local" style={{width:"100%",padding:"9px 12px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:13,outline:"none",colorScheme:T.sch}} value={deadline} onChange={e=>setDeadline(e.target.value)}/>}</div>
 {!isWish&&hasDeadline&&<div style={{marginBottom:10}}><div style={{fontSize:9,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:6,fontFamily:"'JetBrains Mono',monospace"}}>繰り返し</div><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{REC.map(o=><button key={o.v} style={{padding:"6px 12px",borderRadius:7,border:"1px solid "+(recurrence===o.v?T.cOn:T.brd),fontSize:11,fontWeight:600,cursor:"pointer",background:recurrence===o.v?T.cOn:T.cOff,color:recurrence===o.v?T.cOnT:T.cOffT}} onClick={()=>setRecurrence(o.v)}>{o.l}</button>)}</div></div>}
 {!isWish&&<div style={{marginBottom:10}}><div style={{fontSize:9,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:6,fontFamily:"'JetBrains Mono',monospace"}}>場所</div><input style={{width:"100%",padding:"9px 12px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:13,outline:"none",minWidth:0}} placeholder="例: 自宅" value={location} onChange={e=>{const v=e.target.value;setLocation(v);if(!iconTouched&&locEmojis[v.trim()])setIcon(locEmojis[v.trim()])}} list="pl"/><datalist id="pl">{locs.map(l=><option key={l} value={l}/>)}</datalist>{location.trim()&&locEmojis[location.trim()]&&!iconTouched&&<div style={{fontSize:10,color:T.mut,marginTop:4,fontFamily:"'JetBrains Mono',monospace"}}>→ アイコン自動設定: {locEmojis[location.trim()]}</div>}</div>}
-<div style={{marginBottom:12,padding:12,background:T.inp,borderRadius:10,border:"1px solid "+T.brd}}>
+<div style={{marginBottom:10}}>{formExpandSubs?<div style={{padding:12,background:T.inp,borderRadius:10,border:"1px solid "+T.brd}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
 <span style={{fontSize:11,fontWeight:800,color:T.text,letterSpacing:1,textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace"}}>📋 サブタスク</span>
+<div style={{display:"flex",gap:8,alignItems:"center"}}>
 {formSubs.length>0&&<span style={{fontSize:10,color:T.mut,fontFamily:"'JetBrains Mono',monospace"}}>{formSubs.length}件</span>}
+<button style={{background:"none",border:"none",color:T.mut,fontSize:14,cursor:"pointer",padding:"0 4px"}} onClick={()=>{if(formSubs.length===0&&!formSubInput.trim())setFormExpandSubs(false)}} aria-label="閉じる">▴</button>
+</div>
 </div>
 {formSubs.map((sub,i)=><div key={sub.id} style={{display:"flex",gap:6,marginBottom:6,alignItems:"center"}}>
 <span style={{width:18,height:18,borderRadius:4,border:"2px solid "+T.chk,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:T.dim}}>{i+1}</span>
@@ -640,11 +644,11 @@ return(<div style={{minHeight:“100dvh”,background:T.bg,color:T.text,fontFami
 <button style={{width:30,height:30,borderRadius:6,border:"1px solid "+T.brd,background:"transparent",color:T.dim,fontSize:14,cursor:"pointer",flexShrink:0}} onClick={()=>setFormSubs(p=>p.filter((_,idx)=>idx!==i))}>✕</button>
 </div>)}
 <div style={{display:"flex",gap:6,marginTop:formSubs.length>0?8:0}}>
-<input style={{flex:1,padding:"10px 12px",background:T.card,border:"1px dashed "+T.brd,borderRadius:8,color:T.text,fontSize:14,outline:"none",minWidth:0}} value={formSubInput} onChange={e=>setFormSubInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.nativeEvent.isComposing&&formSubInput.trim()){setFormSubs(p=>[...p,{id:Date.now().toString(36)+Math.random().toString(36).slice(2,4),title:formSubInput.trim(),done:false}]);setFormSubInput("")}}} placeholder="＋ サブタスクを追加してEnter"/>
+<input style={{flex:1,padding:"10px 12px",background:T.card,border:"1px dashed "+T.brd,borderRadius:8,color:T.text,fontSize:14,outline:"none",minWidth:0}} value={formSubInput} onChange={e=>setFormSubInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.nativeEvent.isComposing&&formSubInput.trim()){setFormSubs(p=>[...p,{id:Date.now().toString(36)+Math.random().toString(36).slice(2,4),title:formSubInput.trim(),done:false}]);setFormSubInput("")}}} placeholder="＋ サブタスクを追加してEnter" autoFocus/>
 <button style={{width:44,height:42,borderRadius:8,border:"1px solid "+T.brd,background:formSubInput.trim()?T.cOn:T.cOff,color:formSubInput.trim()?T.cOnT:T.cOffT,fontSize:20,fontWeight:700,cursor:"pointer",flexShrink:0}} onClick={()=>{if(formSubInput.trim()){setFormSubs(p=>[...p,{id:Date.now().toString(36)+Math.random().toString(36).slice(2,4),title:formSubInput.trim(),done:false}]);setFormSubInput("")}}}>+</button>
 </div>
-</div>
-<div style={{marginBottom:10}}><div style={{fontSize:9,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:6,fontFamily:"'JetBrains Mono',monospace"}}>メモ</div><textarea style={{width:"100%",padding:"9px 12px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:13,outline:"none",minHeight:50,resize:"vertical",fontFamily:"inherit"}} placeholder="メモ..." value={memo} onChange={e=>setMemo(e.target.value)}/></div>
+</div>:<button style={{padding:"8px 12px",borderRadius:8,border:"1px dashed "+T.brd,background:"transparent",color:T.sub,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace"}} onClick={()=>setFormExpandSubs(true)}>+ サブタスク</button>}</div>
+{formExpandMemo?<div style={{marginBottom:10}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}><span style={{fontSize:9,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,fontFamily:"'JetBrains Mono',monospace"}}>メモ</span><button style={{background:"none",border:"none",color:T.mut,fontSize:14,cursor:"pointer",padding:"0 4px"}} onClick={()=>{if(!memo.trim())setFormExpandMemo(false)}} aria-label="閉じる">▴</button></div><textarea style={{width:"100%",padding:"9px 12px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:13,outline:"none",minHeight:50,resize:"vertical",fontFamily:"inherit"}} placeholder="メモ..." value={memo} onChange={e=>setMemo(e.target.value)} autoFocus/></div>:<div style={{marginBottom:10}}><button style={{padding:"8px 12px",borderRadius:8,border:"1px dashed "+T.brd,background:"transparent",color:T.sub,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace"}} onClick={()=>setFormExpandMemo(true)}>+ メモ</button></div>}
 <button style={{width:"100%",padding:12,background:"#ff3b30",border:"none",borderRadius:9,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}} onClick={submit}>{editId?"更新する":"追加する"}</button>
 </div>}
 
@@ -875,6 +879,7 @@ const wi=WI.find(w=>w.v===task.weight);
 const im=IMP.find(x=>x.v===task.importance);
 const[ns,setNs]=useState(””);
 const[showSubInput,setShowSubInput]=useState(false);
+useEffect(()=>{if(!expanded){setShowSubInput(false);setNs(””)}},[expanded]);
 const[subDragId,setSubDragId]=useState(null);
 const subDragStartY=useRef(0);
 const subs=task.subtasks||[];const sd=subs.filter(s=>s.done).length;const hs=subs.length>0;
@@ -884,10 +889,9 @@ const subDragMove=y=>{if(!subDragId)return;const dy=y-subDragStartY.current;cons
 const subDragEnd=()=>setSubDragId(null);
 const[showQuickMenu,setShowQuickMenu]=useState(false);
 const longPressTimer=useRef(null);
-const[swipeOffset,setSwipeOffset]=useState(0);
-const[swipeReleasing,setSwipeReleasing]=useState(false);
 const SWIPE_THRESHOLD=120;
 const cardRef=useRef(null);
+const bgRef=useRef(null);
 const swipeRef=useRef({x:0,y:0,axis:null,off:0});
 const cbRef=useRef({});
 useEffect(()=>{cbRef.current={done:task.done,expanded,memoExp,onDelete,onToggleDone}});
@@ -917,7 +921,23 @@ const excess=Math.abs(off)-SWIPE_THRESHOLD;
 off=Math.sign(off)*(SWIPE_THRESHOLD+excess*0.4);
 }
 s.off=off;
-setSwipeOffset(off);
+el.style.transition=“none”;
+el.style.transform=“translateX(”+off+“px)”;
+const bg=bgRef.current;
+if(bg){
+const progress=Math.min(1,Math.abs(off)/SWIPE_THRESHOLD);
+const ready=Math.abs(off)>=SWIPE_THRESHOLD;
+bg.style.display=“flex”;
+bg.style.justifyContent=off>0?“flex-start”:“flex-end”;
+bg.style.background=off>0?(ready?”#4ade80”:“rgba(74,222,128,”+(0.2+progress*0.5)+”)”):(ready?”#ff3b30”:“rgba(255,59,48,”+(0.2+progress*0.5)+”)”);
+const icon=bg.firstChild;
+if(icon){
+icon.textContent=off>0?“✓”:“🗑”;
+icon.style.fontSize=(24+progress*8)+“px”;
+icon.style.color=ready?”#000”:”#fff”;
+icon.style.transform=“scale(”+(0.6+progress*0.4)+”)”;
+}
+}
 }
 };
 const onEnd=()=>{
@@ -925,15 +945,20 @@ if(longPressTimer.current){clearTimeout(longPressTimer.current);longPressTimer.c
 const s=swipeRef.current;const cb=cbRef.current;
 if(s.axis===“x”){
 const off=s.off;
+el.style.transition=“transform .18s cubic-bezier(.2,.8,.4,1)”;
 if(off<=-SWIPE_THRESHOLD){
-setSwipeReleasing(true);setSwipeOffset(-600);
-setTimeout(()=>{cb.onDelete();setSwipeOffset(0);setSwipeReleasing(false)},180)
+el.style.transform=“translateX(-600px)”;
+setTimeout(()=>{cb.onDelete()},180)
 }else if(off>=SWIPE_THRESHOLD){
-setSwipeReleasing(true);setSwipeOffset(600);
-setTimeout(()=>{cb.onToggleDone();setSwipeOffset(0);setSwipeReleasing(false)},180)
+el.style.transform=“translateX(600px)”;
+setTimeout(()=>{cb.onToggleDone()},180)
 }else{
-setSwipeReleasing(true);setSwipeOffset(0);
-setTimeout(()=>setSwipeReleasing(false),200)
+el.style.transform=“translateX(0px)”;
+setTimeout(()=>{
+el.style.transition=””;
+el.style.transform=””;
+if(bgRef.current)bgRef.current.style.display=“none”;
+},200);
 }
 }
 s.axis=null;
@@ -949,18 +974,16 @@ el.removeEventListener(“touchend”,onEnd);
 el.removeEventListener(“touchcancel”,onEnd);
 }
 },[]);
-const swipeProgress=Math.min(1,Math.abs(swipeOffset)/SWIPE_THRESHOLD);
-const swipeReady=Math.abs(swipeOffset)>=SWIPE_THRESHOLD;
 const DONE_TIER={bg:isDark?”#0a0a0a”:”#f5f3ec”,border:isDark?“rgba(136,136,136,0.15)”:“rgba(161,161,170,0.3)”,shadow:“none”,fs:13,fw:500,tc:isDark?”#777”:”#52525b”,mc:isDark?”#555”:”#71717a”,pad:10,mfs:9,bfs:8,bp:“2px 6px”};
 const ts=task.done?DONE_TIER:(isDark?TIER[pr]:{…TIER[pr],…TIER_LIGHT[pr]});
 const displayRc=task.done?(isDark?”#555”:”#a1a1aa”):rc;
 const changeIcon=e=>{e.stopPropagation();const current=task.icon||””;const v=prompt(“アイコン(絵文字1-2文字)”,current);if(v===null)return;onQuickUpdate(“icon”,v.slice(0,2))};
 
 return(<div style={{position:“relative”,overflow:“hidden”,borderRadius:10,opacity:dragging?0.5:1,touchAction:“pan-y”}}>
-{swipeOffset!==0&&!task.done&&<div style={{position:“absolute”,inset:0,borderRadius:10,display:“flex”,alignItems:“center”,justifyContent:swipeOffset>0?“flex-start”:“flex-end”,padding:“0 24px”,background:swipeOffset>0?(swipeReady?”#4ade80”:“rgba(74,222,128,”+(0.2+swipeProgress*0.5)+”)”):(swipeReady?”#ff3b30”:“rgba(255,59,48,”+(0.2+swipeProgress*0.5)+”)”),pointerEvents:“none”,transition:swipeReleasing?“background .18s”:“none”}}>
-<span style={{fontSize:24+swipeProgress*8,color:swipeReady?”#000”:”#fff”,fontWeight:800,transform:“scale(”+(0.6+swipeProgress*0.4)+”)”,transition:“transform .1s”}}>{swipeOffset>0?“✓”:“🗑”}</span>
 
-</div>}
+<div ref={bgRef} style={{position:"absolute",inset:0,borderRadius:10,display:"none",alignItems:"center",padding:"0 24px",pointerEvents:"none"}}>
+<span style={{fontWeight:800,transition:"transform .1s",display:"inline-block"}}/>
+</div>
 {showQuickMenu&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.6)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setShowQuickMenu(false)}>
 <div style={{background:T.card,border:"1px solid "+T.brd,borderRadius:14,padding:14,minWidth:240,maxWidth:320,userSelect:"none",WebkitUserSelect:"none",WebkitTouchCallout:"none"}} onClick={e=>e.stopPropagation()}>
 <div style={{fontSize:12,color:T.mut,marginBottom:10,fontFamily:"'JetBrains Mono',monospace",textAlign:"center"}}>クイック操作</div>
@@ -976,7 +999,7 @@ return(<div style={{position:“relative”,overflow:“hidden”,borderRadius:1
 </div>
 </div>
 </div>}
-<div ref={cardRef} className="task-card" style={{background:isW?T.card:ts.bg,borderRadius:10,padding:ts.pad+"px 14px "+ts.pad+"px "+(ts.pad+8)+"px",transition:swipeReleasing?"transform .18s cubic-bezier(.2,.8,.4,1)":(swipeOffset!==0?"none":"all .2s"),cursor:"pointer",position:"relative",display:"flex",width:"100%",flexDirection:expanded||memoExp?"column":"row",alignItems:expanded||memoExp?"stretch":"center",border:"1px solid "+(isLatestDone?"rgba(74,222,128,0.5)":isW?(wishOver?"rgba(255,59,48,0.4)":wishUrgent?"rgba(255,149,0,0.4)":"rgba(192,132,252,0.2)"):ts.border),boxShadow:isLatestDone?"0 0 8px rgba(74,222,128,0.2)":ts.shadow!=="none"?"0 0 10px "+ts.shadow:"",transform:"translateX("+swipeOffset+"px)",userSelect:"none",WebkitUserSelect:"none",WebkitTouchCallout:"none",touchAction:"pan-y"}} onClick={e=>{if(e.target.closest(".ne")||Math.abs(swipeOffset)>5)return;onToggleExpand()}}>
+<div ref={cardRef} className="task-card" style={{background:isW?T.card:ts.bg,borderRadius:10,padding:ts.pad+"px 14px "+ts.pad+"px "+(ts.pad+8)+"px",transition:"all .2s",cursor:"pointer",position:"relative",display:"flex",width:"100%",flexDirection:expanded||memoExp?"column":"row",alignItems:expanded||memoExp?"stretch":"center",border:"1px solid "+(isLatestDone?"rgba(74,222,128,0.5)":isW?(wishOver?"rgba(255,59,48,0.4)":wishUrgent?"rgba(255,149,0,0.4)":"rgba(192,132,252,0.2)"):ts.border),boxShadow:isLatestDone?"0 0 8px rgba(74,222,128,0.2)":ts.shadow!=="none"?"0 0 10px "+ts.shadow:"",userSelect:"none",WebkitUserSelect:"none",WebkitTouchCallout:"none",touchAction:"pan-y",willChange:"transform"}} onClick={e=>{if(e.target.closest(".ne")||(swipeRef.current&&swipeRef.current.axis==="x"))return;onToggleExpand()}}>
 {!isW&&!task.done&&<div style={{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",width:wi?.bw||4,height:(wi?.bh||75)+"%",background:displayRc,borderRadius:"0 3px 3px 0"}}/>}
 {isW&&<div style={{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",width:3,height:"60%",background:rc,borderRadius:"0 3px 3px 0"}}/>}
 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%"}}>
