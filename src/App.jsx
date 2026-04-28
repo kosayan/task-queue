@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from “react”;
 import { useSwipeable } from “react-swipeable”;
 
-const VER = “3.12.5”;
+const VER = “3.13.0”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
@@ -62,12 +62,17 @@ if(so===“impGroup”||so===“weightGroup”)return tierN(task.importance,task
 return 5;
 }
 
-const SK=“task-queue-v1”,SOK=“task-queue-sort”,SOR=“task-queue-sortrev”,DK=“task-queue-defaults”,THK=“task-queue-theme”,TRK=“task-queue-trash”,HRK=“task-queue-habits”,DRK=“task-queue-dayreset”,LEK=“task-queue-locemojis”,LXK=“task-queue-lastexport”,TPK=“task-queue-todaypicks”,TDK=“task-queue-todaypickday”,BNK=“task-queue-bannercount”,ABK=“task-queue-autobackup”,CBK=“task-queue-colorblind”,WRK=“task-queue-weekreport”,MRK=“task-queue-monthreset”,SNK=“task-queue-soundenabled”;
+const SK=“task-queue-v1”,SOK=“task-queue-sort”,SOR=“task-queue-sortrev”,DK=“task-queue-defaults”,THK=“task-queue-theme”,TRK=“task-queue-trash”,HRK=“task-queue-habits”,DRK=“task-queue-dayreset”,LEK=“task-queue-locemojis”,LXK=“task-queue-lastexport”,TPK=“task-queue-todaypicks”,TDK=“task-queue-todaypickday”,BNK=“task-queue-bannercount”,ABK=“task-queue-autobackup”,CBK=“task-queue-colorblind”,WRK=“task-queue-weekreport”,MRK=“task-queue-monthreset”,SNK=“task-queue-soundenabled”,SCK=“task-queue-soundcustom”,SCN=“task-queue-soundcustomname”;
 const DD={importance:2,weight:2,hasDeadline:false,recurrence:“none”,location:””};
 
 function ld(k,d){try{const r=localStorage.getItem(k);return r?JSON.parse(r):d}catch{return d}}
 let quotaWarnedFlag=false;
 function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){if(!quotaWarnedFlag&&(e.name===“QuotaExceededError”||e.code===22||e.code===1014)){quotaWarnedFlag=true;try{window.dispatchEvent(new CustomEvent(“tq-quota-exceeded”))}catch{}}}}
+
+function idbOpen(){return new Promise((res,rej)=>{const req=indexedDB.open(“task-queue-db”,1);req.onupgradeneeded=e=>{const db=e.target.result;if(!db.objectStoreNames.contains(“audio”))db.createObjectStore(“audio”)};req.onsuccess=e=>res(e.target.result);req.onerror=()=>rej(req.error)})}
+async function idbSetAudio(key,blob){try{const db=await idbOpen();return new Promise((res,rej)=>{const tx=db.transaction(“audio”,“readwrite”);tx.objectStore(“audio”).put(blob,key);tx.oncomplete=()=>res(true);tx.onerror=()=>rej(tx.error)})}catch{return false}}
+async function idbGetAudio(key){try{const db=await idbOpen();return new Promise((res)=>{const tx=db.transaction(“audio”,“readonly”);const r=tx.objectStore(“audio”).get(key);r.onsuccess=()=>res(r.result||null);r.onerror=()=>res(null)})}catch{return null}}
+async function idbDelAudio(key){try{const db=await idbOpen();return new Promise((res)=>{const tx=db.transaction(“audio”,“readwrite”);tx.objectStore(“audio”).delete(key);tx.oncomplete=()=>res(true);tx.onerror=()=>res(false)})}catch{return false}}
 
 const Refresh=()=>(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:16,height:16}}><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>);
 const Grip=()=>(<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{width:14,height:14}}><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="4" y1="14" x2="20" y2="14"/><line x1="4" y1="18" x2="20" y2="18"/></svg>);
@@ -130,6 +135,7 @@ const[memoExpId,setMemoExpId]=useState(null);
 const[sortOrder,setSortOrder]=useState(()=>{const v=localStorage.getItem(SOK)||“smart”;if(v===“light”){localStorage.setItem(SOK,“heavy”);return “heavy”}if(v===“created”){localStorage.setItem(SOK,“smart”);return “smart”}return v});
 const[sortReverse,setSortReverse]=useState(()=>{const v=localStorage.getItem(SOK);if(v===“light”)return true;return ld(SOR,false)});
 const[soundEnabled,setSoundEnabled]=useState(()=>ld(SNK,false));
+const[customSoundName,setCustomSoundName]=useState(()=>ld(SCN,””));
 const audioCtxRef=useRef(null);
 const audioBufRef=useRef(null);
 const audioLoadPromiseRef=useRef(null);
@@ -144,8 +150,16 @@ if(audioBufRef.current)return ctx;
 if(!audioLoadPromiseRef.current){
 audioLoadPromiseRef.current=(async()=>{
 try{
+const hasCustom=ld(SCK,false);
+let arr;
+if(hasCustom){
+const blob=await idbGetAudio(“complete”);
+if(blob)arr=await blob.arrayBuffer();
+}
+if(!arr){
 const res=await fetch(”./sounds/complete.mp3”);
-const arr=await res.arrayBuffer();
+arr=await res.arrayBuffer();
+}
 audioBufRef.current=await ctx.decodeAudioData(arr);
 }catch{}
 })();
@@ -170,8 +184,24 @@ const playCompleteSound=useCallback(()=>{
 if(!soundEnabled)return;
 if(audioBufRef.current){playSoundOnBuf();return}
 const t0=Date.now();
-ensureAudio().then(()=>{if(Date.now()-t0<500)playSoundOnBuf()});
+ensureAudio().then(()=>{if(Date.now()-t0<1500)playSoundOnBuf()});
 },[soundEnabled,ensureAudio]);
+const reloadAudioBuf=useCallback(()=>{audioBufRef.current=null;audioLoadPromiseRef.current=null;if(soundEnabled)ensureAudio()},[soundEnabled,ensureAudio]);
+const setCustomSound=useCallback(async(file)=>{
+try{
+const blob=new Blob([await file.arrayBuffer()],{type:file.type||“audio/mpeg”});
+const ok=await idbSetAudio(“complete”,blob);
+if(!ok)return false;
+sv(SCK,true);sv(SCN,file.name);setCustomSoundName(file.name);
+reloadAudioBuf();
+return true;
+}catch{return false}
+},[reloadAudioBuf]);
+const resetCustomSound=useCallback(async()=>{
+await idbDelAudio(“complete”);
+sv(SCK,false);sv(SCN,””);setCustomSoundName(””);
+reloadAudioBuf();
+},[reloadAudioBuf]);
 useEffect(()=>{if(soundEnabled)ensureAudio()},[soundEnabled,ensureAudio]);
 const[sortDir,setSortDir]=useState(()=>localStorage.getItem(SOK+”-dir”)||“desc”);
 const[searchQ,setSearchQ]=useState(””);const[showSearch,setShowSearch]=useState(false);
@@ -794,11 +824,23 @@ return(<div style={{minHeight:“100dvh”,background:T.bg,color:T.text,fontFami
 </div>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0"}}>
 <span style={{fontSize:12,color:T.sub}}>完了時の効果音</span>
-<button style={{width:44,height:24,borderRadius:12,border:"none",background:soundEnabled?"#4ade80":T.dim,position:"relative",cursor:"pointer",transition:"background .2s"}} onClick={async()=>{const next=!soundEnabled;setSoundEnabled(next);if(next){try{const AC=window.AudioContext||window.webkitAudioContext;if(!audioCtxRef.current&&AC)audioCtxRef.current=new AC();const ctx=audioCtxRef.current;if(ctx.state==="suspended")await ctx.resume();if(!audioBufRef.current){const res=await fetch("./sounds/complete.mp3");const arr=await res.arrayBuffer();audioBufRef.current=await ctx.decodeAudioData(arr)}const src=ctx.createBufferSource();src.buffer=audioBufRef.current;const gain=ctx.createGain();gain.gain.value=0.6;src.connect(gain);gain.connect(ctx.destination);src.start(0)}catch{}}}}>
+<button style={{width:44,height:24,borderRadius:12,border:"none",background:soundEnabled?"#4ade80":T.dim,position:"relative",cursor:"pointer",transition:"background .2s"}} onClick={async()=>{const next=!soundEnabled;setSoundEnabled(next);if(next){try{await ensureAudio();playSoundOnBuf()}catch{}}}}>
 <span style={{position:"absolute",top:2,left:soundEnabled?22:2,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
 </button>
 </div>
-{soundEnabled&&<div style={{fontSize:10,color:T.mut,padding:"4px 0",lineHeight:1.5}}>※ public/sounds/complete.mp3 を配置してください</div>}
+{soundEnabled&&<div style={{padding:"6px 0",borderTop:"1px solid "+T.brd,marginTop:4}}>
+<div style={{fontSize:11,fontWeight:700,color:T.mut,marginBottom:6,letterSpacing:1,fontFamily:"'JetBrains Mono',monospace"}}>カスタム音声</div>
+<div style={{fontSize:11,color:T.dim,marginBottom:8,lineHeight:1.5}}>{customSoundName?"現在: "+customSoundName:"デフォルト音声を使用中"}</div>
+<div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+<label style={{flex:1,minWidth:120,padding:"9px 12px",borderRadius:8,border:"1px solid "+T.brd,background:T.inp,color:T.text,fontSize:12,fontWeight:600,cursor:"pointer",textAlign:"center",display:"inline-block"}}>
+ファイルを選ぶ
+<input type="file" accept="audio/*,video/*" style={{display:"none"}} onChange={async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const ok=await setCustomSound(f);if(ok){try{await ensureAudio();playSoundOnBuf()}catch{}}else{alert("読み込みに失敗しました")}e.target.value=""}}/>
+</label>
+{customSoundName&&<button style={{padding:"9px 12px",borderRadius:8,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:12,fontWeight:600,cursor:"pointer"}} onClick={async()=>{await resetCustomSound()}}>デフォルトに戻す</button>}
+<button style={{padding:"9px 12px",borderRadius:8,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:12,fontWeight:600,cursor:"pointer"}} onClick={async()=>{await ensureAudio();playSoundOnBuf()}}>▶ 試聴</button>
+</div>
+<div style={{fontSize:10,color:T.dim,marginTop:6,lineHeight:1.5}}>※ mp3 / m4a / wav / mp4 / mov などの音声・動画ファイル対応(動画は音声のみ抽出)</div>
+</div>}
 </div>
 
 <div style={{marginBottom:14}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>新規タスクのデフォルト</div>
