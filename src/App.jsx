@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from “react”;
 import { useSwipeable } from “react-swipeable”;
 
-const VER = “3.12.1”;
+const VER = “3.12.2”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
@@ -687,7 +687,7 @@ return(<div style={{minHeight:“100dvh”,background:T.bg,color:T.text,fontFami
 
 {!isHabit&&!isGroupMode&&<div style={{display:“flex”,flexDirection:“column”,gap:8}}>
 {sorted.length===0&&<div style={{textAlign:“center”,padding:36,color:T.dim,fontSize:13,fontFamily:”‘JetBrains Mono’,monospace”}}>{searchQ?“検索結果なし”:filter===“done”?“完了タスクなし”:“タスクを追加しましょう”}</div>}
-{sorted.map((task,idx)=>{const useRank=isTask&&sortOrder!==“smart”&&sortOrder!==“impGroup”&&sortOrder!==“weightGroup”&&filter!==“done”;const dt=useRank?Math.max(1,Math.min(9,Math.floor(idx/Math.max(1,sorted.length/9))+1)):null;return<TaskCard key={task.id} task={task} T={T} isDark={isDark} sortOrder={sortOrder} expanded={expandedId===task.id} memoExp={memoExpId===task.id} dragging={draggingId===task.id} draggable={isWish} isToday={todayPicks.includes(task.id)} isLatestDone={latestDoneId===task.id} locEmojis={locEmojis} displayTier={dt} onToggleExpand={()=>{setExpandedId(expandedId===task.id?null:task.id);setMemoExpId(null)}} onToggleMemo={()=>{setMemoExpId(memoExpId===task.id?null:task.id);setExpandedId(null)}} onToggleDone={()=>togDone(task.id)} onEdit={()=>startEdit(task)} onDelete={()=>delTask(task.id)} onUpdateSubtasks={s=>upSub(task.id,s)} onUpdateMemo={m=>upMemo(task.id,m)} onQuickUpdate={(f,v)=>quickUpdate(task.id,f,v)} onToggleToday={()=>setTodayPicks(p=>p.includes(task.id)?p.filter(x=>x!==task.id):[…p,task.id])} onFocus={()=>setFocusTaskId(task.id)} onDragStart={y=>dragStart(task.id,“wish”,y)} onDragMove={dragMove} onDragEnd={dragEnd}/>})}
+{sorted.map((task,idx)=>{const useRank=isTask&&sortOrder!==“impGroup”&&sortOrder!==“weightGroup”&&filter!==“done”;const dt=useRank?Math.max(1,Math.min(9,Math.floor(idx/Math.max(1,sorted.length/9))+1)):null;return<TaskCard key={task.id} task={task} T={T} isDark={isDark} sortOrder={sortOrder} expanded={expandedId===task.id} memoExp={memoExpId===task.id} dragging={draggingId===task.id} draggable={isWish} isToday={todayPicks.includes(task.id)} isLatestDone={latestDoneId===task.id} locEmojis={locEmojis} displayTier={dt} onToggleExpand={()=>{setExpandedId(expandedId===task.id?null:task.id);setMemoExpId(null)}} onToggleMemo={()=>{setMemoExpId(memoExpId===task.id?null:task.id);setExpandedId(null)}} onToggleDone={()=>togDone(task.id)} onEdit={()=>startEdit(task)} onDelete={()=>delTask(task.id)} onUpdateSubtasks={s=>upSub(task.id,s)} onUpdateMemo={m=>upMemo(task.id,m)} onQuickUpdate={(f,v)=>quickUpdate(task.id,f,v)} onToggleToday={()=>setTodayPicks(p=>p.includes(task.id)?p.filter(x=>x!==task.id):[…p,task.id])} onFocus={()=>setFocusTaskId(task.id)} onDragStart={y=>dragStart(task.id,“wish”,y)} onDragMove={dragMove} onDragEnd={dragEnd} onSwipeCompleteSound={playCompleteSound}/>})}
 
 </div>}
 
@@ -879,7 +879,7 @@ return(<div style={{minHeight:“100dvh”,background:T.bg,color:T.text,fontFami
 </div>)
 }
 
-const TaskCard=memo(function TaskCard({task,T,isDark,sortOrder,expanded,memoExp,dragging,draggable,isToday,isLatestDone,locEmojis={},displayTier,onToggleExpand,onToggleMemo,onToggleDone,onEdit,onDelete,onUpdateSubtasks,onUpdateMemo,onQuickUpdate,onToggleToday,onFocus,onDragStart,onDragMove,onDragEnd}){
+const TaskCard=memo(function TaskCard({task,T,isDark,sortOrder,expanded,memoExp,dragging,draggable,isToday,isLatestDone,locEmojis={},displayTier,onToggleExpand,onToggleMemo,onToggleDone,onEdit,onDelete,onUpdateSubtasks,onUpdateMemo,onQuickUpdate,onToggleToday,onFocus,onDragStart,onDragMove,onDragEnd,onSwipeCompleteSound}){
 const isW=task.type===“wish”;
 const wishUrgent=isW&&task.deadline&&((new Date(task.deadline)-new Date())/36e5)<24&&((new Date(task.deadline)-new Date())/36e5)>=0;
 const wishOver=isW&&task.deadline&&((new Date(task.deadline)-new Date())/36e5)<0;
@@ -918,11 +918,11 @@ swipeBlockedRef.current=false;
 },
 onSwiping:(e)=>{
 if(swipeBlockedRef.current)return;
-if(task.done||expanded||memoExp)return;
+if(expanded||memoExp)return;
 if(e.dir!==“Left”&&e.dir!==“Right”)return;
-if(e.dir===“Right”&&isRecurring)return;
+if(e.dir===“Right”&&(isRecurring||task.done))return;
 let off=e.deltaX;
-if(e.dir===“Right”&&isRecurring)off=0;
+if(e.dir===“Right”&&(isRecurring||task.done))off=0;
 if(Math.abs(off)>SWIPE_THRESHOLD){
 const excess=Math.abs(off)-SWIPE_THRESHOLD;
 off=Math.sign(off)*(SWIPE_THRESHOLD+excess*0.4);
@@ -932,14 +932,15 @@ setSwipeOffset(off);
 },
 onSwiped:(e)=>{
 if(swipeBlockedRef.current){swipeBlockedRef.current=false;setSwipeOffset(0);return}
-if(task.done||expanded||memoExp){setSwipeOffset(0);return}
+if(expanded||memoExp){setSwipeOffset(0);return}
 if(e.dir!==“Left”&&e.dir!==“Right”){setSwipeOffset(0);return}
 const off=e.deltaX;
 setSwipeAnimating(true);
 if(off<=-SWIPE_THRESHOLD){
 setSwipeOffset(-600);
 setTimeout(()=>{onDelete();setSwipeOffset(0);setSwipeAnimating(false)},180)
-}else if(off>=SWIPE_THRESHOLD&&!isRecurring){
+}else if(off>=SWIPE_THRESHOLD&&!isRecurring&&!task.done){
+if(onSwipeCompleteSound)onSwipeCompleteSound();
 setSwipeOffset(600);
 setTimeout(()=>{onToggleDone();setSwipeOffset(0);setSwipeAnimating(false)},180)
 }else{
@@ -968,7 +969,7 @@ const displayRc=task.done?(isDark?”#555”:”#a1a1aa”):rc;
 const changeIcon=e=>{e.stopPropagation();const current=task.icon||””;const v=prompt(“アイコン(絵文字1-2文字)”,current);if(v===null)return;onQuickUpdate(“icon”,v.slice(0,2))};
 
 return(<div {…swipeHandlers} style={{position:“relative”,overflow:“hidden”,borderRadius:10,opacity:dragging?0.5:1}}>
-{swipeOffset!==0&&!task.done&&<div style={{position:“absolute”,inset:0,borderRadius:10,display:“flex”,alignItems:“center”,justifyContent:swipeOffset>0?“flex-start”:“flex-end”,padding:“0 24px”,background:swipeOffset>0?(swipeReady?”#4ade80”:“rgba(74,222,128,”+(0.2+swipeProgress*0.5)+”)”):(swipeReady?”#ff3b30”:“rgba(255,59,48,”+(0.2+swipeProgress*0.5)+”)”),pointerEvents:“none”,transition:swipeAnimating?“background .18s”:“none”}}>
+{swipeOffset!==0&&<div style={{position:“absolute”,inset:0,borderRadius:10,display:“flex”,alignItems:“center”,justifyContent:swipeOffset>0?“flex-start”:“flex-end”,padding:“0 24px”,background:swipeOffset>0?(swipeReady?”#4ade80”:“rgba(74,222,128,”+(0.2+swipeProgress*0.5)+”)”):(swipeReady?”#ff3b30”:“rgba(255,59,48,”+(0.2+swipeProgress*0.5)+”)”),pointerEvents:“none”,transition:swipeAnimating?“background .18s”:“none”}}>
 <span style={{fontSize:24+swipeProgress*8,color:swipeReady?”#000”:”#fff”,fontWeight:800,transform:“scale(”+(0.6+swipeProgress*0.4)+”)”,transition:“transform .1s”}}>{swipeOffset>0?“✓”:“🗑”}</span>
 
 </div>}
@@ -979,8 +980,8 @@ return(<div {…swipeHandlers} style={{position:“relative”,overflow:“hidde
 <div style={{display:"flex",flexDirection:"column",gap:6}}>
 {!task.done&&task.type!=="wish"&&onFocus&&<button style={{padding:"13px",borderRadius:8,border:"none",background:"#ff9500",color:"#000",fontSize:14,fontWeight:800,cursor:"pointer",letterSpacing:1}} onClick={()=>{onFocus();setShowQuickMenu(false)}}>▶ これやる(集中モード)</button>}
 {!task.done&&<button style={{padding:"11px",borderRadius:8,border:"1px solid #4ade80",background:"rgba(74,222,128,0.12)",color:"#4ade80",fontSize:13,fontWeight:700,cursor:"pointer"}} onClick={()=>{onToggleDone();setShowQuickMenu(false)}}>✓ 完了にする</button>}
-{!task.done&&task.type!=="wish"&&<button style={{padding:"11px",borderRadius:8,border:"1px solid "+T.brd,background:"transparent",color:T.text,fontSize:13,fontWeight:600,cursor:"pointer"}} onClick={()=>{onToggleToday();setShowQuickMenu(false)}}>{isToday?"⭐ TODAYから外す":"⭐ TODAYにする"}</button>}
-{!task.done&&<button style={{padding:"11px",borderRadius:8,border:"1px solid "+T.brd,background:"transparent",color:T.text,fontSize:13,fontWeight:600,cursor:"pointer"}} onClick={()=>{onQuickUpdate("type",task.type==="wish"?"task":"wish");setShowQuickMenu(false)}}>🔄 {task.type==="wish"?"タスクに":"やりたいに"}変換</button>}
+{!task.done&&task.type!=="wish"&&<button style={{padding:"11px",borderRadius:8,border:"1px solid "+T.brd,background:"transparent",color:T.text,fontSize:13,fontWeight:600,cursor:"pointer"}} onClick={()=>{onToggleToday();setShowQuickMenu(false)}}>{isToday?"◆ TODAYから外す":"◆ TODAYにする"}</button>}
+{!task.done&&<button style={{padding:"11px",borderRadius:8,border:"1px solid "+T.brd,background:"transparent",color:T.text,fontSize:13,fontWeight:600,cursor:"pointer"}} onClick={()=>{onQuickUpdate("type",task.type==="wish"?"task":"wish");setShowQuickMenu(false)}}>⇄ {task.type==="wish"?"タスクに":"やりたいに"}変換</button>}
 <button style={{padding:"11px",borderRadius:8,border:"1px solid rgba(255,59,48,0.3)",background:"transparent",color:"#ff3b30",fontSize:13,fontWeight:600,cursor:"pointer"}} onClick={()=>{onDelete();setShowQuickMenu(false)}}>🗑 削除</button>
 <button style={{padding:"9px",borderRadius:8,border:"none",background:"transparent",color:T.mut,fontSize:12,cursor:"pointer",marginTop:4}} onClick={()=>setShowQuickMenu(false)}>キャンセル</button>
 </div>
