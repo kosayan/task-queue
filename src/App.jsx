@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from “react”;
 import { useSwipeable } from “react-swipeable”;
 
-const VER = “3.13.1”;
+const VER = “3.13.2”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
@@ -365,6 +365,7 @@ setTimeout(()=>setParticles(p=>p.filter(x=>!x.id.startsWith(id+”-”))),2300);
 },[]);
 
 const togDone=useCallback((id,silentSound)=>{setTasks(prev=>{const t=prev.find(x=>x.id===id);if(!t)return prev;if(!t.done){fireParticles(t.importance||2);if(!silentSound)playCompleteSound()}if(!t.done&&t.recurrence&&t.recurrence!==“none”&&t.deadline){const nt={…t,id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),deadline:advRec(t.deadline,t.recurrence),done:false,createdAt:Date.now(),completedAt:null};return prev.map(x=>x.id===id?{…x,done:true,completedAt:Date.now()}:x).concat(nt)}return prev.map(x=>x.id===id?{…x,done:!x.done,completedAt:!x.done?Date.now():null}:x)})},[fireParticles,playCompleteSound]);
+const togHabitDone=useCallback((id,silentSound)=>{const tdy=new Date();if(tdy.getHours()<dayReset)tdy.setDate(tdy.getDate()-1);const key=tdy.getFullYear()+”-”+String(tdy.getMonth()+1).padStart(2,“0”)+”-”+String(tdy.getDate()).padStart(2,“0”);const y=new Date(tdy);y.setDate(y.getDate()-1);const yKey=y.getFullYear()+”-”+String(y.getMonth()+1).padStart(2,“0”)+”-”+String(y.getDate()).padStart(2,“0”);setHabits(p=>p.map(x=>{if(x.id!==id)return x;const now=!x.doneToday;if(now){const prev=x.streak||0;const newStreak=x.lastDoneDate===yKey?prev+1:x.lastDoneDate===key?prev:1;const isMilestone=[5,10,30,50,100].includes(newStreak);fireParticles(isMilestone?3:1);if(!silentSound)playCompleteSound();if(isMilestone)setTimeout(()=>fireParticles(3),200);return{…x,doneToday:true,lastDoneDate:key,streak:newStreak,bestStreak:Math.max(x.bestStreak||0,newStreak)}}return{…x,doneToday:false,lastDoneDate:x.lastDoneDate===key?yKey:x.lastDoneDate,streak:x.lastDoneDate===key?Math.max(0,(x.streak||1)-1):x.streak}}))},[dayReset,fireParticles,playCompleteSound]);
 
 const delTask=useCallback(id=>{const t=tasks.find(x=>x.id===id);if(!t)return;setTrash(p=>[…p,{…t,deletedAt:Date.now()}]);showUndo([t],“delete”);setTasks(p=>p.filter(x=>x.id!==id));if(expandedId===id)setExpandedId(null)},[tasks,expandedId,showUndo]);
 
@@ -737,24 +738,7 @@ return(<div style={{minHeight:“100dvh”,background:T.bg,color:T.text,fontFami
 <input style={{flex:1,padding:"8px 10px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:13,outline:"none",minWidth:0}} placeholder="日課を追加..." value={habitInput} onChange={e=>setHabitInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.nativeEvent.isComposing&&habitInput.trim()){setHabits(p=>[...p,{id:Date.now().toString(36)+Math.random().toString(36).slice(2,4),title:habitInput.trim(),memo:"",icon:habitIcon.trim(),doneToday:false}]);setHabitInput("");setHabitIcon("")}}}/>
 <button style={{width:40,height:38,borderRadius:8,border:"1px solid "+T.brd,background:habitInput.trim()?T.cOn:T.cOff,color:habitInput.trim()?T.cOnT:T.cOffT,fontSize:18,fontWeight:700,cursor:"pointer",flexShrink:0}} onClick={()=>{if(habitInput.trim()){setHabits(p=>[...p,{id:Date.now().toString(36)+Math.random().toString(36).slice(2,4),title:habitInput.trim(),memo:"",icon:habitIcon.trim(),doneToday:false}]);setHabitInput("");setHabitIcon("")}}}>+</button>
 </div>
-{habitsSorted.map(h=>(
-<div key={h.id} style={{background:T.card,border:"1px solid "+(editHabitId===h.id?"#ff3b30":T.brd),borderRadius:10,padding:"10px 12px",marginBottom:6,opacity:draggingId===h.id?0.5:(h.doneToday?.4:1),transition:"opacity .2s"}}>
-{editHabitId===h.id?<div style={{display:"flex",flexDirection:"column",gap:6}}>
-<div style={{display:"flex",gap:6,alignItems:"center"}}>
-<input style={{width:40,padding:"5px 2px",background:T.inp,border:"1px solid "+T.brd,borderRadius:5,color:T.text,fontSize:15,outline:"none",textAlign:"center",flexShrink:0}} placeholder="📌" value={h.icon} onChange={e=>setHabits(p=>p.map(x=>x.id===h.id?{...x,icon:e.target.value}:x))} maxLength={2}/>
-<input style={{flex:1,padding:"5px 8px",background:T.inp,border:"1px solid "+T.brd,borderRadius:5,color:T.text,fontSize:13,outline:"none",minWidth:0}} value={h.title} onChange={e=>setHabits(p=>p.map(x=>x.id===h.id?{...x,title:e.target.value}:x))}/>
-<button style={{background:"none",border:"1px solid #4ade80",borderRadius:5,color:"#4ade80",fontSize:11,fontWeight:700,cursor:"pointer",padding:"4px 10px"}} onClick={()=>setEditHabitId(null)}>完了</button>
-</div>
-<textarea style={{width:"100%",padding:"6px 8px",background:T.inp,border:"1px solid "+T.brd,borderRadius:5,color:T.text,fontSize:11,outline:"none",minHeight:40,resize:"vertical",fontFamily:"inherit"}} placeholder="メモ..." value={h.memo||""} onChange={e=>setHabits(p=>p.map(x=>x.id===h.id?{...x,memo:e.target.value}:x))}/>
-</div>:<div style={{display:"flex",alignItems:"center",gap:8}}>
-<button style={{width:20,height:20,borderRadius:5,border:"2px solid "+(h.doneToday?"#4ade80":T.chk),background:h.doneToday?"#4ade80":"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,color:"#000",fontSize:10,fontWeight:700}} onClick={()=>{const tdy=new Date();if(tdy.getHours()<dayReset)tdy.setDate(tdy.getDate()-1);const key=tdy.getFullYear()+"-"+String(tdy.getMonth()+1).padStart(2,"0")+"-"+String(tdy.getDate()).padStart(2,"0");const y=new Date(tdy);y.setDate(y.getDate()-1);const yKey=y.getFullYear()+"-"+String(y.getMonth()+1).padStart(2,"0")+"-"+String(y.getDate()).padStart(2,"0");setHabits(p=>p.map(x=>{if(x.id!==h.id)return x;const now=!x.doneToday;if(now){const prev=x.streak||0;const newStreak=x.lastDoneDate===yKey?prev+1:x.lastDoneDate===key?prev:1;const isMilestone=[5,10,30,50,100].includes(newStreak);fireParticles(isMilestone?3:1);if(isMilestone)setTimeout(()=>fireParticles(3),200);return{...x,doneToday:true,lastDoneDate:key,streak:newStreak,bestStreak:Math.max(x.bestStreak||0,newStreak)}}return{...x,doneToday:false,lastDoneDate:x.lastDoneDate===key?yKey:x.lastDoneDate,streak:x.lastDoneDate===key?Math.max(0,(x.streak||1)-1):x.streak}}))}}>{h.doneToday&&"✓"}</button>
-<div style={{fontSize:18,flexShrink:0,width:24,textAlign:"center",cursor:"pointer"}} onClick={()=>setEditHabitId(h.id)}>{h.icon||"📌"}</div>
-<div style={{flex:1,cursor:"pointer",minWidth:0}} onClick={()=>setEditHabitId(h.id)}><ScrollTitle text={h.title} style={{fontSize:13,fontWeight:500,color:T.text,textDecoration:h.doneToday?"line-through":"none"}}/><div style={{display:"flex",gap:6,alignItems:"center",marginTop:2}}>{h.streak>=2&&<span style={{fontSize:10,color:"#ff9500",fontFamily:"'JetBrains Mono',monospace",fontWeight:700}}>🔥 {h.streak}</span>}{h.memo&&<span style={{fontSize:10,color:T.mut,fontFamily:"'JetBrains Mono',monospace",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0,flex:1}}>{h.memo}</span>}</div></div>
-<div style={{flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",width:28,height:28,color:T.dim,cursor:"grab",touchAction:"none"}} onTouchStart={e=>{e.stopPropagation();dragStart(h.id,"habit",e.touches[0].clientY)}} onTouchMove={e=>{if(draggingId===h.id){e.stopPropagation();dragMove(e.touches[0].clientY)}}} onTouchEnd={e=>{e.stopPropagation();dragEnd()}} onClick={e=>e.stopPropagation()}><Grip/></div>
-<button style={{background:"none",border:"none",color:T.dim,fontSize:11,cursor:"pointer",padding:4}} onClick={()=>setHabits(p=>p.filter(x=>x.id!==h.id))}>✕</button>
-</div>}
-</div>
-))}
+{habitsSorted.map(h=><HabitCard key={h.id} habit={h} T={T} isEditing={editHabitId===h.id} dragging={draggingId===h.id} onSetEdit={setEditHabitId} onUpdate={u=>setHabits(p=>p.map(x=>x.id===u.id?u:x))} onDelete={()=>setHabits(p=>p.filter(x=>x.id!==h.id))} onToggleDone={()=>togHabitDone(h.id)} onDragStart={y=>dragStart(h.id,"habit",y)} onDragMove={dragMove} onDragEnd={dragEnd}/>)}
 {habits.length===0&&<div style={{textAlign:"center",padding:36,color:T.dim,fontSize:13,fontFamily:"'JetBrains Mono',monospace"}}>日課を追加しましょう</div>}
 </>}
 
@@ -835,7 +819,7 @@ return(<div style={{minHeight:“100dvh”,background:T.bg,color:T.text,fontFami
 <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
 <label style={{flex:1,minWidth:120,padding:"9px 12px",borderRadius:8,border:"1px solid "+T.brd,background:T.inp,color:T.text,fontSize:12,fontWeight:600,cursor:"pointer",textAlign:"center",display:"inline-block"}}>
 ファイルを選ぶ
-<input type="file" style={{display:"none"}} onChange={async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const ok=await setCustomSound(f);if(ok){try{await ensureAudio();playSoundOnBuf()}catch{}}else{alert("読み込みに失敗しました")}e.target.value=""}}/>
+<input type="file" accept=".mp3,.m4a,.wav,.aac,.ogg,.mp4,.mov,audio/mpeg,audio/mp4,audio/wav,audio/aac,audio/ogg,video/mp4,video/quicktime" style={{display:"none"}} onChange={async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const ok=await setCustomSound(f);if(ok){try{await ensureAudio();playSoundOnBuf()}catch{}}else{alert("読み込みに失敗しました")}e.target.value=""}}/>
 </label>
 {customSoundName&&<button style={{padding:"9px 12px",borderRadius:8,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:12,fontWeight:600,cursor:"pointer"}} onClick={async()=>{await resetCustomSound()}}>デフォルトに戻す</button>}
 <button style={{padding:"9px 12px",borderRadius:8,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:12,fontWeight:600,cursor:"pointer"}} onClick={async()=>{await ensureAudio();playSoundOnBuf()}}>▶ 試聴</button>
@@ -963,6 +947,43 @@ return(<div style={{minHeight:“100dvh”,background:T.bg,color:T.text,fontFami
 <div style={{position:"fixed",bottom:6,right:10,fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:T.dim,userSelect:"none",pointerEvents:"none"}}>v{VER}</div>
 </div>)
 }
+
+const HabitCard=memo(function HabitCard({habit,T,isEditing,onSetEdit,onUpdate,onDelete,onToggleDone,onDragStart,onDragMove,onDragEnd,dragging}){
+const SWIPE_THRESHOLD=Math.max(100,Math.min(160,(typeof window!==“undefined”?window.innerWidth:400)*0.3));
+const BOTTOM_GUARD=60;
+const[swipeOffset,setSwipeOffset]=useState(0);
+const[swipeAnimating,setSwipeAnimating]=useState(false);
+const swipeBlockedRef=useRef(false);
+const swipeProgress=Math.min(1,Math.abs(swipeOffset)/SWIPE_THRESHOLD);
+const swipeReady=Math.abs(swipeOffset)>=SWIPE_THRESHOLD;
+const swipeHandlers=useSwipeable({
+onSwipeStart:(e)=>{const startY=e.event.touches?e.event.touches[0].clientY:e.event.clientY;if(startY>=window.innerHeight-BOTTOM_GUARD){swipeBlockedRef.current=true;return}swipeBlockedRef.current=false},
+onSwiping:(e)=>{if(swipeBlockedRef.current)return;if(isEditing)return;if(e.dir!==“Left”&&e.dir!==“Right”)return;let off=e.deltaX;if(Math.abs(off)>SWIPE_THRESHOLD){const excess=Math.abs(off)-SWIPE_THRESHOLD;off=Math.sign(off)*(SWIPE_THRESHOLD+excess*0.4)}setSwipeAnimating(false);setSwipeOffset(off)},
+onSwiped:(e)=>{if(swipeBlockedRef.current){swipeBlockedRef.current=false;setSwipeOffset(0);return}if(isEditing){setSwipeOffset(0);return}if(e.dir!==“Left”&&e.dir!==“Right”){setSwipeOffset(0);return}const off=e.deltaX;setSwipeAnimating(true);if(off<=-SWIPE_THRESHOLD){setSwipeOffset(-600);setTimeout(()=>{onDelete();setSwipeOffset(0);setSwipeAnimating(false)},180)}else if(off>=SWIPE_THRESHOLD){setSwipeOffset(600);setTimeout(()=>{onToggleDone();setSwipeOffset(0);setSwipeAnimating(false)},180)}else{setSwipeOffset(0);setTimeout(()=>setSwipeAnimating(false),200)}},
+trackTouch:true,trackMouse:false,preventScrollOnSwipe:false,delta:12,
+});
+return(<div {…swipeHandlers} style={{position:“relative”,overflow:“hidden”,borderRadius:10,marginBottom:6,opacity:dragging?0.5:1}}>
+{swipeOffset!==0&&<div style={{position:“absolute”,inset:0,borderRadius:10,display:“flex”,alignItems:“center”,justifyContent:swipeOffset>0?“flex-start”:“flex-end”,padding:“0 24px”,background:swipeOffset>0?(swipeReady?”#4ade80”:“rgba(74,222,128,”+(0.2+swipeProgress*0.5)+”)”):(swipeReady?”#ff3b30”:“rgba(255,59,48,”+(0.2+swipeProgress*0.5)+”)”),pointerEvents:“none”,transition:swipeAnimating?“background .18s”:“none”}}>
+<span style={{fontSize:24+swipeProgress*8,color:swipeReady?”#000”:”#fff”,fontWeight:800,transform:“scale(”+(0.6+swipeProgress*0.4)+”)”,transition:“transform .1s”}}>{swipeOffset>0?“✓”:“🗑”}</span>
+
+</div>}
+<div style={{background:T.card,border:"1px solid "+(isEditing?"#ff3b30":T.brd),borderRadius:10,padding:"10px 12px",opacity:habit.doneToday?.4:1,transition:swipeAnimating?"transform .18s cubic-bezier(.2,.8,.4,1)":(swipeOffset!==0?"none":"opacity .2s"),transform:"translate3d("+swipeOffset+"px,0,0)",userSelect:"none",WebkitUserSelect:"none",WebkitTouchCallout:"none",touchAction:"pan-y",willChange:"transform"}}>
+{isEditing?<div style={{display:"flex",flexDirection:"column",gap:6}}>
+<div style={{display:"flex",gap:6,alignItems:"center"}}>
+<input style={{width:40,padding:"5px 2px",background:T.inp,border:"1px solid "+T.brd,borderRadius:5,color:T.text,fontSize:15,outline:"none",textAlign:"center",flexShrink:0}} placeholder="📌" value={habit.icon} onChange={e=>onUpdate({...habit,icon:e.target.value})} maxLength={2}/>
+<input style={{flex:1,padding:"5px 8px",background:T.inp,border:"1px solid "+T.brd,borderRadius:5,color:T.text,fontSize:13,outline:"none",minWidth:0}} value={habit.title} onChange={e=>onUpdate({...habit,title:e.target.value})}/>
+<button style={{background:"none",border:"1px solid #4ade80",borderRadius:5,color:"#4ade80",fontSize:11,fontWeight:700,cursor:"pointer",padding:"4px 10px"}} onClick={()=>onSetEdit(null)}>完了</button>
+</div>
+<textarea style={{width:"100%",padding:"6px 8px",background:T.inp,border:"1px solid "+T.brd,borderRadius:5,color:T.text,fontSize:11,outline:"none",minHeight:40,resize:"vertical",fontFamily:"inherit"}} placeholder="メモ..." value={habit.memo||""} onChange={e=>onUpdate({...habit,memo:e.target.value})}/>
+</div>:<div style={{display:"flex",alignItems:"center",gap:8}}>
+<button style={{width:20,height:20,borderRadius:5,border:"2px solid "+(habit.doneToday?"#4ade80":T.chk),background:habit.doneToday?"#4ade80":"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,color:"#000",fontSize:10,fontWeight:700}} onClick={e=>{e.stopPropagation();onToggleDone()}}>{habit.doneToday&&"✓"}</button>
+<div style={{fontSize:18,flexShrink:0,width:24,textAlign:"center",cursor:"pointer"}} onClick={()=>onSetEdit(habit.id)}>{habit.icon||"📌"}</div>
+<div style={{flex:1,cursor:"pointer",minWidth:0}} onClick={()=>onSetEdit(habit.id)}><ScrollTitle text={habit.title} style={{fontSize:13,fontWeight:500,color:T.text,textDecoration:habit.doneToday?"line-through":"none"}}/><div style={{display:"flex",gap:6,alignItems:"center",marginTop:2}}>{habit.streak>=2&&<span style={{fontSize:10,color:"#ff9500",fontFamily:"'JetBrains Mono',monospace",fontWeight:700}}>🔥 {habit.streak}</span>}{habit.memo&&<span style={{fontSize:10,color:T.mut,fontFamily:"'JetBrains Mono',monospace",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0,flex:1}}>{habit.memo}</span>}</div></div>
+<div style={{flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",width:28,height:28,color:T.dim,cursor:"grab",touchAction:"none"}} onTouchStart={e=>{e.stopPropagation();onDragStart(e.touches[0].clientY)}} onTouchMove={e=>{if(dragging){e.stopPropagation();onDragMove(e.touches[0].clientY)}}} onTouchEnd={e=>{e.stopPropagation();onDragEnd()}} onClick={e=>e.stopPropagation()}><Grip/></div>
+</div>}
+</div>
+</div>)
+});
 
 const TaskCard=memo(function TaskCard({task,T,isDark,sortOrder,expanded,memoExp,dragging,draggable,isToday,isLatestDone,locEmojis={},displayTier,onToggleExpand,onToggleMemo,onToggleDone,onEdit,onDelete,onUpdateSubtasks,onUpdateMemo,onQuickUpdate,onToggleToday,onFocus,onDragStart,onDragMove,onDragEnd,onSwipeCompleteSound}){
 const isW=task.type===“wish”;
