@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from “react”;
 import { useSwipeable } from “react-swipeable”;
 
-const VER = “3.12.4”;
+const VER = “3.12.5”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
@@ -132,7 +132,7 @@ const[sortReverse,setSortReverse]=useState(()=>{const v=localStorage.getItem(SOK
 const[soundEnabled,setSoundEnabled]=useState(()=>ld(SNK,false));
 const audioCtxRef=useRef(null);
 const audioBufRef=useRef(null);
-const audioLoadingRef=useRef(false);
+const audioLoadPromiseRef=useRef(null);
 const ensureAudio=useCallback(async()=>{
 if(!soundEnabled)return null;
 if(!audioCtxRef.current){
@@ -140,21 +140,22 @@ try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return null;a
 }
 const ctx=audioCtxRef.current;
 if(ctx.state===“suspended”){try{await ctx.resume()}catch{}}
-if(audioBufRef.current||audioLoadingRef.current)return ctx;
-audioLoadingRef.current=true;
+if(audioBufRef.current)return ctx;
+if(!audioLoadPromiseRef.current){
+audioLoadPromiseRef.current=(async()=>{
 try{
 const res=await fetch(”./sounds/complete.mp3”);
 const arr=await res.arrayBuffer();
 audioBufRef.current=await ctx.decodeAudioData(arr);
 }catch{}
-audioLoadingRef.current=false;
+})();
+}
+await audioLoadPromiseRef.current;
 return ctx;
 },[soundEnabled]);
-const playCompleteSound=useCallback(()=>{
-if(!soundEnabled)return;
-const ctx=audioCtxRef.current;
-const buf=audioBufRef.current;
-if(!ctx||!buf){ensureAudio();return}
+const playSoundOnBuf=()=>{
+const ctx=audioCtxRef.current;const buf=audioBufRef.current;
+if(!ctx||!buf)return;
 try{
 if(ctx.state===“suspended”)ctx.resume();
 const src=ctx.createBufferSource();
@@ -164,7 +165,13 @@ gain.gain.value=0.6;
 src.connect(gain);gain.connect(ctx.destination);
 src.start(0);
 }catch{}
-},[soundEnabled]);
+};
+const playCompleteSound=useCallback(()=>{
+if(!soundEnabled)return;
+if(audioBufRef.current){playSoundOnBuf();return}
+const t0=Date.now();
+ensureAudio().then(()=>{if(Date.now()-t0<500)playSoundOnBuf()});
+},[soundEnabled,ensureAudio]);
 useEffect(()=>{if(soundEnabled)ensureAudio()},[soundEnabled,ensureAudio]);
 const[sortDir,setSortDir]=useState(()=>localStorage.getItem(SOK+”-dir”)||“desc”);
 const[searchQ,setSearchQ]=useState(””);const[showSearch,setShowSearch]=useState(false);
