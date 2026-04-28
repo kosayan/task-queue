@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from “react”;
 import { useSwipeable } from “react-swipeable”;
 
-const VER = “3.13.2”;
+const VER = “3.13.3”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
@@ -790,23 +790,42 @@ return(<div style={{minHeight:“100dvh”,background:T.bg,color:T.text,fontFami
 
 <div style={{marginBottom:14}}>
 <div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:8,fontFamily:"'JetBrains Mono',monospace"}}>この1週間の完了数</div>
-<div style={{display:"flex",alignItems:"flex-end",gap:4,height:70,padding:"0 2px"}}>
-{weekChart.map((dy,i)=>{const max=Math.max(1,...weekChart.map(d=>d.count));const h=(dy.count/max)*55;const isToday=i===weekChart.length-1;return<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
-<div style={{width:"100%",height:55,display:"flex",alignItems:"flex-end"}}><div style={{width:"100%",height:h+"px",background:dy.count>0?(isToday?"#4ade80":"#c084fc"):T.dim,borderRadius:"3px 3px 0 0",minHeight:dy.count>0?4:2,transition:"height .3s"}}/></div>
-<span style={{fontSize:9,color:isToday?"#4ade80":T.mut,fontFamily:"'JetBrains Mono',monospace",fontWeight:isToday?700:400}}>{dy.label}</span>
-<span style={{fontSize:10,color:T.text,fontFamily:"'JetBrains Mono',monospace",fontWeight:700}}>{dy.count}</span>
+<div style={{display:"flex",alignItems:"stretch",gap:4,padding:"0 2px"}}>
+{weekChart.map((dy,i)=>{const max=Math.max(1,...weekChart.map(d=>d.count));const h=(dy.count/max)*60;const isToday=i===weekChart.length-1;return<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+<div style={{width:"100%",height:64,display:"flex",alignItems:"flex-end"}}><div style={{width:"100%",height:h+"px",background:dy.count>0?(isToday?"#4ade80":"#c084fc"):T.dim,borderRadius:"3px 3px 0 0",minHeight:dy.count>0?4:2,transition:"height .3s"}}/></div>
+<span style={{fontSize:9,color:isToday?"#4ade80":T.mut,fontFamily:"'JetBrains Mono',monospace",fontWeight:isToday?700:400,lineHeight:1}}>{dy.label}</span>
+<span style={{fontSize:10,color:T.text,fontFamily:"'JetBrains Mono',monospace",fontWeight:700,lineHeight:1}}>{dy.count}</span>
 </div>})}
 </div>
 </div>
 
-<div style={{marginBottom:14}}>
-<div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>表示</div>
-<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0"}}>
-<span style={{fontSize:12,color:T.sub}}>色覚多様性モード(青・黄・茶ベース)</span>
-<button style={{width:44,height:24,borderRadius:12,border:"none",background:colorBlindMode?"#4ade80":T.dim,position:"relative",cursor:"pointer",transition:"background .2s"}} onClick={()=>setColorBlindMode(v=>!v)}>
-<span style={{position:"absolute",top:2,left:colorBlindMode?22:2,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
-</button>
+<div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>バックアップ・復元</div><div style={{display:"flex",gap:8}}><button style={{flex:1,padding:10,borderRadius:9,border:"1px solid "+T.brd,background:T.cOff,color:T.text,fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={doExport}>エクスポート</button><button style={{flex:1,padding:10,borderRadius:9,border:"1px solid "+T.brd,background:T.cOff,color:T.text,fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={doImportClick}>インポート</button><input ref={fr} type="file" accept="application/json" style={{display:"none"}} onChange={doImport}/></div></div>
+
+<div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>今日やる3つ(朝の選択)</div>
+<div style={{fontSize:11,color:T.sub,marginBottom:7}}>現在の選択: {todayPicks.length}件</div>
+<div style={{display:"flex",gap:8}}>
+<button style={{flex:1,padding:10,borderRadius:9,border:"1px solid "+T.brd,background:T.cOff,color:T.text,fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{setShowSettings(false);setShowPicker(true)}}>選び直す</button>
+{todayPicks.length>0&&<button style={{flex:1,padding:10,borderRadius:9,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setTodayPicks([])}>クリア</button>}
 </div>
+</div>
+
+<div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}>
+<div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>場所の管理</div>
+{locs.length===0&&<div style={{fontSize:11,color:T.dim,padding:"4px 0"}}>タスクに場所を設定すると、ここで絵文字を管理できます</div>}
+{locs.map(l=><div key={l} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 0",borderBottom:"1px solid "+(isDark?"#1a1a1a":T.brd)}}>
+<input style={{width:42,padding:"5px",background:T.inp,border:"1px solid "+T.brd,borderRadius:6,color:T.text,fontSize:14,outline:"none",textAlign:"center",flexShrink:0}} placeholder="📌" value={locEmojis[l]||""} onChange={e=>setLocEmojis(prev=>({...prev,[l]:e.target.value}))} maxLength={2}/>
+<input style={{flex:1,padding:"6px 8px",background:T.inp,border:"1px solid "+T.brd,borderRadius:6,color:T.text,fontSize:12,outline:"none",minWidth:0}} defaultValue={l} onBlur={e=>renameLocation(l,e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.nativeEvent.isComposing){e.target.blur()}}}/>
+<button style={{width:28,height:28,borderRadius:6,border:"1px solid rgba(255,59,48,0.3)",background:"transparent",color:"#ff3b30",fontSize:11,cursor:"pointer",flexShrink:0}} onClick={()=>deleteLocation(l)} aria-label="削除">✕</button>
+</div>)}
+</div>
+
+<div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}>
+<div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>今やるべきタスクの表示件数</div>
+<div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{[3,4,5,6,7].map(n=><button key={n} style={{padding:"6px 14px",borderRadius:7,border:"1px solid "+(bannerCount===n?T.cOn:T.brd),fontSize:12,fontWeight:700,cursor:"pointer",background:bannerCount===n?T.cOn:T.cOff,color:bannerCount===n?T.cOnT:T.cOffT}} onClick={()=>setBannerCount(n)}>{n}件</button>)}</div>
+</div>
+
+<div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}>
+<div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>効果音</div>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0"}}>
 <span style={{fontSize:12,color:T.sub}}>完了時の効果音</span>
 <button style={{width:44,height:24,borderRadius:12,border:"none",background:soundEnabled?"#4ade80":T.dim,position:"relative",cursor:"pointer",transition:"background .2s"}} onClick={async()=>{const next=!soundEnabled;setSoundEnabled(next);if(next){try{await ensureAudio();playSoundOnBuf()}catch{}}}}>
@@ -828,7 +847,17 @@ return(<div style={{minHeight:“100dvh”,background:T.bg,color:T.text,fontFami
 </div>}
 </div>
 
-<div style={{marginBottom:14}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>新規タスクのデフォルト</div>
+<div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}>
+<div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>表示</div>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0"}}>
+<span style={{fontSize:12,color:T.sub}}>色覚多様性モード(青・黄・茶ベース)</span>
+<button style={{width:44,height:24,borderRadius:12,border:"none",background:colorBlindMode?"#4ade80":T.dim,position:"relative",cursor:"pointer",transition:"background .2s"}} onClick={()=>setColorBlindMode(v=>!v)}>
+<span style={{position:"absolute",top:2,left:colorBlindMode?22:2,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+</button>
+</div>
+</div>
+
+<div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>新規タスクのデフォルト</div>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0"}}>
 <span style={{fontSize:12,color:T.sub}}>新規タスク作成時、締切入力欄を最初から表示</span>
 <button style={{width:44,height:24,borderRadius:12,border:"none",background:defaults.hasDeadline?"#4ade80":T.dim,position:"relative",cursor:"pointer",transition:"background .2s"}} onClick={()=>setDefaults(p=>({...p,hasDeadline:!p.hasDeadline}))}>
@@ -837,32 +866,7 @@ return(<div style={{minHeight:“100dvh”,background:T.bg,color:T.text,fontFami
 </div>
 </div>
 
-<div style={{marginBottom:14}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>1日の境目(時)</div><input type="number" min="0" max="23" style={{width:60,padding:"8px 10px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:14,outline:"none"}} value={dayReset} onChange={e=>setDayReset(parseInt(e.target.value)||0)}/><span style={{fontSize:11,color:T.mut,marginLeft:6}}>時</span></div>
-
-<div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}>
-<div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>今やるべきタスクの表示件数</div>
-<div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{[3,4,5,6,7].map(n=><button key={n} style={{padding:"6px 14px",borderRadius:7,border:"1px solid "+(bannerCount===n?T.cOn:T.brd),fontSize:12,fontWeight:700,cursor:"pointer",background:bannerCount===n?T.cOn:T.cOff,color:bannerCount===n?T.cOnT:T.cOffT}} onClick={()=>setBannerCount(n)}>{n}件</button>)}</div>
-</div>
-
-<div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}>
-<div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>場所の管理</div>
-{locs.length===0&&<div style={{fontSize:11,color:T.dim,padding:"4px 0"}}>タスクに場所を設定すると、ここで絵文字を管理できます</div>}
-{locs.map(l=><div key={l} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 0",borderBottom:"1px solid "+(isDark?"#1a1a1a":T.brd)}}>
-<input style={{width:42,padding:"5px",background:T.inp,border:"1px solid "+T.brd,borderRadius:6,color:T.text,fontSize:14,outline:"none",textAlign:"center",flexShrink:0}} placeholder="📌" value={locEmojis[l]||""} onChange={e=>setLocEmojis(prev=>({...prev,[l]:e.target.value}))} maxLength={2}/>
-<input style={{flex:1,padding:"6px 8px",background:T.inp,border:"1px solid "+T.brd,borderRadius:6,color:T.text,fontSize:12,outline:"none",minWidth:0}} defaultValue={l} onBlur={e=>renameLocation(l,e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.nativeEvent.isComposing){e.target.blur()}}}/>
-<button style={{width:28,height:28,borderRadius:6,border:"1px solid rgba(255,59,48,0.3)",background:"transparent",color:"#ff3b30",fontSize:11,cursor:"pointer",flexShrink:0}} onClick={()=>deleteLocation(l)} aria-label="削除">✕</button>
-</div>)}
-</div>
-
-<div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>今日やる3つ(朝の選択)</div>
-<div style={{fontSize:11,color:T.sub,marginBottom:7}}>現在の選択: {todayPicks.length}件</div>
-<div style={{display:"flex",gap:8}}>
-<button style={{flex:1,padding:10,borderRadius:9,border:"1px solid "+T.brd,background:T.cOff,color:T.text,fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{setShowSettings(false);setShowPicker(true)}}>選び直す</button>
-{todayPicks.length>0&&<button style={{flex:1,padding:10,borderRadius:9,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>setTodayPicks([])}>クリア</button>}
-</div>
-</div>
-
-<div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>バックアップ・復元</div><div style={{display:"flex",gap:8}}><button style={{flex:1,padding:10,borderRadius:9,border:"1px solid "+T.brd,background:T.cOff,color:T.text,fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={doExport}>エクスポート</button><button style={{flex:1,padding:10,borderRadius:9,border:"1px solid "+T.brd,background:T.cOff,color:T.text,fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={doImportClick}>インポート</button><input ref={fr} type="file" accept="application/json" style={{display:"none"}} onChange={doImport}/></div></div>
+<div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>1日の境目(時)</div><input type="number" min="0" max="23" style={{width:60,padding:"8px 10px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:14,outline:"none"}} value={dayReset} onChange={e=>setDayReset(parseInt(e.target.value)||0)}/><span style={{fontSize:11,color:T.mut,marginLeft:6}}>時</span></div>
 
 <div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>ゴミ箱({trash.length}件)</div>
 {trash.map(t=><div key={t.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",borderBottom:"1px solid "+(isDark?"#1a1a1a":T.brd)}}><span style={{fontSize:12,color:T.sub}}>{t.icon?t.icon+" ":""}{t.title}</span><button style={{padding:"3px 8px",borderRadius:6,border:"1px solid rgba(34,197,94,0.3)",background:"transparent",color:"#4ade80",fontSize:10,fontWeight:600,cursor:"pointer"}} onClick={()=>restoreTask(t.id)}>復元</button></div>)}
