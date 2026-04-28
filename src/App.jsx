@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from “react”;
+import { useSwipeable } from “react-swipeable”;
 
-const VER = “3.11.2”;
+const VER = “3.11.3”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
@@ -417,7 +418,7 @@ const bannerTs=e=>{topSwipeStart.current=e.touches[0].clientX};
 const bannerTm=e=>{const dx=e.touches[0].clientX-topSwipeStart.current;setTopSwipeOff(dx)};
 const bannerTe=()=>{if(topSwipeOff>50&&topIdx>0)setTopIdx(topIdx-1);else if(topSwipeOff<-50&&topIdx<topTasks.length-1)setTopIdx(topIdx+1);setTopSwipeOff(0)};
 
-const gcss=”@import url(‘https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap’);*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html,body,#root{min-height:100vh}input,select,button,textarea{font-family:‘Noto Sans JP’,sans-serif}@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}@keyframes slideDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}@keyframes titleScroll{0%,12%{transform:translateX(0)}88%,100%{transform:translateX(var(–d))}}.task-card{animation:fadeIn .3s ease both}.overdue-pulse{animation:pulse 1.5s ease infinite}.form-slide{animation:slideUp .3s ease both}”;
+const gcss=”@import url(‘https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap’);*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html,body,#root{min-height:100vh}input,select,button,textarea{font-family:‘Noto Sans JP’,sans-serif}@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}@keyframes slideDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}@keyframes titleScroll{0%,12%{transform:translateX(0)}88%,100%{transform:translateX(var(–d))}}.task-card{animation:fadeIn .3s ease}.overdue-pulse{animation:pulse 1.5s ease infinite}.form-slide{animation:slideUp .3s ease both}”;
 
 const isTask=mode===“task”,isWish=mode===“wish”,isHabit=mode===“habit”;
 const habitsSorted=useMemo(()=>{const done=habits.filter(h=>h.doneToday);const un=habits.filter(h=>!h.doneToday);return[…un,…done]},[habits]);
@@ -889,6 +890,47 @@ const subDragMove=y=>{if(!subDragId)return;const dy=y-subDragStartY.current;cons
 const subDragEnd=()=>setSubDragId(null);
 const[showQuickMenu,setShowQuickMenu]=useState(false);
 const longPressTimer=useRef(null);
+const SWIPE_THRESHOLD=120;
+const[swipeOffset,setSwipeOffset]=useState(0);
+const[swipeAnimating,setSwipeAnimating]=useState(false);
+const swipeProgress=Math.min(1,Math.abs(swipeOffset)/SWIPE_THRESHOLD);
+const swipeReady=Math.abs(swipeOffset)>=SWIPE_THRESHOLD;
+const swipeHandlers=useSwipeable({
+onSwipeStart:()=>{
+if(longPressTimer.current){clearTimeout(longPressTimer.current);longPressTimer.current=null}
+},
+onSwiping:(e)=>{
+if(task.done||expanded||memoExp)return;
+if(e.dir!==“Left”&&e.dir!==“Right”)return;
+let off=e.deltaX;
+if(Math.abs(off)>SWIPE_THRESHOLD){
+const excess=Math.abs(off)-SWIPE_THRESHOLD;
+off=Math.sign(off)*(SWIPE_THRESHOLD+excess*0.4);
+}
+setSwipeAnimating(false);
+setSwipeOffset(off);
+},
+onSwiped:(e)=>{
+if(task.done||expanded||memoExp){setSwipeOffset(0);return}
+if(e.dir!==“Left”&&e.dir!==“Right”){setSwipeOffset(0);return}
+const off=e.deltaX;
+setSwipeAnimating(true);
+if(off<=-SWIPE_THRESHOLD){
+setSwipeOffset(-600);
+setTimeout(()=>{onDelete();setSwipeOffset(0);setSwipeAnimating(false)},180)
+}else if(off>=SWIPE_THRESHOLD){
+setSwipeOffset(600);
+setTimeout(()=>{onToggleDone();setSwipeOffset(0);setSwipeAnimating(false)},180)
+}else{
+setSwipeOffset(0);
+setTimeout(()=>setSwipeAnimating(false),200)
+}
+},
+trackTouch:true,
+trackMouse:false,
+preventScrollOnSwipe:false,
+delta:8,
+});
 const handleTouchStart=()=>{
 if(task.done||expanded||memoExp)return;
 longPressTimer.current=setTimeout(()=>{setShowQuickMenu(true);if(navigator.vibrate)try{navigator.vibrate(30)}catch{}},500)
@@ -904,9 +946,12 @@ const ts=task.done?DONE_TIER:(isDark?TIER[pr]:{…TIER[pr],…TIER_LIGHT[pr]});
 const displayRc=task.done?(isDark?”#555”:”#a1a1aa”):rc;
 const changeIcon=e=>{e.stopPropagation();const current=task.icon||””;const v=prompt(“アイコン(絵文字1-2文字)”,current);if(v===null)return;onQuickUpdate(“icon”,v.slice(0,2))};
 
-return(<div style={{position:“relative”,overflow:“visible”,borderRadius:10,opacity:dragging?0.5:1}}>
-{showQuickMenu&&<div style={{position:“fixed”,top:0,left:0,right:0,bottom:0,background:“rgba(0,0,0,0.6)”,zIndex:200,display:“flex”,alignItems:“center”,justifyContent:“center”,padding:16}} onClick={()=>setShowQuickMenu(false)}>
+return(<div {…swipeHandlers} style={{position:“relative”,overflow:“hidden”,borderRadius:10,opacity:dragging?0.5:1}}>
+{swipeOffset!==0&&!task.done&&<div style={{position:“absolute”,inset:0,borderRadius:10,display:“flex”,alignItems:“center”,justifyContent:swipeOffset>0?“flex-start”:“flex-end”,padding:“0 24px”,background:swipeOffset>0?(swipeReady?”#4ade80”:“rgba(74,222,128,”+(0.2+swipeProgress*0.5)+”)”):(swipeReady?”#ff3b30”:“rgba(255,59,48,”+(0.2+swipeProgress*0.5)+”)”),pointerEvents:“none”,transition:swipeAnimating?“background .18s”:“none”}}>
+<span style={{fontSize:24+swipeProgress*8,color:swipeReady?”#000”:”#fff”,fontWeight:800,transform:“scale(”+(0.6+swipeProgress*0.4)+”)”,transition:“transform .1s”}}>{swipeOffset>0?“✓”:“🗑”}</span>
 
+</div>}
+{showQuickMenu&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.6)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setShowQuickMenu(false)}>
 <div style={{background:T.card,border:"1px solid "+T.brd,borderRadius:14,padding:14,minWidth:240,maxWidth:320,userSelect:"none",WebkitUserSelect:"none",WebkitTouchCallout:"none"}} onClick={e=>e.stopPropagation()}>
 <div style={{fontSize:12,color:T.mut,marginBottom:10,fontFamily:"'JetBrains Mono',monospace",textAlign:"center"}}>クイック操作</div>
 <div style={{fontSize:14,fontWeight:700,color:T.text,marginBottom:12,textAlign:"center",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{task.icon?task.icon+" ":""}{task.title}</div>
@@ -921,7 +966,7 @@ return(<div style={{position:“relative”,overflow:“visible”,borderRadius:
 </div>
 </div>
 </div>}
-<div className="task-card" style={{background:isW?T.card:ts.bg,borderRadius:10,padding:ts.pad+"px 14px "+ts.pad+"px "+(ts.pad+8)+"px",transition:"all .2s",cursor:"pointer",position:"relative",display:"flex",width:"100%",flexDirection:expanded||memoExp?"column":"row",alignItems:expanded||memoExp?"stretch":"center",border:"1px solid "+(isLatestDone?"rgba(74,222,128,0.5)":isW?(wishOver?"rgba(255,59,48,0.4)":wishUrgent?"rgba(255,149,0,0.4)":"rgba(192,132,252,0.2)"):ts.border),boxShadow:isLatestDone?"0 0 8px rgba(74,222,128,0.2)":ts.shadow!=="none"?"0 0 10px "+ts.shadow:"",userSelect:"none",WebkitUserSelect:"none",WebkitTouchCallout:"none"}} onClick={e=>{if(e.target.closest(".ne"))return;onToggleExpand()}} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onTouchCancel={handleTouchEnd}>
+<div className="task-card" style={{background:isW?T.card:ts.bg,borderRadius:10,padding:ts.pad+"px 14px "+ts.pad+"px "+(ts.pad+8)+"px",transition:swipeAnimating?"transform .18s cubic-bezier(.2,.8,.4,1)":(swipeOffset!==0?"none":"all .2s"),cursor:"pointer",position:"relative",display:"flex",width:"100%",flexDirection:expanded||memoExp?"column":"row",alignItems:expanded||memoExp?"stretch":"center",border:"1px solid "+(isLatestDone?"rgba(74,222,128,0.5)":isW?(wishOver?"rgba(255,59,48,0.4)":wishUrgent?"rgba(255,149,0,0.4)":"rgba(192,132,252,0.2)"):ts.border),boxShadow:isLatestDone?"0 0 8px rgba(74,222,128,0.2)":ts.shadow!=="none"?"0 0 10px "+ts.shadow:"",transform:"translate3d("+swipeOffset+"px,0,0)",userSelect:"none",WebkitUserSelect:"none",WebkitTouchCallout:"none",willChange:"transform"}} onClick={e=>{if(e.target.closest(".ne")||Math.abs(swipeOffset)>5)return;onToggleExpand()}} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onTouchCancel={handleTouchEnd}>
 {!isW&&!task.done&&<div style={{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",width:wi?.bw||4,height:(wi?.bh||75)+"%",background:displayRc,borderRadius:"0 3px 3px 0"}}/>}
 {isW&&<div style={{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",width:3,height:"60%",background:rc,borderRadius:"0 3px 3px 0"}}/>}
 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%"}}>
