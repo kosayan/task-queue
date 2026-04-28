@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from “react”;
 import { useSwipeable } from “react-swipeable”;
 
-const VER = “3.12.0”;
+const VER = “3.12.1”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
-const SORTS = [{ v: “smart”, l: “スマート順” }, { v: “heavy”, l: “重さ順”, rev: true }, { v: “deadline”, l: “締切順”, rev: true }, { v: “created”, l: “作成日順”, rev: true }, { v: “impGroup”, l: “重要度まとめ” }, { v: “weightGroup”, l: “重さまとめ” }];
+const SORTS = [{ v: “smart”, l: “スマート順” }, { v: “importance”, l: “重要度”, rev: true }, { v: “heavy”, l: “重さ”, rev: true }, { v: “deadline”, l: “締切”, rev: true }, { v: “impGroup”, l: “重要度まとめ” }, { v: “weightGroup”, l: “重さまとめ” }];
 const ROI_MAP = {“3-3”:”#dc2626”,“3-2”:”#f97316”,“3-1”:”#facc15”,“3-0”:”#84cc16”,“2-3”:”#2563eb”,“2-2”:”#0891b2”,“2-1”:”#14b8a6”,“2-0”:”#5eead4”,“1-3”:”#9333ea”,“1-2”:”#c084fc”,“1-1”:”#67e8f9”,“1-0”:”#a7f3d0”};
 const ROI_MAP_CV = {“3-3”:”#000000”,“3-2”:”#1e3a8a”,“3-1”:”#1d4ed8”,“3-0”:”#3b82f6”,“2-3”:”#475569”,“2-2”:”#64748b”,“2-1”:”#94a3b8”,“2-0”:”#cbd5e1”,“1-3”:”#b45309”,“1-2”:”#d97706”,“1-1”:”#f59e0b”,“1-0”:”#fcd34d”};
 const TIER_MAP = {“3-1”:1,“3-0”:1,“3-2”:2,“3-3”:3,“2-1”:4,“2-0”:4,“2-2”:5,“2-3”:6,“1-1”:7,“1-0”:7,“1-2”:8,“1-3”:9};
@@ -62,7 +62,7 @@ if(so===“impGroup”||so===“weightGroup”)return tierN(task.importance,task
 return 5;
 }
 
-const SK=“task-queue-v1”,SOK=“task-queue-sort”,SOR=“task-queue-sortrev”,DK=“task-queue-defaults”,THK=“task-queue-theme”,TRK=“task-queue-trash”,HRK=“task-queue-habits”,DRK=“task-queue-dayreset”,LEK=“task-queue-locemojis”,LXK=“task-queue-lastexport”,TPK=“task-queue-todaypicks”,TDK=“task-queue-todaypickday”,BNK=“task-queue-bannercount”,ABK=“task-queue-autobackup”,CBK=“task-queue-colorblind”,WRK=“task-queue-weekreport”,MRK=“task-queue-monthreset”;
+const SK=“task-queue-v1”,SOK=“task-queue-sort”,SOR=“task-queue-sortrev”,DK=“task-queue-defaults”,THK=“task-queue-theme”,TRK=“task-queue-trash”,HRK=“task-queue-habits”,DRK=“task-queue-dayreset”,LEK=“task-queue-locemojis”,LXK=“task-queue-lastexport”,TPK=“task-queue-todaypicks”,TDK=“task-queue-todaypickday”,BNK=“task-queue-bannercount”,ABK=“task-queue-autobackup”,CBK=“task-queue-colorblind”,WRK=“task-queue-weekreport”,MRK=“task-queue-monthreset”,SNK=“task-queue-soundenabled”;
 const DD={importance:2,weight:2,hasDeadline:false,recurrence:“none”,location:””};
 
 function ld(k,d){try{const r=localStorage.getItem(k);return r?JSON.parse(r):d}catch{return d}}
@@ -127,8 +127,10 @@ const[icon,setIcon]=useState(””);const[iconTouched,setIconTouched]=useState(
 const[filter,setFilter]=useState(“all”);const[locFilter,setLocFilter]=useState(null);
 const[editId,setEditId]=useState(null);const[expandedId,setExpandedId]=useState(null);
 const[memoExpId,setMemoExpId]=useState(null);
-const[sortOrder,setSortOrder]=useState(()=>{const v=localStorage.getItem(SOK)||“smart”;if(v===“light”){localStorage.setItem(SOK,“heavy”);return “heavy”}return v});
+const[sortOrder,setSortOrder]=useState(()=>{const v=localStorage.getItem(SOK)||“smart”;if(v===“light”){localStorage.setItem(SOK,“heavy”);return “heavy”}if(v===“created”){localStorage.setItem(SOK,“smart”);return “smart”}return v});
 const[sortReverse,setSortReverse]=useState(()=>{const v=localStorage.getItem(SOK);if(v===“light”)return true;return ld(SOR,false)});
+const[soundEnabled,setSoundEnabled]=useState(()=>ld(SNK,false));
+const playCompleteSound=useCallback(()=>{if(!soundEnabled)return;try{const a=new Audio(”./sounds/complete.mp3”);a.volume=0.6;a.play().catch(()=>{})}catch{}},[soundEnabled]);
 const[sortDir,setSortDir]=useState(()=>localStorage.getItem(SOK+”-dir”)||“desc”);
 const[searchQ,setSearchQ]=useState(””);const[showSearch,setShowSearch]=useState(false);
 const[showSettings,setShowSettings]=useState(false);
@@ -206,6 +208,7 @@ sv(ABK,Date.now());sv(ABK+”-day”,todayKey);
 
 useEffect(()=>{localStorage.setItem(SOK,sortOrder)},[sortOrder]);
 useEffect(()=>{sv(SOR,sortReverse)},[sortReverse]);
+useEffect(()=>{sv(SNK,soundEnabled)},[soundEnabled]);
 useEffect(()=>{localStorage.setItem(SOK+”-dir”,sortDir)},[sortDir]);
 useEffect(()=>{sv(DK,defaults)},[defaults]);
 useEffect(()=>{localStorage.setItem(THK,isDark?“dark”:“light”);document.body.style.background=T.bg},[isDark,T.bg]);
@@ -288,7 +291,7 @@ if(typeof navigator!==“undefined”&&navigator.vibrate&&(now-lastVibrateRef.cu
 setTimeout(()=>setParticles(p=>p.filter(x=>!x.id.startsWith(id+”-”))),2300);
 },[]);
 
-const togDone=useCallback(id=>{setTasks(prev=>{const t=prev.find(x=>x.id===id);if(!t)return prev;if(!t.done)fireParticles(t.importance||2);if(!t.done&&t.recurrence&&t.recurrence!==“none”&&t.deadline){const nt={…t,id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),deadline:advRec(t.deadline,t.recurrence),done:false,createdAt:Date.now(),completedAt:null};return prev.map(x=>x.id===id?{…x,done:true,completedAt:Date.now()}:x).concat(nt)}return prev.map(x=>x.id===id?{…x,done:!x.done,completedAt:!x.done?Date.now():null}:x)})},[fireParticles]);
+const togDone=useCallback(id=>{setTasks(prev=>{const t=prev.find(x=>x.id===id);if(!t)return prev;if(!t.done){fireParticles(t.importance||2);playCompleteSound()}if(!t.done&&t.recurrence&&t.recurrence!==“none”&&t.deadline){const nt={…t,id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),deadline:advRec(t.deadline,t.recurrence),done:false,createdAt:Date.now(),completedAt:null};return prev.map(x=>x.id===id?{…x,done:true,completedAt:Date.now()}:x).concat(nt)}return prev.map(x=>x.id===id?{…x,done:!x.done,completedAt:!x.done?Date.now():null}:x)})},[fireParticles,playCompleteSound]);
 
 const delTask=useCallback(id=>{const t=tasks.find(x=>x.id===id);if(!t)return;setTrash(p=>[…p,{…t,deletedAt:Date.now()}]);showUndo([t],“delete”);setTasks(p=>p.filter(x=>x.id!==id));if(expandedId===id)setExpandedId(null)},[tasks,expandedId,showUndo]);
 
@@ -379,13 +382,13 @@ if(searchQ.trim()){const q=searchQ.toLowerCase();r=r.filter(t=>t.title.toLowerCa
 if(filter===“done”){r.sort((a,b)=>(b.completedAt||0)-(a.completedAt||0))}
 else if(mode!==“wish”&&sortOrder!==“impGroup”&&sortOrder!==“weightGroup”){
 if(sortOrder===“smart”)r.sort((a,b)=>{if(a.bd!==b.bd)return a.bd-b.bd;if(a.weight!==b.weight)return a.weight-b.weight;return b.importance-a.importance});
-else if(sortOrder===“deadline”)r.sort((a,b)=>{if(!a.deadline&&!b.deadline)return 0;if(!a.deadline)return 1;if(!b.deadline)return-1;return new Date(a.deadline)-new Date(b.deadline)});
+else if(sortOrder===“importance”)r.sort((a,b)=>b.importance-a.importance);
 else if(sortOrder===“heavy”)r.sort((a,b)=>b.weight-a.weight);
-else if(sortOrder===“created”)r.sort((a,b)=>b.createdAt-a.createdAt);
-if(sortReverse&&(sortOrder===“deadline”||sortOrder===“heavy”||sortOrder===“created”))r.reverse();
+else if(sortOrder===“deadline”)r.sort((a,b)=>{if(!a.deadline&&!b.deadline)return 0;if(!a.deadline)return 1;if(!b.deadline)return-1;return new Date(a.deadline)-new Date(b.deadline)});
+if(sortReverse&&(sortOrder===“importance”||sortOrder===“heavy”||sortOrder===“deadline”))r.reverse();
 }
 if(mode===“wish”&&sortOrder===“deadline”){r.sort((a,b)=>{if(!a.deadline&&!b.deadline)return 0;if(!a.deadline)return 1;if(!b.deadline)return-1;return new Date(a.deadline)-new Date(b.deadline)});if(sortReverse)r.reverse()}
-if(mode===“task”&&todayPicks.length>0&&sortOrder!==“impGroup”&&sortOrder!==“weightGroup”){
+if(mode===“task”&&sortOrder===“smart”&&todayPicks.length>0){
 const picks=r.filter(t=>todayPicks.includes(t.id)&&!t.done);const rest=r.filter(t=>!(todayPicks.includes(t.id)&&!t.done));
 r=[…picks,…rest];
 }
@@ -747,6 +750,13 @@ return(<div style={{minHeight:“100dvh”,background:T.bg,color:T.text,fontFami
 <span style={{position:"absolute",top:2,left:colorBlindMode?22:2,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
 </button>
 </div>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0"}}>
+<span style={{fontSize:12,color:T.sub}}>完了時の効果音</span>
+<button style={{width:44,height:24,borderRadius:12,border:"none",background:soundEnabled?"#4ade80":T.dim,position:"relative",cursor:"pointer",transition:"background .2s"}} onClick={()=>{const next=!soundEnabled;setSoundEnabled(next);if(next){try{const a=new Audio("./sounds/complete.mp3");a.volume=0.6;a.play().catch(()=>{})}catch{}}}}>
+<span style={{position:"absolute",top:2,left:soundEnabled?22:2,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
+</button>
+</div>
+{soundEnabled&&<div style={{fontSize:10,color:T.mut,padding:"4px 0",lineHeight:1.5}}>※ public/sounds/complete.mp3 を配置してください</div>}
 </div>
 
 <div style={{marginBottom:14}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>新規タスクのデフォルト</div>
