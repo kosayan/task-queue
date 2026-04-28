@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from “react”;
 import { useSwipeable } from “react-swipeable”;
 
-const VER = “3.12.2”;
+const VER = “3.12.3”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
@@ -291,7 +291,7 @@ if(typeof navigator!==“undefined”&&navigator.vibrate&&(now-lastVibrateRef.cu
 setTimeout(()=>setParticles(p=>p.filter(x=>!x.id.startsWith(id+”-”))),2300);
 },[]);
 
-const togDone=useCallback(id=>{setTasks(prev=>{const t=prev.find(x=>x.id===id);if(!t)return prev;if(!t.done){fireParticles(t.importance||2);playCompleteSound()}if(!t.done&&t.recurrence&&t.recurrence!==“none”&&t.deadline){const nt={…t,id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),deadline:advRec(t.deadline,t.recurrence),done:false,createdAt:Date.now(),completedAt:null};return prev.map(x=>x.id===id?{…x,done:true,completedAt:Date.now()}:x).concat(nt)}return prev.map(x=>x.id===id?{…x,done:!x.done,completedAt:!x.done?Date.now():null}:x)})},[fireParticles,playCompleteSound]);
+const togDone=useCallback((id,silentSound)=>{setTasks(prev=>{const t=prev.find(x=>x.id===id);if(!t)return prev;if(!t.done){fireParticles(t.importance||2);if(!silentSound)playCompleteSound()}if(!t.done&&t.recurrence&&t.recurrence!==“none”&&t.deadline){const nt={…t,id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),deadline:advRec(t.deadline,t.recurrence),done:false,createdAt:Date.now(),completedAt:null};return prev.map(x=>x.id===id?{…x,done:true,completedAt:Date.now()}:x).concat(nt)}return prev.map(x=>x.id===id?{…x,done:!x.done,completedAt:!x.done?Date.now():null}:x)})},[fireParticles,playCompleteSound]);
 
 const delTask=useCallback(id=>{const t=tasks.find(x=>x.id===id);if(!t)return;setTrash(p=>[…p,{…t,deletedAt:Date.now()}]);showUndo([t],“delete”);setTasks(p=>p.filter(x=>x.id!==id));if(expandedId===id)setExpandedId(null)},[tasks,expandedId,showUndo]);
 
@@ -687,7 +687,7 @@ return(<div style={{minHeight:“100dvh”,background:T.bg,color:T.text,fontFami
 
 {!isHabit&&!isGroupMode&&<div style={{display:“flex”,flexDirection:“column”,gap:8}}>
 {sorted.length===0&&<div style={{textAlign:“center”,padding:36,color:T.dim,fontSize:13,fontFamily:”‘JetBrains Mono’,monospace”}}>{searchQ?“検索結果なし”:filter===“done”?“完了タスクなし”:“タスクを追加しましょう”}</div>}
-{sorted.map((task,idx)=>{const useRank=isTask&&sortOrder!==“impGroup”&&sortOrder!==“weightGroup”&&filter!==“done”;const dt=useRank?Math.max(1,Math.min(9,Math.floor(idx/Math.max(1,sorted.length/9))+1)):null;return<TaskCard key={task.id} task={task} T={T} isDark={isDark} sortOrder={sortOrder} expanded={expandedId===task.id} memoExp={memoExpId===task.id} dragging={draggingId===task.id} draggable={isWish} isToday={todayPicks.includes(task.id)} isLatestDone={latestDoneId===task.id} locEmojis={locEmojis} displayTier={dt} onToggleExpand={()=>{setExpandedId(expandedId===task.id?null:task.id);setMemoExpId(null)}} onToggleMemo={()=>{setMemoExpId(memoExpId===task.id?null:task.id);setExpandedId(null)}} onToggleDone={()=>togDone(task.id)} onEdit={()=>startEdit(task)} onDelete={()=>delTask(task.id)} onUpdateSubtasks={s=>upSub(task.id,s)} onUpdateMemo={m=>upMemo(task.id,m)} onQuickUpdate={(f,v)=>quickUpdate(task.id,f,v)} onToggleToday={()=>setTodayPicks(p=>p.includes(task.id)?p.filter(x=>x!==task.id):[…p,task.id])} onFocus={()=>setFocusTaskId(task.id)} onDragStart={y=>dragStart(task.id,“wish”,y)} onDragMove={dragMove} onDragEnd={dragEnd} onSwipeCompleteSound={playCompleteSound}/>})}
+{sorted.map((task,idx)=>{const useRank=isTask&&sortOrder!==“impGroup”&&sortOrder!==“weightGroup”&&filter!==“done”;const dt=useRank?Math.max(1,Math.min(9,Math.floor(idx/Math.max(1,sorted.length/9))+1)):null;return<TaskCard key={task.id} task={task} T={T} isDark={isDark} sortOrder={sortOrder} expanded={expandedId===task.id} memoExp={memoExpId===task.id} dragging={draggingId===task.id} draggable={isWish} isToday={todayPicks.includes(task.id)} isLatestDone={latestDoneId===task.id} locEmojis={locEmojis} displayTier={dt} onToggleExpand={()=>{setExpandedId(expandedId===task.id?null:task.id);setMemoExpId(null)}} onToggleMemo={()=>{setMemoExpId(memoExpId===task.id?null:task.id);setExpandedId(null)}} onToggleDone={(silent)=>togDone(task.id,silent)} onEdit={()=>startEdit(task)} onDelete={()=>delTask(task.id)} onUpdateSubtasks={s=>upSub(task.id,s)} onUpdateMemo={m=>upMemo(task.id,m)} onQuickUpdate={(f,v)=>quickUpdate(task.id,f,v)} onToggleToday={()=>setTodayPicks(p=>p.includes(task.id)?p.filter(x=>x!==task.id):[…p,task.id])} onFocus={()=>setFocusTaskId(task.id)} onDragStart={y=>dragStart(task.id,“wish”,y)} onDragMove={dragMove} onDragEnd={dragEnd} onSwipeCompleteSound={playCompleteSound}/>})}
 
 </div>}
 
@@ -942,7 +942,7 @@ setTimeout(()=>{onDelete();setSwipeOffset(0);setSwipeAnimating(false)},180)
 }else if(off>=SWIPE_THRESHOLD&&!isRecurring&&!task.done){
 if(onSwipeCompleteSound)onSwipeCompleteSound();
 setSwipeOffset(600);
-setTimeout(()=>{onToggleDone();setSwipeOffset(0);setSwipeAnimating(false)},180)
+setTimeout(()=>{onToggleDone(true);setSwipeOffset(0);setSwipeAnimating(false)},180)
 }else{
 setSwipeOffset(0);
 setTimeout(()=>setSwipeAnimating(false),200)
