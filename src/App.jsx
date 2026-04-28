@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from “react”;
 import { useSwipeable } from “react-swipeable”;
 
-const VER = “3.13.0”;
+const VER = “3.13.1”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
@@ -203,6 +203,7 @@ sv(SCK,false);sv(SCN,””);setCustomSoundName(””);
 reloadAudioBuf();
 },[reloadAudioBuf]);
 useEffect(()=>{if(soundEnabled)ensureAudio()},[soundEnabled,ensureAudio]);
+useEffect(()=>{if(!soundEnabled)return;const init=()=>{if(audioCtxRef.current&&audioBufRef.current)return;ensureAudio().then(()=>{const ctx=audioCtxRef.current;const buf=audioBufRef.current;if(!ctx||!buf)return;try{const src=ctx.createBufferSource();src.buffer=buf;const gain=ctx.createGain();gain.gain.value=0;src.connect(gain);gain.connect(ctx.destination);src.start(0);src.stop(ctx.currentTime+0.001)}catch{}})};const opts={passive:true,once:true};window.addEventListener(“touchstart”,init,opts);window.addEventListener(“touchend”,init,opts);window.addEventListener(“click”,init,opts);return()=>{window.removeEventListener(“touchstart”,init,opts);window.removeEventListener(“touchend”,init,opts);window.removeEventListener(“click”,init,opts)}},[soundEnabled,ensureAudio]);
 const[sortDir,setSortDir]=useState(()=>localStorage.getItem(SOK+”-dir”)||“desc”);
 const[searchQ,setSearchQ]=useState(””);const[showSearch,setShowSearch]=useState(false);
 const[showSettings,setShowSettings]=useState(false);
@@ -834,7 +835,7 @@ return(<div style={{minHeight:“100dvh”,background:T.bg,color:T.text,fontFami
 <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
 <label style={{flex:1,minWidth:120,padding:"9px 12px",borderRadius:8,border:"1px solid "+T.brd,background:T.inp,color:T.text,fontSize:12,fontWeight:600,cursor:"pointer",textAlign:"center",display:"inline-block"}}>
 ファイルを選ぶ
-<input type="file" accept="audio/*,video/*" style={{display:"none"}} onChange={async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const ok=await setCustomSound(f);if(ok){try{await ensureAudio();playSoundOnBuf()}catch{}}else{alert("読み込みに失敗しました")}e.target.value=""}}/>
+<input type="file" style={{display:"none"}} onChange={async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const ok=await setCustomSound(f);if(ok){try{await ensureAudio();playSoundOnBuf()}catch{}}else{alert("読み込みに失敗しました")}e.target.value=""}}/>
 </label>
 {customSoundName&&<button style={{padding:"9px 12px",borderRadius:8,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:12,fontWeight:600,cursor:"pointer"}} onClick={async()=>{await resetCustomSound()}}>デフォルトに戻す</button>}
 <button style={{padding:"9px 12px",borderRadius:8,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:12,fontWeight:600,cursor:"pointer"}} onClick={async()=>{await ensureAudio();playSoundOnBuf()}}>▶ 試聴</button>
