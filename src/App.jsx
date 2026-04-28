@@ -1,6 +1,6 @@
-import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from “react”;
+import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef, memo } from “react”;
 
-const VER = “3.10.8”;
+const VER = “3.10.9”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
@@ -867,7 +867,7 @@ return(<div style={{minHeight:“100dvh”,background:T.bg,color:T.text,fontFami
 </div>)
 }
 
-function TaskCard({task,T,isDark,sortOrder,expanded,memoExp,dragging,draggable,isToday,isLatestDone,locEmojis={},onToggleExpand,onToggleMemo,onToggleDone,onEdit,onDelete,onUpdateSubtasks,onUpdateMemo,onQuickUpdate,onPostpone,onToggleToday,onFocus,onDragStart,onDragMove,onDragEnd}){
+const TaskCard=memo(function TaskCard({task,T,isDark,sortOrder,expanded,memoExp,dragging,draggable,isToday,isLatestDone,locEmojis={},onToggleExpand,onToggleMemo,onToggleDone,onEdit,onDelete,onUpdateSubtasks,onUpdateMemo,onQuickUpdate,onPostpone,onToggleToday,onFocus,onDragStart,onDragMove,onDragEnd}){
 const isW=task.type===“wish”;
 const wishUrgent=isW&&task.deadline&&((new Date(task.deadline)-new Date())/36e5)<24&&((new Date(task.deadline)-new Date())/36e5)>=0;
 const wishOver=isW&&task.deadline&&((new Date(task.deadline)-new Date())/36e5)<0;
@@ -1076,4 +1076,6 @@ return(<div style={{position:“relative”,overflow:“hidden”,borderRadius:1
 </div>}
 </div>
 </div>)
-}
+},(prev,next)=>{
+return prev.task===next.task&&prev.expanded===next.expanded&&prev.memoExp===next.memoExp&&prev.dragging===next.dragging&&prev.draggable===next.draggable&&prev.isToday===next.isToday&&prev.isLatestDone===next.isLatestDone&&prev.sortOrder===next.sortOrder&&prev.isDark===next.isDark&&prev.T===next.T&&prev.locEmojis===next.locEmojis;
+});
