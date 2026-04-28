@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from “react”;
 import { useSwipeable } from “react-swipeable”;
 
-const VER = “3.12.3”;
+const VER = “3.12.4”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
@@ -130,7 +130,42 @@ const[memoExpId,setMemoExpId]=useState(null);
 const[sortOrder,setSortOrder]=useState(()=>{const v=localStorage.getItem(SOK)||“smart”;if(v===“light”){localStorage.setItem(SOK,“heavy”);return “heavy”}if(v===“created”){localStorage.setItem(SOK,“smart”);return “smart”}return v});
 const[sortReverse,setSortReverse]=useState(()=>{const v=localStorage.getItem(SOK);if(v===“light”)return true;return ld(SOR,false)});
 const[soundEnabled,setSoundEnabled]=useState(()=>ld(SNK,false));
-const playCompleteSound=useCallback(()=>{if(!soundEnabled)return;try{const a=new Audio(”./sounds/complete.mp3”);a.volume=0.6;a.play().catch(()=>{})}catch{}},[soundEnabled]);
+const audioCtxRef=useRef(null);
+const audioBufRef=useRef(null);
+const audioLoadingRef=useRef(false);
+const ensureAudio=useCallback(async()=>{
+if(!soundEnabled)return null;
+if(!audioCtxRef.current){
+try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return null;audioCtxRef.current=new AC()}catch{return null}
+}
+const ctx=audioCtxRef.current;
+if(ctx.state===“suspended”){try{await ctx.resume()}catch{}}
+if(audioBufRef.current||audioLoadingRef.current)return ctx;
+audioLoadingRef.current=true;
+try{
+const res=await fetch(”./sounds/complete.mp3”);
+const arr=await res.arrayBuffer();
+audioBufRef.current=await ctx.decodeAudioData(arr);
+}catch{}
+audioLoadingRef.current=false;
+return ctx;
+},[soundEnabled]);
+const playCompleteSound=useCallback(()=>{
+if(!soundEnabled)return;
+const ctx=audioCtxRef.current;
+const buf=audioBufRef.current;
+if(!ctx||!buf){ensureAudio();return}
+try{
+if(ctx.state===“suspended”)ctx.resume();
+const src=ctx.createBufferSource();
+src.buffer=buf;
+const gain=ctx.createGain();
+gain.gain.value=0.6;
+src.connect(gain);gain.connect(ctx.destination);
+src.start(0);
+}catch{}
+},[soundEnabled]);
+useEffect(()=>{if(soundEnabled)ensureAudio()},[soundEnabled,ensureAudio]);
 const[sortDir,setSortDir]=useState(()=>localStorage.getItem(SOK+”-dir”)||“desc”);
 const[searchQ,setSearchQ]=useState(””);const[showSearch,setShowSearch]=useState(false);
 const[showSettings,setShowSettings]=useState(false);
@@ -752,7 +787,7 @@ return(<div style={{minHeight:“100dvh”,background:T.bg,color:T.text,fontFami
 </div>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0"}}>
 <span style={{fontSize:12,color:T.sub}}>完了時の効果音</span>
-<button style={{width:44,height:24,borderRadius:12,border:"none",background:soundEnabled?"#4ade80":T.dim,position:"relative",cursor:"pointer",transition:"background .2s"}} onClick={()=>{const next=!soundEnabled;setSoundEnabled(next);if(next){try{const a=new Audio("./sounds/complete.mp3");a.volume=0.6;a.play().catch(()=>{})}catch{}}}}>
+<button style={{width:44,height:24,borderRadius:12,border:"none",background:soundEnabled?"#4ade80":T.dim,position:"relative",cursor:"pointer",transition:"background .2s"}} onClick={async()=>{const next=!soundEnabled;setSoundEnabled(next);if(next){try{const AC=window.AudioContext||window.webkitAudioContext;if(!audioCtxRef.current&&AC)audioCtxRef.current=new AC();const ctx=audioCtxRef.current;if(ctx.state==="suspended")await ctx.resume();if(!audioBufRef.current){const res=await fetch("./sounds/complete.mp3");const arr=await res.arrayBuffer();audioBufRef.current=await ctx.decodeAudioData(arr)}const src=ctx.createBufferSource();src.buffer=audioBufRef.current;const gain=ctx.createGain();gain.gain.value=0.6;src.connect(gain);gain.connect(ctx.destination);src.start(0)}catch{}}}}>
 <span style={{position:"absolute",top:2,left:soundEnabled?22:2,width:20,height:20,borderRadius:"50%",background:"#fff",transition:"left .2s"}}/>
 </button>
 </div>
