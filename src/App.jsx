@@ -1,6 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef, memo } from “react”;
 
-const VER = “3.10.9”;
+const VER = “3.10.10”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
@@ -985,7 +985,7 @@ const ts=task.done?DONE_TIER:(isDark?TIER[pr]:{…TIER[pr],…TIER_LIGHT[pr]});
 const displayRc=task.done?(isDark?”#555”:”#a1a1aa”):rc;
 const changeIcon=e=>{e.stopPropagation();const current=task.icon||””;const v=prompt(“アイコン(絵文字1-2文字)”,current);if(v===null)return;onQuickUpdate(“icon”,v.slice(0,2))};
 
-return(<div style={{position:“relative”,overflow:“hidden”,borderRadius:10,opacity:dragging?0.5:1,touchAction:“pan-y”}}>
+return(<div style={{position:“relative”,overflow:“visible”,borderRadius:10,opacity:dragging?0.5:1,touchAction:“pan-y”}}>
 
 <div ref={bgRef} style={{position:"absolute",inset:0,borderRadius:10,display:"flex",alignItems:"center",padding:"0 24px",pointerEvents:"none",opacity:0,transition:"opacity .15s"}}>
 <span ref={iconRef} style={{fontWeight:800,display:"inline-block"}}/>
