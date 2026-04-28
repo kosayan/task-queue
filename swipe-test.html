@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Swipe Test</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:system-ui,-apple-system,sans-serif;background:#0a0a0a;color:#fff;padding:20px;padding-top:env(safe-area-inset-top, 20px);padding-bottom:env(safe-area-inset-bottom, 20px);min-height:100vh}
+h1{font-size:18px;margin-bottom:16px}
+.note{font-size:12px;color:#888;margin-bottom:16px;line-height:1.5}
+.card-wrap{position:relative;overflow:hidden;border-radius:10px;margin-bottom:8px}
+.card-bg{position:absolute;inset:0;display:flex;align-items:center;padding:0 24px;opacity:0;transition:opacity .15s;pointer-events:none}
+.card-bg-icon{font-weight:800;display:inline-block}
+.card{background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:16px;display:flex;align-items:center;gap:12px;touch-action:pan-y;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;will-change:transform;cursor:pointer}
+.icon{font-size:20px}
+.title{flex:1;font-size:15px;font-weight:600}
+.log{position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,0.9);border-top:1px solid #4ade80;padding:8px;font-family:monospace;font-size:10px;color:#4ade80;max-height:30vh;overflow-y:auto;z-index:100}
+.log-line{white-space:pre;line-height:1.3}
+</style>
+</head>
+<body>
+<h1>📱 Swipe Test (純粋JS、Reactなし)</h1>
+<p class="note">5枚のカードを左右にスワイプしてみてください。<br>追従するならReact側の問題、しないならiOS Safari環境の問題。</p>
+
+<div id="cards"></div>
+
+<div class="log" id="log"></div>
+
+<script>
+const TASKS=[
+{icon:"🎯",title:"ダーツ企画書"},
+{icon:"📦",title:"物販準備"},
+{icon:"🎤",title:"芸人チャンネル収録"},
+{icon:"🧹",title:"サイハワ片付け"},
+{icon:"📓",title:"日記書く"}
+];
+
+const SWIPE_THRESHOLD=120;
+let logLines=[];
+function log(msg){
+  const t=new Date().toLocaleTimeString().slice(-5)+":"+String(Date.now()%1000).padStart(3,'0');
+  logLines.unshift("["+t+"] "+msg);
+  if(logLines.length>10)logLines.length=10;
+  document.getElementById('log').innerHTML=logLines.map(l=>'<div class="log-line">'+l+'</div>').join('');
+}
+
+function makeCard(task){
+  const wrap=document.createElement('div');
+  wrap.className='card-wrap';
+  const bg=document.createElement('div');bg.className='card-bg';
+  const bgIcon=document.createElement('span');bgIcon.className='card-bg-icon';
+  bg.appendChild(bgIcon);
+  const card=document.createElement('div');card.className='card';
+  card.innerHTML='<span class="icon">'+task.icon+'</span><span class="title">'+task.title+'</span>';
+  wrap.appendChild(bg);
+  wrap.appendChild(card);
+  
+  let state={x:0,y:0,axis:null,off:0};
+  
+  const apply=()=>{
+    card.style.transform="translate3d("+state.off+"px,0,0)";
+    if(state.off===0){bg.style.opacity="0"}
+    else{
+      const progress=Math.min(1,Math.abs(state.off)/SWIPE_THRESHOLD);
+      const ready=Math.abs(state.off)>=SWIPE_THRESHOLD;
+      bg.style.opacity="1";
+      bg.style.justifyContent=state.off>0?"flex-start":"flex-end";
+      bg.style.background=state.off>0?(ready?"#4ade80":"rgba(74,222,128,"+(0.2+progress*0.5)+")"):(ready?"#ff3b30":"rgba(255,59,48,"+(0.2+progress*0.5)+")");
+      bgIcon.textContent=state.off>0?"✓":"🗑";
+      bgIcon.style.fontSize=(24+progress*8)+"px";
+      bgIcon.style.color=ready?"#000":"#fff";
+      bgIcon.style.transform="scale("+(0.6+progress*0.4)+")";
+    }
+  };
+  
+  card.addEventListener('touchstart',e=>{
+    state.x=e.touches[0].clientX;
+    state.y=e.touches[0].clientY;
+    state.axis=null;
+    card.style.transition='none';
+    log("start "+task.title.slice(0,4));
+  },{passive:true});
+  
+  card.addEventListener('touchmove',e=>{
+    const dx=e.touches[0].clientX-state.x;
+    const dy=e.touches[0].clientY-state.y;
+    if(state.axis===null){
+      if(Math.abs(dx)>8||Math.abs(dy)>8){
+        state.axis=Math.abs(dx)>Math.abs(dy)?"x":"y";
+        log("axis="+state.axis+" cancelable="+e.cancelable);
+      }
+    }
+    if(state.axis==="x"){
+      if(e.cancelable)e.preventDefault();
+      let off=dx;
+      if(Math.abs(off)>SWIPE_THRESHOLD){
+        const excess=Math.abs(off)-SWIPE_THRESHOLD;
+        off=Math.sign(off)*(SWIPE_THRESHOLD+excess*0.4);
+      }
+      state.off=off;
+      apply();
+    }
+  },{passive:false});
+  
+  const onEnd=()=>{
+    if(state.axis==="x"){
+      log("end off="+Math.round(state.off));
+      card.style.transition="transform .18s cubic-bezier(.2,.8,.4,1)";
+      if(state.off<=-SWIPE_THRESHOLD){
+        state.off=-600;apply();
+        setTimeout(()=>{wrap.style.height='0';wrap.style.marginBottom='0';wrap.style.overflow='hidden'},180);
+      }else if(state.off>=SWIPE_THRESHOLD){
+        state.off=600;apply();
+        setTimeout(()=>{wrap.style.opacity='0.5'},180);
+      }else{
+        state.off=0;apply();
+      }
+    }
+    state.axis=null;
+  };
+  card.addEventListener('touchend',onEnd,{passive:true});
+  card.addEventListener('touchcancel',onEnd,{passive:true});
+  
+  return wrap;
+}
+
+const container=document.getElementById('cards');
+TASKS.forEach(t=>container.appendChild(makeCard(t)));
+log("ready - swipe a card");
+</script>
+
+</body>
+</html>
