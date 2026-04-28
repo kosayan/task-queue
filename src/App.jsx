@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from “react”;
 import { useSwipeable } from “react-swipeable”;
 
-const VER = “3.11.3”;
+const VER = “3.12.0”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
-const SORTS = [{ v: “smart”, l: “スマート順” }, { v: “heavy”, l: “重い順” }, { v: “light”, l: “軽い順” }, { v: “deadline”, l: “締切順” }, { v: “impGroup”, l: “重要度まとめ” }, { v: “weightGroup”, l: “重さまとめ” }, { v: “created”, l: “作成日順” }];
+const SORTS = [{ v: “smart”, l: “スマート順” }, { v: “heavy”, l: “重さ順”, rev: true }, { v: “deadline”, l: “締切順”, rev: true }, { v: “created”, l: “作成日順”, rev: true }, { v: “impGroup”, l: “重要度まとめ” }, { v: “weightGroup”, l: “重さまとめ” }];
 const ROI_MAP = {“3-3”:”#dc2626”,“3-2”:”#f97316”,“3-1”:”#facc15”,“3-0”:”#84cc16”,“2-3”:”#2563eb”,“2-2”:”#0891b2”,“2-1”:”#14b8a6”,“2-0”:”#5eead4”,“1-3”:”#9333ea”,“1-2”:”#c084fc”,“1-1”:”#67e8f9”,“1-0”:”#a7f3d0”};
 const ROI_MAP_CV = {“3-3”:”#000000”,“3-2”:”#1e3a8a”,“3-1”:”#1d4ed8”,“3-0”:”#3b82f6”,“2-3”:”#475569”,“2-2”:”#64748b”,“2-1”:”#94a3b8”,“2-0”:”#cbd5e1”,“1-3”:”#b45309”,“1-2”:”#d97706”,“1-1”:”#f59e0b”,“1-0”:”#fcd34d”};
 const TIER_MAP = {“3-1”:1,“3-0”:1,“3-2”:2,“3-3”:3,“2-1”:4,“2-0”:4,“2-2”:5,“2-3”:6,“1-1”:7,“1-0”:7,“1-2”:8,“1-3”:9};
@@ -58,14 +58,11 @@ function advRec(dl,r){if(!dl||r===“none”||!r)return dl;const d=new Date(dl);
 
 function sortProm(task,so){
 if(so===“smart”)return tierN(task.importance,task.weight);
-if(so===“light”){const w=task.weight>=3?3:task.weight>=2?2:task.weight>=1?1:0;return[1,2,4,7][w]||5}
-if(so===“heavy”){const w=task.weight>=3?3:task.weight>=2?2:task.weight>=1?1:0;return[7,4,2,1][w]||5}
-if(so===“deadline”){if(!task.deadline)return 8;const h=(new Date(task.deadline).getTime()-Date.now())/36e5;if(h<0)return 1;if(h<6)return 2;if(h<24)return 3;if(h<72)return 5;return 7}
 if(so===“impGroup”||so===“weightGroup”)return tierN(task.importance,task.weight);
 return 5;
 }
 
-const SK=“task-queue-v1”,SOK=“task-queue-sort”,DK=“task-queue-defaults”,THK=“task-queue-theme”,TRK=“task-queue-trash”,HRK=“task-queue-habits”,DRK=“task-queue-dayreset”,LEK=“task-queue-locemojis”,LXK=“task-queue-lastexport”,TPK=“task-queue-todaypicks”,TDK=“task-queue-todaypickday”,BNK=“task-queue-bannercount”,ABK=“task-queue-autobackup”,CBK=“task-queue-colorblind”,WRK=“task-queue-weekreport”,MRK=“task-queue-monthreset”;
+const SK=“task-queue-v1”,SOK=“task-queue-sort”,SOR=“task-queue-sortrev”,DK=“task-queue-defaults”,THK=“task-queue-theme”,TRK=“task-queue-trash”,HRK=“task-queue-habits”,DRK=“task-queue-dayreset”,LEK=“task-queue-locemojis”,LXK=“task-queue-lastexport”,TPK=“task-queue-todaypicks”,TDK=“task-queue-todaypickday”,BNK=“task-queue-bannercount”,ABK=“task-queue-autobackup”,CBK=“task-queue-colorblind”,WRK=“task-queue-weekreport”,MRK=“task-queue-monthreset”;
 const DD={importance:2,weight:2,hasDeadline:false,recurrence:“none”,location:””};
 
 function ld(k,d){try{const r=localStorage.getItem(k);return r?JSON.parse(r):d}catch{return d}}
@@ -130,7 +127,9 @@ const[icon,setIcon]=useState(””);const[iconTouched,setIconTouched]=useState(
 const[filter,setFilter]=useState(“all”);const[locFilter,setLocFilter]=useState(null);
 const[editId,setEditId]=useState(null);const[expandedId,setExpandedId]=useState(null);
 const[memoExpId,setMemoExpId]=useState(null);
-const[sortOrder,setSortOrder]=useState(()=>localStorage.getItem(SOK)||“smart”);
+const[sortOrder,setSortOrder]=useState(()=>{const v=localStorage.getItem(SOK)||“smart”;if(v===“light”){localStorage.setItem(SOK,“heavy”);return “heavy”}return v});
+const[sortReverse,setSortReverse]=useState(()=>{const v=localStorage.getItem(SOK);if(v===“light”)return true;return ld(SOR,false)});
+const[sortDir,setSortDir]=useState(()=>localStorage.getItem(SOK+”-dir”)||“desc”);
 const[searchQ,setSearchQ]=useState(””);const[showSearch,setShowSearch]=useState(false);
 const[showSettings,setShowSettings]=useState(false);
 const[undoData,setUndoData]=useState(null);const[defaults,setDefaults]=useState(()=>ld(DK,DD));
@@ -206,6 +205,8 @@ sv(ABK,Date.now());sv(ABK+”-day”,todayKey);
 },[]);
 
 useEffect(()=>{localStorage.setItem(SOK,sortOrder)},[sortOrder]);
+useEffect(()=>{sv(SOR,sortReverse)},[sortReverse]);
+useEffect(()=>{localStorage.setItem(SOK+”-dir”,sortDir)},[sortDir]);
 useEffect(()=>{sv(DK,defaults)},[defaults]);
 useEffect(()=>{localStorage.setItem(THK,isDark?“dark”:“light”);document.body.style.background=T.bg},[isDark,T.bg]);
 useEffect(()=>{sv(DRK,dayReset)},[dayReset]);
@@ -268,7 +269,7 @@ setTasks(p=>[…p,{id:Date.now().toString(36)+Math.random().toString(36).slice(2
 setQuickInput(””);setQuickIcon(””)
 },[quickInput,quickIcon,mode,defaults,locEmojis]);
 
-const showUndo=useCallback((ts,a)=>{if(ur.current)clearTimeout(ur.current);setUndoData({tasks:ts,action:a});ur.current=setTimeout(()=>setUndoData(null),5000)},[]);
+const showUndo=useCallback((ts,a)=>{if(ur.current)clearTimeout(ur.current);setUndoData({tasks:ts,action:a});ur.current=setTimeout(()=>setUndoData(null),10000)},[]);
 
 const lastVibrateRef=useRef(0);
 const fireParticles=useCallback(imp=>{
@@ -380,16 +381,16 @@ else if(mode!==“wish”&&sortOrder!==“impGroup”&&sortOrder!==“weightGrou
 if(sortOrder===“smart”)r.sort((a,b)=>{if(a.bd!==b.bd)return a.bd-b.bd;if(a.weight!==b.weight)return a.weight-b.weight;return b.importance-a.importance});
 else if(sortOrder===“deadline”)r.sort((a,b)=>{if(!a.deadline&&!b.deadline)return 0;if(!a.deadline)return 1;if(!b.deadline)return-1;return new Date(a.deadline)-new Date(b.deadline)});
 else if(sortOrder===“heavy”)r.sort((a,b)=>b.weight-a.weight);
-else if(sortOrder===“light”)r.sort((a,b)=>a.weight-b.weight);
 else if(sortOrder===“created”)r.sort((a,b)=>b.createdAt-a.createdAt);
+if(sortReverse&&(sortOrder===“deadline”||sortOrder===“heavy”||sortOrder===“created”))r.reverse();
 }
-if(mode===“wish”&&sortOrder===“deadline”){r.sort((a,b)=>{if(!a.deadline&&!b.deadline)return 0;if(!a.deadline)return 1;if(!b.deadline)return-1;return new Date(a.deadline)-new Date(b.deadline)})}
+if(mode===“wish”&&sortOrder===“deadline”){r.sort((a,b)=>{if(!a.deadline&&!b.deadline)return 0;if(!a.deadline)return 1;if(!b.deadline)return-1;return new Date(a.deadline)-new Date(b.deadline)});if(sortReverse)r.reverse()}
 if(mode===“task”&&todayPicks.length>0&&sortOrder!==“impGroup”&&sortOrder!==“weightGroup”){
 const picks=r.filter(t=>todayPicks.includes(t.id)&&!t.done);const rest=r.filter(t=>!(todayPicks.includes(t.id)&&!t.done));
 r=[…picks,…rest];
 }
 return r
-},[tasks,filter,locFilter,searchQ,sortOrder,mode,todayPicks,tick]);
+},[tasks,filter,locFilter,searchQ,sortOrder,sortReverse,mode,todayPicks,tick]);
 
 const topTasks=useMemo(()=>{
 const a=tasks.filter(t=>!t.done&&t.type!==“wish”).map(t=>({…t,sc:score(t),bd:band(t)}));
@@ -418,7 +419,7 @@ const bannerTs=e=>{topSwipeStart.current=e.touches[0].clientX};
 const bannerTm=e=>{const dx=e.touches[0].clientX-topSwipeStart.current;setTopSwipeOff(dx)};
 const bannerTe=()=>{if(topSwipeOff>50&&topIdx>0)setTopIdx(topIdx-1);else if(topSwipeOff<-50&&topIdx<topTasks.length-1)setTopIdx(topIdx+1);setTopSwipeOff(0)};
 
-const gcss=”@import url(‘https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap’);*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html,body,#root{min-height:100vh}input,select,button,textarea{font-family:‘Noto Sans JP’,sans-serif}@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}@keyframes slideDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}@keyframes titleScroll{0%,12%{transform:translateX(0)}88%,100%{transform:translateX(var(–d))}}.task-card{animation:fadeIn .3s ease}.overdue-pulse{animation:pulse 1.5s ease infinite}.form-slide{animation:slideUp .3s ease both}”;
+const gcss=”@import url(‘https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap’);*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html,body,#root{min-height:100vh}input,select,button,textarea{font-family:‘Noto Sans JP’,sans-serif}@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}@keyframes slideDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}@keyframes titleScroll{0%,12%{transform:translateX(0)}88%,100%{transform:translateX(var(–d))}}.task-card{animation:fadeIn .3s ease}.overdue-pulse{animation:pulse 1.5s ease infinite}.form-slide{animation:slideUp .3s ease}”;
 
 const isTask=mode===“task”,isWish=mode===“wish”,isHabit=mode===“habit”;
 const habitsSorted=useMemo(()=>{const done=habits.filter(h=>h.doneToday);const un=habits.filter(h=>!h.doneToday);return[…un,…done]},[habits]);
@@ -607,8 +608,8 @@ return(<div style={{minHeight:“100dvh”,background:T.bg,color:T.text,fontFami
 <div style={{display:"flex",gap:6,marginBottom:6,alignItems:"center",position:"relative"}}>
 <button style={{display:"flex",alignItems:"center",justifyContent:"center",width:34,height:30,borderRadius:8,border:"1px solid "+T.fBrd,background:showSearch?T.cOn:T.inp,color:showSearch?T.cOnT:T.mut,fontSize:14,cursor:"pointer",flexShrink:0}} onClick={()=>setShowSearch(v=>!v)}>🔍</button>
 <div ref={sortDDRef} style={{position:"relative"}}>
-<button style={{display:"flex",alignItems:"center",gap:3,padding:"6px 10px",borderRadius:8,border:"1px solid "+T.fBrd,background:T.inp,fontSize:11,fontWeight:600,color:T.sub,fontFamily:"'JetBrains Mono',monospace",cursor:"pointer"}} onClick={()=>setShowSortDD(v=>!v)}>▼ {SORTS.find(s=>s.v===sortOrder)?.l}</button>
-{showSortDD&&<div style={{position:"absolute",top:34,left:0,background:T.card,border:"1px solid "+T.brd,borderRadius:10,padding:6,zIndex:50,boxShadow:"0 4px 12px "+T.shd,minWidth:140}}>{SORTS.map(s=><button key={s.v} style={{display:"block",width:"100%",textAlign:"left",padding:"8px 12px",borderRadius:6,border:"none",background:sortOrder===s.v?T.cOn:"transparent",color:sortOrder===s.v?T.cOnT:T.sub,fontSize:12,fontWeight:600,cursor:"pointer",marginBottom:2}} onClick={()=>{setSortOrder(s.v);setShowSortDD(false);setOpenGroup(null)}}>{s.l}</button>)}</div>}
+<button style={{display:"flex",alignItems:"center",gap:3,padding:"6px 10px",borderRadius:8,border:"1px solid "+T.fBrd,background:T.inp,fontSize:11,fontWeight:600,color:T.sub,fontFamily:"'JetBrains Mono',monospace",cursor:"pointer"}} onClick={()=>setShowSortDD(v=>!v)}>{(SORTS.find(s=>s.v===sortOrder)?.rev)?(sortReverse?"▲ ":"▼ "):"▼ "}{SORTS.find(s=>s.v===sortOrder)?.l}</button>
+{showSortDD&&<div style={{position:"absolute",top:34,left:0,background:T.card,border:"1px solid "+T.brd,borderRadius:10,padding:6,zIndex:50,boxShadow:"0 4px 12px "+T.shd,minWidth:140}}>{SORTS.map(s=><button key={s.v} style={{display:"block",width:"100%",textAlign:"left",padding:"8px 12px",borderRadius:6,border:"none",background:sortOrder===s.v?T.cOn:"transparent",color:sortOrder===s.v?T.cOnT:T.sub,fontSize:12,fontWeight:600,cursor:"pointer",marginBottom:2}} onClick={()=>{if(sortOrder===s.v&&s.rev){setSortReverse(v=>!v)}else{setSortOrder(s.v);setSortReverse(false)}setShowSortDD(false);setOpenGroup(null)}}>{(sortOrder===s.v&&s.rev)?(sortReverse?"▲ ":"▼ "):""}{s.l}</button>)}</div>}
 </div>
 </div>
 {locs.length>0&&isTask&&<div style={{display:"flex",gap:6,marginBottom:10,alignItems:"center",flexWrap:"wrap"}}>
@@ -683,7 +684,7 @@ return(<div style={{minHeight:“100dvh”,background:T.bg,color:T.text,fontFami
 
 {!isHabit&&!isGroupMode&&<div style={{display:“flex”,flexDirection:“column”,gap:8}}>
 {sorted.length===0&&<div style={{textAlign:“center”,padding:36,color:T.dim,fontSize:13,fontFamily:”‘JetBrains Mono’,monospace”}}>{searchQ?“検索結果なし”:filter===“done”?“完了タスクなし”:“タスクを追加しましょう”}</div>}
-{sorted.map(task=><TaskCard key={task.id} task={task} T={T} isDark={isDark} sortOrder={sortOrder} expanded={expandedId===task.id} memoExp={memoExpId===task.id} dragging={draggingId===task.id} draggable={isWish} isToday={todayPicks.includes(task.id)} isLatestDone={latestDoneId===task.id} locEmojis={locEmojis} onToggleExpand={()=>{setExpandedId(expandedId===task.id?null:task.id);setMemoExpId(null)}} onToggleMemo={()=>{setMemoExpId(memoExpId===task.id?null:task.id);setExpandedId(null)}} onToggleDone={()=>togDone(task.id)} onEdit={()=>startEdit(task)} onDelete={()=>delTask(task.id)} onUpdateSubtasks={s=>upSub(task.id,s)} onUpdateMemo={m=>upMemo(task.id,m)} onQuickUpdate={(f,v)=>quickUpdate(task.id,f,v)} onPostpone={()=>{if(task.deadline){const d=new Date(task.deadline);d.setDate(d.getDate()+1);quickUpdate(task.id,“deadline”,d.toISOString().slice(0,16))}else{const d=new Date();d.setDate(d.getDate()+3);d.setHours(18,0,0,0);quickUpdate(task.id,“deadline”,d.toISOString().slice(0,16))}}} onToggleToday={()=>setTodayPicks(p=>p.includes(task.id)?p.filter(x=>x!==task.id):[…p,task.id])} onFocus={()=>setFocusTaskId(task.id)} onDragStart={y=>dragStart(task.id,“wish”,y)} onDragMove={dragMove} onDragEnd={dragEnd}/>)}
+{sorted.map((task,idx)=>{const useRank=isTask&&sortOrder!==“smart”&&sortOrder!==“impGroup”&&sortOrder!==“weightGroup”&&filter!==“done”;const dt=useRank?Math.max(1,Math.min(9,Math.floor(idx/Math.max(1,sorted.length/9))+1)):null;return<TaskCard key={task.id} task={task} T={T} isDark={isDark} sortOrder={sortOrder} expanded={expandedId===task.id} memoExp={memoExpId===task.id} dragging={draggingId===task.id} draggable={isWish} isToday={todayPicks.includes(task.id)} isLatestDone={latestDoneId===task.id} locEmojis={locEmojis} displayTier={dt} onToggleExpand={()=>{setExpandedId(expandedId===task.id?null:task.id);setMemoExpId(null)}} onToggleMemo={()=>{setMemoExpId(memoExpId===task.id?null:task.id);setExpandedId(null)}} onToggleDone={()=>togDone(task.id)} onEdit={()=>startEdit(task)} onDelete={()=>delTask(task.id)} onUpdateSubtasks={s=>upSub(task.id,s)} onUpdateMemo={m=>upMemo(task.id,m)} onQuickUpdate={(f,v)=>quickUpdate(task.id,f,v)} onToggleToday={()=>setTodayPicks(p=>p.includes(task.id)?p.filter(x=>x!==task.id):[…p,task.id])} onFocus={()=>setFocusTaskId(task.id)} onDragStart={y=>dragStart(task.id,“wish”,y)} onDragMove={dragMove} onDragEnd={dragEnd}/>})}
 
 </div>}
 
@@ -862,20 +863,20 @@ return(<div style={{minHeight:“100dvh”,background:T.bg,color:T.text,fontFami
 
 {undoData&&<div className=“form-slide” style={{position:“fixed”,bottom:“calc(24px + env(safe-area-inset-bottom))”,left:16,right:16,maxWidth:360,margin:“0 auto”,background:T.toast,border:“1px solid “+T.brd,borderRadius:10,padding:“12px 16px”,display:“flex”,alignItems:“center”,justifyContent:“space-between”,fontSize:13,color:T.sub,zIndex:200}}><span>削除しました</span><button style={{background:“none”,border:“none”,color:”#ff3b30”,fontWeight:700,cursor:“pointer”,fontSize:13}} onClick={undo}>元に戻す</button></div>}
 
-{!showForm&&!isHabit&&!focusTaskId&&!showSettings&&!showPicker&&!showWeekReport&&!showMonthReset&&!showQuotaWarn&&!showBackupNudge&&!expandedId&&!memoExpId&&<button style={{position:“fixed”,bottom:“calc(52px + env(safe-area-inset-bottom))”,right:20,width:56,height:56,borderRadius:“50%”,border:“none”,background:”#ff3b30”,color:”#fff”,fontSize:32,fontWeight:300,cursor:“pointer”,boxShadow:“0 4px 16px rgba(255,59,48,0.35),0 2px 6px rgba(0,0,0,0.2)”,display:“flex”,alignItems:“center”,justifyContent:“center”,zIndex:150,padding:0,lineHeight:1,touchAction:“manipulation”}} onClick={()=>{resetForm();setShowForm(true)}} aria-label={isWish?“やりたいことを追加”:“新しいタスク”}>+</button>}
+{!showForm&&!isHabit&&!focusTaskId&&!showSettings&&!showPicker&&!showWeekReport&&!showMonthReset&&!showQuotaWarn&&!showBackupNudge&&!expandedId&&!memoExpId&&<button style={{position:“fixed”,bottom:“calc(”+(undoData?108:52)+“px + env(safe-area-inset-bottom))”,right:20,width:56,height:56,borderRadius:“50%”,border:“none”,background:”#ff3b30”,color:”#fff”,fontSize:32,fontWeight:300,cursor:“pointer”,boxShadow:“0 4px 16px rgba(255,59,48,0.35),0 2px 6px rgba(0,0,0,0.2)”,display:“flex”,alignItems:“center”,justifyContent:“center”,zIndex:150,padding:0,lineHeight:1,touchAction:“manipulation”,transition:“bottom .2s”}} onClick={()=>{resetForm();setShowForm(true)}} aria-label={isWish?“やりたいことを追加”:“新しいタスク”}>+</button>}
 
 <div style={{position:"fixed",bottom:6,right:10,fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:T.dim,userSelect:"none",pointerEvents:"none"}}>v{VER}</div>
 </div>)
 }
 
-const TaskCard=memo(function TaskCard({task,T,isDark,sortOrder,expanded,memoExp,dragging,draggable,isToday,isLatestDone,locEmojis={},onToggleExpand,onToggleMemo,onToggleDone,onEdit,onDelete,onUpdateSubtasks,onUpdateMemo,onQuickUpdate,onPostpone,onToggleToday,onFocus,onDragStart,onDragMove,onDragEnd}){
+const TaskCard=memo(function TaskCard({task,T,isDark,sortOrder,expanded,memoExp,dragging,draggable,isToday,isLatestDone,locEmojis={},displayTier,onToggleExpand,onToggleMemo,onToggleDone,onEdit,onDelete,onUpdateSubtasks,onUpdateMemo,onQuickUpdate,onToggleToday,onFocus,onDragStart,onDragMove,onDragEnd}){
 const isW=task.type===“wish”;
 const wishUrgent=isW&&task.deadline&&((new Date(task.deadline)-new Date())/36e5)<24&&((new Date(task.deadline)-new Date())/36e5)>=0;
 const wishOver=isW&&task.deadline&&((new Date(task.deadline)-new Date())/36e5)<0;
 const lb=isW?(wishOver?{t:“OVERDUE”,c:”#ff3b30”}:wishUrgent?{t:“SOON”,c:”#ff9500”}:{t:“WISH”,c:”#c084fc”}):sLabel(task.sc);
 const isOD=task.sc>=1000;
 const rc=isW?(wishOver?”#ff3b30”:wishUrgent?”#ff9500”:”#c084fc”):roi(task.importance,task.weight);
-const pr=isW?5:sortProm(task,sortOrder);
+const pr=isW?5:(displayTier||sortProm(task,sortOrder));
 const wi=WI.find(w=>w.v===task.weight);
 const im=IMP.find(x=>x.v===task.importance);
 const[ns,setNs]=useState(””);
@@ -890,19 +891,28 @@ const subDragMove=y=>{if(!subDragId)return;const dy=y-subDragStartY.current;cons
 const subDragEnd=()=>setSubDragId(null);
 const[showQuickMenu,setShowQuickMenu]=useState(false);
 const longPressTimer=useRef(null);
-const SWIPE_THRESHOLD=120;
+const SWIPE_THRESHOLD=Math.max(100,Math.min(160,(typeof window!==“undefined”?window.innerWidth:400)*0.3));
+const BOTTOM_GUARD=60;
 const[swipeOffset,setSwipeOffset]=useState(0);
 const[swipeAnimating,setSwipeAnimating]=useState(false);
+const swipeBlockedRef=useRef(false);
 const swipeProgress=Math.min(1,Math.abs(swipeOffset)/SWIPE_THRESHOLD);
 const swipeReady=Math.abs(swipeOffset)>=SWIPE_THRESHOLD;
+const isRecurring=task.recurrence&&task.recurrence!==“none”;
 const swipeHandlers=useSwipeable({
-onSwipeStart:()=>{
+onSwipeStart:(e)=>{
 if(longPressTimer.current){clearTimeout(longPressTimer.current);longPressTimer.current=null}
+const startY=e.event.touches?e.event.touches[0].clientY:e.event.clientY;
+if(startY>=window.innerHeight-BOTTOM_GUARD){swipeBlockedRef.current=true;return}
+swipeBlockedRef.current=false;
 },
 onSwiping:(e)=>{
+if(swipeBlockedRef.current)return;
 if(task.done||expanded||memoExp)return;
 if(e.dir!==“Left”&&e.dir!==“Right”)return;
+if(e.dir===“Right”&&isRecurring)return;
 let off=e.deltaX;
+if(e.dir===“Right”&&isRecurring)off=0;
 if(Math.abs(off)>SWIPE_THRESHOLD){
 const excess=Math.abs(off)-SWIPE_THRESHOLD;
 off=Math.sign(off)*(SWIPE_THRESHOLD+excess*0.4);
@@ -911,6 +921,7 @@ setSwipeAnimating(false);
 setSwipeOffset(off);
 },
 onSwiped:(e)=>{
+if(swipeBlockedRef.current){swipeBlockedRef.current=false;setSwipeOffset(0);return}
 if(task.done||expanded||memoExp){setSwipeOffset(0);return}
 if(e.dir!==“Left”&&e.dir!==“Right”){setSwipeOffset(0);return}
 const off=e.deltaX;
@@ -918,7 +929,7 @@ setSwipeAnimating(true);
 if(off<=-SWIPE_THRESHOLD){
 setSwipeOffset(-600);
 setTimeout(()=>{onDelete();setSwipeOffset(0);setSwipeAnimating(false)},180)
-}else if(off>=SWIPE_THRESHOLD){
+}else if(off>=SWIPE_THRESHOLD&&!isRecurring){
 setSwipeOffset(600);
 setTimeout(()=>{onToggleDone();setSwipeOffset(0);setSwipeAnimating(false)},180)
 }else{
@@ -929,7 +940,7 @@ setTimeout(()=>setSwipeAnimating(false),200)
 trackTouch:true,
 trackMouse:false,
 preventScrollOnSwipe:false,
-delta:8,
+delta:12,
 });
 const handleTouchStart=()=>{
 if(task.done||expanded||memoExp)return;
@@ -958,8 +969,7 @@ return(<div {…swipeHandlers} style={{position:“relative”,overflow:“hidde
 <div style={{display:"flex",flexDirection:"column",gap:6}}>
 {!task.done&&task.type!=="wish"&&onFocus&&<button style={{padding:"13px",borderRadius:8,border:"none",background:"#ff9500",color:"#000",fontSize:14,fontWeight:800,cursor:"pointer",letterSpacing:1}} onClick={()=>{onFocus();setShowQuickMenu(false)}}>▶ これやる(集中モード)</button>}
 {!task.done&&<button style={{padding:"11px",borderRadius:8,border:"1px solid #4ade80",background:"rgba(74,222,128,0.12)",color:"#4ade80",fontSize:13,fontWeight:700,cursor:"pointer"}} onClick={()=>{onToggleDone();setShowQuickMenu(false)}}>✓ 完了にする</button>}
-{!task.done&&task.type!=="wish"&&<button style={{padding:"11px",borderRadius:8,border:"1px solid "+T.brd,background:"transparent",color:T.text,fontSize:13,fontWeight:600,cursor:"pointer"}} onClick={()=>{onToggleToday();setShowQuickMenu(false)}}>{isToday?"★ TODAYから外す":"★ 今日やる"}</button>}
-{!task.done&&<button style={{padding:"11px",borderRadius:8,border:"1px solid "+T.brd,background:"transparent",color:T.text,fontSize:13,fontWeight:600,cursor:"pointer"}} onClick={()=>{onPostpone&&onPostpone();setShowQuickMenu(false)}}>⏰ 先送り ({task.deadline?"+1日":"3日後18時"})</button>}
+{!task.done&&task.type!=="wish"&&<button style={{padding:"11px",borderRadius:8,border:"1px solid "+T.brd,background:"transparent",color:T.text,fontSize:13,fontWeight:600,cursor:"pointer"}} onClick={()=>{onToggleToday();setShowQuickMenu(false)}}>{isToday?"⭐ TODAYから外す":"⭐ TODAYにする"}</button>}
 {!task.done&&<button style={{padding:"11px",borderRadius:8,border:"1px solid "+T.brd,background:"transparent",color:T.text,fontSize:13,fontWeight:600,cursor:"pointer"}} onClick={()=>{onQuickUpdate("type",task.type==="wish"?"task":"wish");setShowQuickMenu(false)}}>🔄 {task.type==="wish"?"タスクに":"やりたいに"}変換</button>}
 <button style={{padding:"11px",borderRadius:8,border:"1px solid rgba(255,59,48,0.3)",background:"transparent",color:"#ff3b30",fontSize:13,fontWeight:600,cursor:"pointer"}} onClick={()=>{onDelete();setShowQuickMenu(false)}}>🗑 削除</button>
 <button style={{padding:"9px",borderRadius:8,border:"none",background:"transparent",color:T.mut,fontSize:12,cursor:"pointer",marginTop:4}} onClick={()=>setShowQuickMenu(false)}>キャンセル</button>
@@ -1038,5 +1048,5 @@ return(<div {…swipeHandlers} style={{position:“relative”,overflow:“hidde
 </div>
 </div>)
 },(prev,next)=>{
-return prev.task===next.task&&prev.expanded===next.expanded&&prev.memoExp===next.memoExp&&prev.dragging===next.dragging&&prev.draggable===next.draggable&&prev.isToday===next.isToday&&prev.isLatestDone===next.isLatestDone&&prev.sortOrder===next.sortOrder&&prev.isDark===next.isDark&&prev.T===next.T&&prev.locEmojis===next.locEmojis;
+return prev.task===next.task&&prev.expanded===next.expanded&&prev.memoExp===next.memoExp&&prev.dragging===next.dragging&&prev.draggable===next.draggable&&prev.isToday===next.isToday&&prev.isLatestDone===next.isLatestDone&&prev.sortOrder===next.sortOrder&&prev.isDark===next.isDark&&prev.T===next.T&&prev.locEmojis===next.locEmojis&&prev.displayTier===next.displayTier;
 });
