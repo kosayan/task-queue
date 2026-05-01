@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from “react”;
 import { useSwipeable } from “react-swipeable”;
 
-const VER = “3.15.1”;
+const VER = “3.15.2”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
@@ -115,6 +115,21 @@ if(iW>wW+2){setOverflow(true);setDist(iW-wW+24)}else{setOverflow(false);setDist(
 if(!overflow)return<div ref={wrapRef} style={{…style,whiteSpace:“nowrap”,overflow:“hidden”,textOverflow:“ellipsis”}}><span ref={innerRef}>{text}</span></div>;
 const dur=Math.max(6,Math.min(18,dist/28));
 return(<div ref={wrapRef} style={{…style,whiteSpace:“nowrap”,overflow:“hidden”,maskImage:“linear-gradient(90deg,transparent 0,#000 12px,#000 calc(100% - 12px),transparent 100%)”,WebkitMaskImage:“linear-gradient(90deg,transparent 0,#000 12px,#000 calc(100% - 12px),transparent 100%)”}}><span ref={innerRef} style={{display:“inline-block”,animation:“titleScroll “+dur+“s linear infinite”,paddingRight:24,[”–d”]:”-”+dist+“px”}}>{text}</span></div>);
+}
+
+function AutoMemo({value,onChange,minH,fontSize,maxLines,style,…rest}){
+const ref=useRef(null);
+useEffect(()=>{
+if(!ref.current)return;
+const el=ref.current;
+el.style.height=“auto”;
+const lh=fontSize*1.6;
+const maxH=lh*maxLines+22;
+const need=el.scrollHeight;
+el.style.height=Math.min(Math.max(need,minH),maxH)+“px”;
+el.style.overflowY=need>maxH?“auto”:“hidden”;
+},[value,fontSize,maxLines,minH]);
+return<textarea ref={ref} value={value||””} onChange={e=>onChange(e.target.value)} style={{…style,resize:“none”,minHeight:minH,fontSize,lineHeight:1.6,fontFamily:“inherit”}} {…rest}/>;
 }
 
 export default function App(){
@@ -1151,7 +1166,7 @@ return(<div {…swipeHandlers} style={{position:“relative”,overflow:“hidde
 </div>
 {memoExp&&!expanded&&<div className="ne" style={{marginTop:10,paddingTop:10,borderTop:"1px solid "+T.brd,width:"100%",animation:"slideDown .25s ease"}} onClick={e=>e.stopPropagation()}>
 <div style={{fontSize:9,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:6,fontFamily:"'JetBrains Mono',monospace"}}>📝 メモ</div>
-<textarea style={{width:"100%",padding:"10px 12px",background:T.memo,border:"1px solid "+T.memB,borderRadius:8,color:T.text,fontSize:14,outline:"none",minHeight:120,resize:"vertical",fontFamily:"inherit",lineHeight:1.6}} placeholder="メモを入力..." value={task.memo||""} onChange={e=>onUpdateMemo(e.target.value)} onClick={e=>e.stopPropagation()} autoFocus/>
+<AutoMemo minH={120} fontSize={14} maxLines={12} placeholder="メモを入力..." value={task.memo} onChange={v=>onUpdateMemo(v)} onClick={e=>e.stopPropagation()} autoFocus style={{width:"100%",padding:"10px 12px",background:T.memo,border:"1px solid "+T.memB,borderRadius:8,color:T.text,outline:"none"}}/>
 </div>}
 {expanded&&<div style={{marginTop:12,paddingTop:12,borderTop:"1px solid "+T.brd,width:"100%",animation:"slideDown .25s ease"}}>
 {!isW&&<div className="ne" style={{display:"flex",justifyContent:"flex-end",gap:6,marginBottom:8,flexWrap:"wrap"}} onClick={e=>e.stopPropagation()}>
@@ -1183,7 +1198,7 @@ return(<div {…swipeHandlers} style={{position:“relative”,overflow:“hidde
 <div className="ne" style={{marginTop:12}} onClick={e=>e.stopPropagation()}>
 {(memoEditing||(task.memo&&task.memo.trim()))?<>
 <div style={{fontSize:10,fontWeight:700,color:T.sub,textTransform:"uppercase",letterSpacing:1,marginBottom:5,fontFamily:"'JetBrains Mono',monospace"}}>メモ</div>
-<textarea autoFocus={memoEditing&&!task.memo} style={{width:"100%",padding:10,background:T.memo,border:"1px solid "+T.memB,borderRadius:6,color:T.text,fontSize:13,lineHeight:1.6,outline:"none",minHeight:50,resize:"vertical",fontFamily:"inherit"}} placeholder="メモ..." value={task.memo||""} onChange={e=>onUpdateMemo(e.target.value)}/>
+<AutoMemo autoFocus={memoEditing&&!task.memo} minH={50} fontSize={13} maxLines={12} placeholder="メモ..." value={task.memo} onChange={v=>onUpdateMemo(v)} style={{width:"100%",padding:10,background:T.memo,border:"1px solid "+T.memB,borderRadius:6,color:T.text,outline:"none"}}/>
 </>:<button style={{padding:"6px 12px",borderRadius:6,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:11,fontWeight:600,cursor:"pointer"}} onClick={e=>{e.stopPropagation();setMemoEditing(true)}}>+ メモ</button>}
 </div>
 <div style={{display:"flex",justifyContent:"space-between",gap:6,marginTop:12,alignItems:"center"}}>
