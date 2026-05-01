@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from “react”;
 import { useSwipeable } from “react-swipeable”;
 
-const VER = “3.15.0”;
+const VER = “3.15.1”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
@@ -467,7 +467,7 @@ return r
 },[tasks,filter,locFilter,searchQ,sortOrder,sortReverse,mode,todayPicks,tick]);
 
 const topTasks=useMemo(()=>{
-const a=tasks.filter(t=>!t.done&&t.type!==“wish”).map(t=>({…t,sc:score(t),bd:band(t)}));
+const a=tasks.filter(t=>!t.done&&t.type!==“wish”&&t.type!==“hold”).map(t=>({…t,sc:score(t),bd:band(t)}));
 a.sort((x,y)=>{if(x.bd!==y.bd)return x.bd-y.bd;if(x.weight!==y.weight)return x.weight-y.weight;return y.importance-x.importance});
 return a.slice(0,bannerCount)
 },[tasks,bannerCount,tick]);
@@ -1110,7 +1110,7 @@ return(<div {…swipeHandlers} style={{position:“relative”,overflow:“hidde
 </div>
 </div>
 </div>}
-<div className="task-card" style={{background:isW?T.card:ts.bg,borderRadius:10,padding:ts.pad+"px 14px "+ts.pad+"px "+(ts.pad+8)+"px",transition:swipeAnimating?"transform .18s cubic-bezier(.2,.8,.4,1)":(swipeOffset!==0?"none":"all .2s"),cursor:"pointer",position:"relative",display:"flex",width:"100%",flexDirection:expanded||memoExp?"column":"row",alignItems:expanded||memoExp?"stretch":"center",border:"1px solid "+(isLatestDone?"rgba(74,222,128,0.5)":isW?(wishOver?"rgba(255,59,48,0.4)":wishUrgent?"rgba(255,149,0,0.4)":"rgba(192,132,252,0.2)"):ts.border),boxShadow:isLatestDone?"0 0 8px rgba(74,222,128,0.2)":ts.shadow!=="none"?"0 0 10px "+ts.shadow:"",transform:"translate3d("+swipeOffset+"px,0,0)",userSelect:"none",WebkitUserSelect:"none",WebkitTouchCallout:"none",willChange:"transform"}} onClick={e=>{if(e.target.closest(".ne")||Math.abs(swipeOffset)>5)return;onToggleExpand()}} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onTouchCancel={handleTouchEnd}>
+<div className="task-card" style={{background:isW?T.card:ts.bg,borderRadius:10,padding:ts.pad+"px 14px "+ts.pad+"px "+(ts.pad+8)+"px",transition:swipeAnimating?"transform .18s cubic-bezier(.2,.8,.4,1)":(swipeOffset!==0?"none":"all .2s"),cursor:"pointer",position:"relative",display:"flex",width:"100%",flexDirection:expanded||memoExp?"column":"row",alignItems:expanded||memoExp?"stretch":"center",border:"1px solid "+(isLatestDone?"rgba(74,222,128,0.5)":isW?(wishOver?"rgba(255,59,48,0.4)":wishUrgent?"rgba(255,149,0,0.4)":"rgba(192,132,252,0.2)"):ts.border),boxShadow:isLatestDone?"0 0 8px rgba(74,222,128,0.2)":ts.shadow!=="none"?"0 0 10px "+ts.shadow:"",transform:"translate3d("+swipeOffset+"px,0,0)",userSelect:"none",WebkitUserSelect:"none",WebkitTouchCallout:"none",filter:isHold?"grayscale(1)":"none",opacity:isHold?0.78:1,willChange:"transform"}} onClick={e=>{if(e.target.closest(".ne")||Math.abs(swipeOffset)>5)return;onToggleExpand()}} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} onTouchCancel={handleTouchEnd}>
 {!isW&&!task.done&&<div style={{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",width:wi?.bw||4,height:(wi?.bh||75)+"%",background:displayRc,borderRadius:"0 3px 3px 0"}}/>}
 {isW&&<div style={{position:"absolute",left:0,top:"50%",transform:"translateY(-50%)",width:3,height:"60%",background:rc,borderRadius:"0 3px 3px 0"}}/>}
 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%"}}>
