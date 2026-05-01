@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from “react”;
 import { useSwipeable } from “react-swipeable”;
 
-const VER = “3.14.0”;
+const VER = “3.15.0”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
@@ -45,6 +45,7 @@ function score(t){if(t.done)return-999;if(t.type===“wish”)return-500;if(!t.d
 function band(t){if(t.done)return 5;if(t.type===“wish”)return 6;const s=score(t);return s>=1000?0:s>=80?1:s>=60?2:s>=40?3:4}
 function sLabel(s){return s>=1000?{t:“OVERDUE”,c:”#ff3b30”}:s>=80?{t:“NOW”,c:”#ff3b30”}:s>=60?{t:“SOON”,c:”#ff9500”}:s>=40?{t:“NEXT”,c:”#ffcc00”}:{t:“LATER”,c:”#8e8e93”}}
 function fmtDl(d){if(!d)return”無期限”;const df=new Date(d)-new Date(),m=Math.round(df/6e4);if(m<0)return”overdue”;if(m<60)return m+“m”;const h=Math.floor(m/60),mm=m%60;if(h<24)return mm>0?h+“h “+mm+“m”:h+“h”;const dd=Math.floor(h/24),hh=h%24;if(dd<7)return hh>0?dd+“d “+hh+“h”:dd+“d”;const dl=new Date(d);return(dl.getMonth()+1)+”/”+dl.getDate()}
+function fmtDlBtn(d){if(!d)return”無期限”;const dl=new Date(d);const yy=dl.getFullYear();const cy=new Date().getFullYear();const md=(dl.getMonth()+1)+”/”+dl.getDate();const tm=dl.getHours()===0&&dl.getMinutes()===0?””:” “+String(dl.getHours()).padStart(2,“0”)+”:”+String(dl.getMinutes()).padStart(2,“0”);return(yy!==cy?yy+”/”:””)+md+tm}
 function defDl(){const d=new Date();d.setDate(d.getDate()+1);d.setHours(18,0,0,0);return d.toISOString().slice(0,16)}
 
 function suggestEmoji(title){
@@ -319,6 +320,7 @@ useEffect(()=>{if(showForm&&formRef.current)formRef.current.scrollIntoView({beha
 useEffect(()=>{if(!showSortDD)return;const h=e=>{if(sortDDRef.current&&!sortDDRef.current.contains(e.target))setShowSortDD(false)};document.addEventListener(“mousedown”,h);document.addEventListener(“touchstart”,h);return()=>{document.removeEventListener(“mousedown”,h);document.removeEventListener(“touchstart”,h)}},[showSortDD]);
 
 const quickUpdate=useCallback((id,field,val)=>{setTasks(p=>p.map(t=>t.id===id?{…t,[field]:val}:t))},[]);
+const setTaskDeadline=useCallback((id,val)=>{setTasks(p=>p.map(t=>{if(t.id!==id)return t;if(!val)return{…t,deadline:null,recurrence:“none”};return{…t,deadline:val}}))},[]);
 const upSub=useCallback((id,s)=>setTasks(p=>p.map(t=>t.id===id?{…t,subtasks:s}:t)),[]);
 const upMemo=useCallback((id,m)=>setTasks(p=>p.map(t=>t.id===id?{…t,memo:m}:t)),[]);
 
@@ -663,7 +665,7 @@ return(<div style={{minHeight:“100dvh”,background:T.bg,color:T.text,fontFami
 {!isHabit&&<>
 
 <div style={{display:"flex",gap:4,marginBottom:6}}>
-{(isTask?[{k:"all",l:"すべて"},{k:"noDeadline",l:"無期限"},{k:"active",l:"アクティブ"},{k:"done",l:"完了"},{k:"hold",l:"保留"}]:[{k:"all",l:"すべて"},{k:"done",l:"完了"}]).map(f=>(<button key={f.k} style={{padding:"8px 14px",borderRadius:8,border:"1px solid "+T.fBrd,fontSize:13,fontWeight:600,whiteSpace:"nowrap",background:filter===f.k&&locFilter===null?T.cOn:"transparent",color:filter===f.k&&locFilter===null?T.cOnT:T.fOffT,cursor:"pointer"}} onClick={()=>{setFilter(f.k);setLocFilter(null)}}>{f.l}</button>))}
+{(isTask?[{k:"all",l:"すべて"},{k:"noDeadline",l:"無期限"},{k:"active",l:"アクティブ"},{k:"hold",l:"保留"},{k:"done",l:"完了"}]:[{k:"all",l:"すべて"},{k:"done",l:"完了"}]).map(f=>(<button key={f.k} style={{padding:"8px 14px",borderRadius:8,border:"1px solid "+T.fBrd,fontSize:13,fontWeight:600,whiteSpace:"nowrap",background:filter===f.k&&locFilter===null?T.cOn:"transparent",color:filter===f.k&&locFilter===null?T.cOnT:T.fOffT,cursor:"pointer"}} onClick={()=>{setFilter(f.k);setLocFilter(null)}}>{f.l}</button>))}
 </div>
 <div style={{display:"flex",gap:6,marginBottom:6,alignItems:"center",position:"relative"}}>
 <button style={{display:"flex",alignItems:"center",justifyContent:"center",width:34,height:30,borderRadius:8,border:"1px solid "+T.fBrd,background:showSearch?T.cOn:T.inp,color:showSearch?T.cOnT:T.mut,fontSize:14,cursor:"pointer",flexShrink:0}} onClick={()=>setShowSearch(v=>!v)}>🔍</button>
@@ -687,7 +689,7 @@ return(<div style={{minHeight:“100dvh”,background:T.bg,color:T.text,fontFami
 {showForm&&<div ref={formRef} className=“form-slide” style={{background:T.card,border:“1px solid “+T.brd,borderRadius:14,padding:16,marginBottom:12,maxWidth:“100%”,overflow:“hidden”}}>
 
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}><span style={{fontSize:14,fontWeight:700,color:T.text}}>{editId?"編集":isWish?"やりたいこと":"新しいタスク"}</span><button style={{background:"none",border:"none",color:T.mut,fontSize:16,cursor:"pointer"}} onClick={resetForm}>✕</button></div>
-<div style={{display:"flex",gap:6,marginBottom:6}}><input style={{width:44,padding:"9px 6px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:16,outline:"none",textAlign:"center",flexShrink:0}} placeholder="📌" value={icon} onChange={e=>{setIcon(e.target.value);setIconTouched(true)}} maxLength={2}/><input style={{flex:1,padding:"9px 12px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:14,outline:"none",minWidth:0}} placeholder={isWish?"やりたいこと...":"タスク名..."} value={title} onChange={e=>setTitle(e.target.value)} autoFocus onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&submit()}/></div>
+<div style={{display:"flex",gap:6,marginBottom:6}}><input style={{width:44,padding:"9px 6px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:16,outline:"none",textAlign:"center",flexShrink:0}} placeholder="📌" value={icon} onChange={e=>{setIcon(e.target.value);setIconTouched(true)}} maxLength={8}/><input style={{flex:1,padding:"9px 12px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:14,outline:"none",minWidth:0}} placeholder={isWish?"やりたいこと...":"タスク名..."} value={title} onChange={e=>setTitle(e.target.value)} autoFocus onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&submit()}/></div>
 {!icon&&title.trim()&&suggestEmoji(title)&&<div style={{marginBottom:6,fontSize:11,color:T.mut,display:"flex",alignItems:"center",gap:6,fontFamily:"'JetBrains Mono',monospace"}}>→ アイコン候補: <button style={{background:T.inp,border:"1px solid "+T.brd,borderRadius:6,padding:"3px 10px",fontSize:14,cursor:"pointer"}} onClick={()=>{setIcon(suggestEmoji(title));setIconTouched(true)}}>{suggestEmoji(title)}</button></div>}
 {!isWish&&<>
 <div style={{marginBottom:10}}><div style={{fontSize:9,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:6,fontFamily:"'JetBrains Mono',monospace"}}>重要度</div><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{IMP.map(o=><button key={o.v} style={{padding:"6px 12px",borderRadius:7,border:"1px solid "+(importance===o.v?o.c:T.brd),fontSize:12,fontWeight:600,cursor:"pointer",background:importance===o.v?o.c:T.cOff,color:importance===o.v?"#fff":T.cOffT,display:"flex",alignItems:"center",gap:4}} onClick={()=>setImportance(o.v)}><span style={{fontSize:13,fontWeight:900}}>{o.icon}</span>{o.l}</button>)}</div></div>
@@ -715,13 +717,14 @@ return(<div style={{minHeight:“100dvh”,background:T.bg,color:T.text,fontFami
 </div>
 </div>:<button style={{padding:"8px 12px",borderRadius:8,border:"1px dashed "+T.brd,background:"transparent",color:T.sub,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace"}} onClick={()=>setFormExpandSubs(true)}>+ サブタスク</button>}</div>
 {formExpandMemo?<div style={{marginBottom:10}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}><span style={{fontSize:9,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,fontFamily:"'JetBrains Mono',monospace"}}>メモ</span><button style={{background:"none",border:"none",color:T.mut,fontSize:14,cursor:"pointer",padding:"0 4px"}} onClick={()=>{if(!memo.trim())setFormExpandMemo(false)}} aria-label="閉じる">▴</button></div><textarea style={{width:"100%",padding:"9px 12px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:13,outline:"none",minHeight:50,resize:"vertical",fontFamily:"inherit"}} placeholder="メモ..." value={memo} onChange={e=>setMemo(e.target.value)} autoFocus/></div>:<div style={{marginBottom:10}}><button style={{padding:"8px 12px",borderRadius:8,border:"1px dashed "+T.brd,background:"transparent",color:T.sub,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace"}} onClick={()=>setFormExpandMemo(true)}>+ メモ</button></div>}
+{editId&&<div style={{display:"flex",justifyContent:"flex-end",marginBottom:8}}><button style={{padding:"6px 12px",borderRadius:6,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:11,fontWeight:600,cursor:"pointer"}} onClick={()=>{const target=tasks.find(t=>t.id===editId);if(!target)return;quickUpdate(editId,"type",target.type==="wish"?"task":"wish");resetForm();setShowForm(false)}}>{(()=>{const t=tasks.find(t=>t.id===editId);return t&&t.type==="wish"?"→ タスクへ":"→ やりたいへ"})()}</button></div>}
 <button style={{width:"100%",padding:12,background:"#ff3b30",border:"none",borderRadius:9,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}} onClick={submit}>{editId?"更新する":"追加する"}</button>
 </div>}
 
 {isHabit&&<>
 
 <div style={{display:"flex",gap:6,marginBottom:10}}>
-<input style={{width:44,padding:"8px 4px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:16,outline:"none",textAlign:"center",flexShrink:0}} placeholder="📌" value={habitIcon} onChange={e=>setHabitIcon(e.target.value)} maxLength={2}/>
+<input style={{width:44,padding:"8px 4px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:16,outline:"none",textAlign:"center",flexShrink:0}} placeholder="📌" value={habitIcon} onChange={e=>setHabitIcon(e.target.value)} maxLength={8}/>
 <input style={{flex:1,padding:"8px 10px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:13,outline:"none",minWidth:0}} placeholder="日課を追加..." value={habitInput} onChange={e=>setHabitInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.nativeEvent.isComposing&&habitInput.trim()){setHabits(p=>[...p,{id:Date.now().toString(36)+Math.random().toString(36).slice(2,4),title:habitInput.trim(),memo:"",icon:habitIcon.trim(),doneToday:false}]);setHabitInput("");setHabitIcon("")}}}/>
 <button style={{width:40,height:38,borderRadius:8,border:"1px solid "+T.brd,background:habitInput.trim()?T.cOn:T.cOff,color:habitInput.trim()?T.cOnT:T.cOffT,fontSize:18,fontWeight:700,cursor:"pointer",flexShrink:0}} onClick={()=>{if(habitInput.trim()){setHabits(p=>[...p,{id:Date.now().toString(36)+Math.random().toString(36).slice(2,4),title:habitInput.trim(),memo:"",icon:habitIcon.trim(),doneToday:false}]);setHabitInput("");setHabitIcon("")}}}>+</button>
 </div>
@@ -731,7 +734,7 @@ return(<div style={{minHeight:“100dvh”,background:T.bg,color:T.text,fontFami
 
 {!isHabit&&!isGroupMode&&<div style={{display:“flex”,flexDirection:“column”,gap:8}}>
 {sorted.length===0&&<div style={{textAlign:“center”,padding:36,color:T.dim,fontSize:13,fontFamily:”‘JetBrains Mono’,monospace”}}>{searchQ?“検索結果なし”:filter===“done”?“完了タスクなし”:“タスクを追加しましょう”}</div>}
-{sorted.map((task,idx)=>{const useRank=isTask&&sortOrder!==“impGroup”&&sortOrder!==“weightGroup”&&filter!==“done”;const dt=useRank?Math.max(1,Math.min(9,Math.floor(idx/Math.max(1,sorted.length/9))+1)):null;return<TaskCard key={task.id} task={task} T={T} isDark={isDark} sortOrder={sortOrder} expanded={expandedId===task.id} memoExp={memoExpId===task.id} dragging={draggingId===task.id} draggable={isWish} isToday={todayPicks.includes(task.id)} isLatestDone={latestDoneId===task.id} locEmojis={locEmojis} displayTier={dt} defaultIconTask={defaults.iconTask||“📝”} defaultIconWish={defaults.iconWish||“⭐”} onToggleExpand={()=>{setExpandedId(expandedId===task.id?null:task.id);setMemoExpId(null)}} onToggleMemo={()=>{setMemoExpId(memoExpId===task.id?null:task.id);setExpandedId(null)}} onToggleDone={(silent)=>togDone(task.id,silent)} onEdit={()=>startEdit(task)} onDelete={()=>delTask(task.id)} onUpdateSubtasks={s=>upSub(task.id,s)} onUpdateMemo={m=>upMemo(task.id,m)} onQuickUpdate={(f,v)=>quickUpdate(task.id,f,v)} onToggleToday={()=>setTodayPicks(p=>p.includes(task.id)?p.filter(x=>x!==task.id):[…p,task.id])} onFocus={()=>setFocusTaskId(task.id)} onSetHold={()=>setHoldTask(task.id)} onUnhold={()=>unholdTask(task.id)} onSetHoldUntil={(u)=>setHoldUntil(task.id,u)} onDragStart={y=>dragStart(task.id,“wish”,y)} onDragMove={dragMove} onDragEnd={dragEnd} onSwipeCompleteSound={playCompleteSound}/>})}
+{sorted.map((task,idx)=>{const useRank=isTask&&sortOrder!==“impGroup”&&sortOrder!==“weightGroup”&&filter!==“done”;const dt=useRank?Math.max(1,Math.min(9,Math.floor(idx/Math.max(1,sorted.length/9))+1)):null;return<TaskCard key={task.id} task={task} T={T} isDark={isDark} sortOrder={sortOrder} expanded={expandedId===task.id} memoExp={memoExpId===task.id} dragging={draggingId===task.id} draggable={isWish} isToday={todayPicks.includes(task.id)} isLatestDone={latestDoneId===task.id} locEmojis={locEmojis} displayTier={dt} defaultIconTask={defaults.iconTask||“📝”} defaultIconWish={defaults.iconWish||“⭐”} onToggleExpand={()=>{setExpandedId(expandedId===task.id?null:task.id);setMemoExpId(null)}} onToggleMemo={()=>{setMemoExpId(memoExpId===task.id?null:task.id);setExpandedId(null)}} onToggleDone={(silent)=>togDone(task.id,silent)} onEdit={()=>startEdit(task)} onDelete={()=>delTask(task.id)} onUpdateSubtasks={s=>upSub(task.id,s)} onUpdateMemo={m=>upMemo(task.id,m)} onQuickUpdate={(f,v)=>quickUpdate(task.id,f,v)} onToggleToday={()=>setTodayPicks(p=>p.includes(task.id)?p.filter(x=>x!==task.id):[…p,task.id])} onFocus={()=>setFocusTaskId(task.id)} onSetHold={()=>setHoldTask(task.id)} onUnhold={()=>unholdTask(task.id)} onSetHoldUntil={(u)=>setHoldUntil(task.id,u)} onSetDeadline={(v)=>setTaskDeadline(task.id,v)} onDragStart={y=>dragStart(task.id,“wish”,y)} onDragMove={dragMove} onDragEnd={dragEnd} onSwipeCompleteSound={playCompleteSound}/>})}
 
 </div>}
 
@@ -800,7 +803,7 @@ return(<div style={{minHeight:“100dvh”,background:T.bg,color:T.text,fontFami
 <div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>場所の管理</div>
 {locs.length===0&&<div style={{fontSize:11,color:T.dim,padding:"4px 0"}}>タスクに場所を設定すると、ここで絵文字を管理できます</div>}
 {locs.map(l=><div key={l} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 0",borderBottom:"1px solid "+(isDark?"#1a1a1a":T.brd)}}>
-<input style={{width:42,padding:"5px",background:T.inp,border:"1px solid "+T.brd,borderRadius:6,color:T.text,fontSize:14,outline:"none",textAlign:"center",flexShrink:0}} placeholder="📌" value={locEmojis[l]||""} onChange={e=>setLocEmojis(prev=>({...prev,[l]:e.target.value}))} maxLength={2}/>
+<input style={{width:42,padding:"5px",background:T.inp,border:"1px solid "+T.brd,borderRadius:6,color:T.text,fontSize:14,outline:"none",textAlign:"center",flexShrink:0}} placeholder="📌" value={locEmojis[l]||""} onChange={e=>setLocEmojis(prev=>({...prev,[l]:e.target.value}))} maxLength={8}/>
 <input style={{flex:1,padding:"6px 8px",background:T.inp,border:"1px solid "+T.brd,borderRadius:6,color:T.text,fontSize:12,outline:"none",minWidth:0}} defaultValue={l} onBlur={e=>renameLocation(l,e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.nativeEvent.isComposing){e.target.blur()}}}/>
 <button style={{width:28,height:28,borderRadius:6,border:"1px solid rgba(255,59,48,0.3)",background:"transparent",color:"#ff3b30",fontSize:11,cursor:"pointer",flexShrink:0}} onClick={()=>deleteLocation(l)} aria-label="削除">✕</button>
 </div>)}
@@ -975,7 +978,7 @@ return(<div {…swipeHandlers} style={{position:“relative”,overflow:“hidde
 <div style={{background:T.card,border:"1px solid "+(isEditing?"#ff3b30":T.brd),borderRadius:10,padding:"10px 12px",opacity:habit.doneToday?.4:1,transition:swipeAnimating?"transform .18s cubic-bezier(.2,.8,.4,1)":(swipeOffset!==0?"none":"opacity .2s"),transform:"translate3d("+swipeOffset+"px,0,0)",userSelect:"none",WebkitUserSelect:"none",WebkitTouchCallout:"none",touchAction:"pan-y",willChange:"transform"}}>
 {isEditing?<div style={{display:"flex",flexDirection:"column",gap:6}}>
 <div style={{display:"flex",gap:6,alignItems:"center"}}>
-<input style={{width:40,padding:"5px 2px",background:T.inp,border:"1px solid "+T.brd,borderRadius:5,color:T.text,fontSize:15,outline:"none",textAlign:"center",flexShrink:0}} placeholder="📌" value={habit.icon} onChange={e=>onUpdate({...habit,icon:e.target.value})} maxLength={2}/>
+<input style={{width:40,padding:"5px 2px",background:T.inp,border:"1px solid "+T.brd,borderRadius:5,color:T.text,fontSize:15,outline:"none",textAlign:"center",flexShrink:0}} placeholder="📌" value={habit.icon} onChange={e=>onUpdate({...habit,icon:e.target.value})} maxLength={8}/>
 <input style={{flex:1,padding:"5px 8px",background:T.inp,border:"1px solid "+T.brd,borderRadius:5,color:T.text,fontSize:13,outline:"none",minWidth:0}} value={habit.title} onChange={e=>onUpdate({...habit,title:e.target.value})}/>
 <button style={{background:"none",border:"1px solid #4ade80",borderRadius:5,color:"#4ade80",fontSize:11,fontWeight:700,cursor:"pointer",padding:"4px 10px"}} onClick={()=>onSetEdit(null)}>完了</button>
 </div>
@@ -990,7 +993,7 @@ return(<div {…swipeHandlers} style={{position:“relative”,overflow:“hidde
 </div>)
 });
 
-const TaskCard=memo(function TaskCard({task,T,isDark,sortOrder,expanded,memoExp,dragging,draggable,isToday,isLatestDone,locEmojis={},displayTier,defaultIconTask,defaultIconWish,onToggleExpand,onToggleMemo,onToggleDone,onEdit,onDelete,onUpdateSubtasks,onUpdateMemo,onQuickUpdate,onToggleToday,onFocus,onSetHold,onUnhold,onSetHoldUntil,onDragStart,onDragMove,onDragEnd,onSwipeCompleteSound}){
+const TaskCard=memo(function TaskCard({task,T,isDark,sortOrder,expanded,memoExp,dragging,draggable,isToday,isLatestDone,locEmojis={},displayTier,defaultIconTask,defaultIconWish,onToggleExpand,onToggleMemo,onToggleDone,onEdit,onDelete,onUpdateSubtasks,onUpdateMemo,onQuickUpdate,onToggleToday,onFocus,onSetHold,onUnhold,onSetHoldUntil,onSetDeadline,onDragStart,onDragMove,onDragEnd,onSwipeCompleteSound}){
 const isW=task.type===“wish”;
 const wishUrgent=isW&&task.deadline&&((new Date(task.deadline)-new Date())/36e5)<24&&((new Date(task.deadline)-new Date())/36e5)>=0;
 const wishOver=isW&&task.deadline&&((new Date(task.deadline)-new Date())/36e5)<0;
@@ -1082,6 +1085,10 @@ const DONE_TIER={bg:isDark?”#0a0a0a”:”#f5f3ec”,border:isDark?“rgba(136
 const ts=task.done?DONE_TIER:(isDark?TIER[pr]:{…TIER[pr],…TIER_LIGHT[pr]});
 const displayRc=task.done?(isDark?”#555”:”#a1a1aa”):rc;
 const[iconEditing,setIconEditing]=useState(false);
+const[locEditing,setLocEditing]=useState(false);
+const[dlEditing,setDlEditing]=useState(false);
+const[memoEditing,setMemoEditing]=useState(false);
+useEffect(()=>{if(!expanded){setLocEditing(false);setDlEditing(false);setMemoEditing(false)}},[expanded]);
 
 return(<div {…swipeHandlers} style={{position:“relative”,overflow:“hidden”,borderRadius:10,opacity:dragging?0.5:1}}>
 {swipeOffset!==0&&<div style={{position:“absolute”,inset:0,borderRadius:10,display:“flex”,alignItems:“center”,justifyContent:swipeOffset>0?“flex-start”:“flex-end”,padding:“0 24px”,background:swipeOffset>0?(swipeReady?”#4ade80”:“rgba(74,222,128,”+(0.2+swipeProgress*0.5)+”)”):(swipeReady?”#ff3b30”:“rgba(255,59,48,”+(0.2+swipeProgress*0.5)+”)”),pointerEvents:“none”,transition:swipeAnimating?“background .18s”:“none”}}>
@@ -1096,7 +1103,9 @@ return(<div {…swipeHandlers} style={{position:“relative”,overflow:“hidde
 {!task.done&&task.type!=="wish"&&onFocus&&<button style={{padding:"13px",borderRadius:8,border:"none",background:"#ff9500",color:"#000",fontSize:14,fontWeight:800,cursor:"pointer",letterSpacing:1}} onClick={()=>{onFocus();setShowQuickMenu(false)}}>▶ これやる(集中モード)</button>}
 {!task.done&&<button style={{padding:"11px",borderRadius:8,border:"1px solid #4ade80",background:"rgba(74,222,128,0.12)",color:"#4ade80",fontSize:13,fontWeight:700,cursor:"pointer"}} onClick={()=>{onToggleDone();setShowQuickMenu(false)}}>✓ 完了にする</button>}
 {!task.done&&task.type!=="wish"&&<button style={{padding:"11px",borderRadius:8,border:"1px solid "+T.brd,background:"transparent",color:T.text,fontSize:13,fontWeight:600,cursor:"pointer"}} onClick={()=>{onToggleToday();setShowQuickMenu(false)}}>{isToday?"◆ TODAYから外す":"◆ TODAYにする"}</button>}
-{!task.done&&task.type!=="wish"&&<button style={{padding:"11px",borderRadius:8,border:"1px solid "+T.brd,background:"transparent",color:T.text,fontSize:13,fontWeight:600,cursor:"pointer"}} onClick={()=>{onSetHold&&onSetHold();setShowQuickMenu(false)}}>⏸ 保留にする</button>}
+{!task.done&&task.type!=="wish"&&task.type!=="hold"&&<button style={{padding:"11px",borderRadius:8,border:"1px solid "+T.brd,background:"transparent",color:T.text,fontSize:13,fontWeight:600,cursor:"pointer"}} onClick={()=>{onSetHold&&onSetHold();setShowQuickMenu(false)}}>保留にする</button>}
+{task.type==="hold"&&<button style={{padding:"11px",borderRadius:8,border:"1px solid #c084fc",background:"rgba(192,132,252,0.12)",color:"#c084fc",fontSize:13,fontWeight:700,cursor:"pointer"}} onClick={()=>{onUnhold&&onUnhold();setShowQuickMenu(false)}}>↩ タスクへ戻す</button>}
+<button style={{padding:"11px",borderRadius:8,border:"1px solid rgba(255,59,48,0.3)",background:"transparent",color:"#ff3b30",fontSize:13,fontWeight:600,cursor:"pointer"}} onClick={()=>{onDelete();setShowQuickMenu(false)}}>🗑 削除</button>
 <button style={{padding:"9px",borderRadius:8,border:"none",background:"transparent",color:T.mut,fontSize:12,cursor:"pointer",marginTop:4}} onClick={()=>setShowQuickMenu(false)}>キャンセル</button>
 </div>
 </div>
@@ -1145,12 +1154,25 @@ return(<div {…swipeHandlers} style={{position:“relative”,overflow:“hidde
 <textarea style={{width:"100%",padding:"10px 12px",background:T.memo,border:"1px solid "+T.memB,borderRadius:8,color:T.text,fontSize:14,outline:"none",minHeight:120,resize:"vertical",fontFamily:"inherit",lineHeight:1.6}} placeholder="メモを入力..." value={task.memo||""} onChange={e=>onUpdateMemo(e.target.value)} onClick={e=>e.stopPropagation()} autoFocus/>
 </div>}
 {expanded&&<div style={{marginTop:12,paddingTop:12,borderTop:"1px solid "+T.brd,width:"100%",animation:"slideDown .25s ease"}}>
+{!isW&&<div className="ne" style={{display:"flex",justifyContent:"flex-end",gap:6,marginBottom:8,flexWrap:"wrap"}} onClick={e=>e.stopPropagation()}>
+<button style={{padding:"6px 11px",borderRadius:7,border:"1px "+(task.location?"solid "+T.brd:"dashed "+T.dim),background:task.location?T.inp:"transparent",color:task.location?T.text:T.mut,fontSize:11,fontWeight:600,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4}} onClick={e=>{e.stopPropagation();setLocEditing(true)}}>{task.location?(locEmojis[task.location]?locEmojis[task.location]+" ":"📍 ")+task.location:"+ 場所"}</button>
+<button style={{padding:"6px 11px",borderRadius:7,border:"1px "+(task.deadline?"solid "+T.brd:"dashed "+T.dim),background:task.deadline?T.inp:"transparent",color:task.deadline?T.text:T.mut,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace"}} onClick={e=>{e.stopPropagation();setDlEditing(true)}}>{task.deadline?fmtDlBtn(task.deadline):"無期限"}</button>
+</div>}
+{locEditing&&!isW&&<div className="ne" style={{marginBottom:8,display:"flex",gap:6,alignItems:"center"}} onClick={e=>e.stopPropagation()}>
+<input list={"locs-"+task.id} autoFocus style={{flex:1,padding:"6px 10px",background:T.inp,border:"1px solid "+T.cOn,borderRadius:6,color:T.text,fontSize:12,outline:"none"}} defaultValue={task.location||""} placeholder="場所名..." onBlur={e=>{onQuickUpdate("location",e.target.value.trim());setLocEditing(false)}} onKeyDown={e=>{if(e.key==="Enter"&&!e.nativeEvent.isComposing){e.target.blur()}}}/>
+<datalist id={"locs-"+task.id}>{Object.keys(locEmojis).map(l=><option key={l} value={l}/>)}</datalist>
+{task.location&&<button style={{padding:"6px 10px",borderRadius:6,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:10,cursor:"pointer"}} onClick={e=>{e.stopPropagation();onQuickUpdate("location","");setLocEditing(false)}}>クリア</button>}
+</div>}
+{dlEditing&&!isW&&<div className="ne" style={{marginBottom:8,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}} onClick={e=>e.stopPropagation()}>
+<input type="datetime-local" autoFocus style={{flex:1,minWidth:160,padding:"6px 10px",background:T.inp,border:"1px solid "+T.cOn,borderRadius:6,color:T.text,fontSize:12,outline:"none",colorScheme:T.sch}} value={task.deadline?task.deadline.slice(0,16):""} onChange={e=>onSetDeadline&&onSetDeadline(e.target.value||null)}/>
+{task.deadline&&<button style={{padding:"6px 10px",borderRadius:6,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:10,cursor:"pointer"}} onClick={e=>{e.stopPropagation();onSetDeadline&&onSetDeadline(null)}}>無期限に</button>}
+<button style={{padding:"6px 10px",borderRadius:6,border:"1px solid "+T.brd,background:T.cOff,color:T.text,fontSize:10,cursor:"pointer"}} onClick={e=>{e.stopPropagation();setDlEditing(false)}}>閉じる</button>
+</div>}
 {!isW&&<div className="ne" style={{display:"flex",gap:6,marginBottom:8,flexWrap:"wrap"}}>
 {IMP.map(o=><button key={o.v} style={{padding:"3px 8px",borderRadius:5,border:"1px solid "+(task.importance===o.v?o.c:T.brd),fontSize:10,fontWeight:600,cursor:"pointer",background:task.importance===o.v?o.c:T.cOff,color:task.importance===o.v?"#fff":T.cOffT}} onClick={e=>{e.stopPropagation();onQuickUpdate("importance",o.v)}}>{o.icon}{o.l}</button>)}
 <span style={{opacity:.2}}>|</span>
 {WI.map(o=>{const c=roi(task.importance,o.v);return<button key={o.v} style={{padding:"3px 8px",borderRadius:5,border:"1px solid "+(task.weight===o.v?c:T.brd),fontSize:10,fontWeight:600,cursor:"pointer",background:task.weight===o.v?c:T.cOff,color:task.weight===o.v?"#000":T.cOffT}} onClick={e=>{e.stopPropagation();onQuickUpdate("weight",o.v)}}>{o.l}</button>})}
 </div>}
-{task.deadline&&<div style={{display:"flex",justifyContent:"space-between",padding:"4px 0",fontSize:12}}><span style={{color:T.mut,fontFamily:"'JetBrains Mono',monospace",fontSize:10}}>締切</span><span style={{color:T.text}}>{new Date(task.deadline).toLocaleString()}</span></div>}
 {task.recurrence&&task.recurrence!=="none"&&<div style={{display:"flex",justifyContent:"space-between",padding:"4px 0",fontSize:12}}><span style={{color:T.mut,fontFamily:"'JetBrains Mono',monospace",fontSize:10}}>繰り返し</span><span style={{color:T.text}}>{REC.find(r=>r.v===task.recurrence)?.l}</span></div>}
 <div style={{marginTop:10}}>
 {hs&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}><span style={{color:T.sub,fontFamily:"'JetBrains Mono',monospace",fontSize:10,letterSpacing:1,textTransform:"uppercase",fontWeight:700}}>サブタスク</span><span style={{fontSize:11,color:sd===subs.length?"#4ade80":T.sub,fontFamily:"'JetBrains Mono',monospace",fontWeight:700}}>{sd}/{subs.length}</span></div>}
@@ -1158,27 +1180,31 @@ return(<div {…swipeHandlers} style={{position:“relative”,overflow:“hidde
 {(showSubInput||hs)?<div className="ne" style={{display:"flex",gap:6,marginTop:6}}><input style={{flex:1,padding:"8px 10px",background:T.memo,border:"1px solid "+T.brd,borderRadius:6,color:T.text,fontSize:13,outline:"none",minWidth:0}} placeholder="サブタスク追加..." value={ns} onChange={e=>setNs(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.stopPropagation();addS()}}} onClick={e=>e.stopPropagation()}/><button style={{width:30,height:30,borderRadius:6,border:"1px solid "+T.brd,background:T.cOff,color:T.sub,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} onClick={e=>{e.stopPropagation();addS()}}>+</button></div>
 :<button className="ne" style={{marginTop:4,padding:"5px 10px",borderRadius:6,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:11,fontWeight:600,cursor:"pointer"}} onClick={e=>{e.stopPropagation();setShowSubInput(true)}}>+ サブタスク</button>}
 </div>
-{isHold&&<div className="ne" style={{marginTop:12,padding:10,background:T.inp,border:"1px solid #c084fc",borderRadius:6}} onClick={e=>e.stopPropagation()}>
-<div style={{fontSize:10,fontWeight:700,color:"#c084fc",textTransform:"uppercase",letterSpacing:1,marginBottom:6,fontFamily:"'JetBrains Mono',monospace"}}>⏸ 保留中</div>
-<div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6}}>
-<span style={{fontSize:11,color:T.sub,whiteSpace:"nowrap"}}>解除日:</span>
-<input type="date" style={{flex:1,padding:"5px 8px",background:T.bg,border:"1px solid "+T.brd,borderRadius:5,color:T.text,fontSize:12,outline:"none",colorScheme:T.sch}} value={task.holdUntil?task.holdUntil.slice(0,10):""} onChange={e=>onSetHoldUntil&&onSetHoldUntil(e.target.value?e.target.value+"T"+(new Date().toTimeString().slice(0,5)):"")}/>
-{task.holdUntil&&<button style={{padding:"5px 8px",borderRadius:5,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:10,cursor:"pointer"}} onClick={()=>onSetHoldUntil&&onSetHoldUntil("")}>無期限に</button>}
-</div>
-<div style={{fontSize:10,color:T.dim}}>{task.holdUntil?"※ "+new Date(task.holdUntil).toLocaleDateString("ja-JP")+"以降に自動でタスクへ戻ります":"※ 無期限保留中(右スワイプで手動解除)"}</div>
-</div>}
 <div className="ne" style={{marginTop:12}} onClick={e=>e.stopPropagation()}>
+{(memoEditing||(task.memo&&task.memo.trim()))?<>
 <div style={{fontSize:10,fontWeight:700,color:T.sub,textTransform:"uppercase",letterSpacing:1,marginBottom:5,fontFamily:"'JetBrains Mono',monospace"}}>メモ</div>
-<textarea style={{width:"100%",padding:10,background:T.memo,border:"1px solid "+T.memB,borderRadius:6,color:T.text,fontSize:13,lineHeight:1.6,outline:"none",minHeight:50,resize:"vertical",fontFamily:"inherit"}} placeholder="メモ..." value={task.memo||""} onChange={e=>onUpdateMemo(e.target.value)}/>
+<textarea autoFocus={memoEditing&&!task.memo} style={{width:"100%",padding:10,background:T.memo,border:"1px solid "+T.memB,borderRadius:6,color:T.text,fontSize:13,lineHeight:1.6,outline:"none",minHeight:50,resize:"vertical",fontFamily:"inherit"}} placeholder="メモ..." value={task.memo||""} onChange={e=>onUpdateMemo(e.target.value)}/>
+</>:<button style={{padding:"6px 12px",borderRadius:6,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:11,fontWeight:600,cursor:"pointer"}} onClick={e=>{e.stopPropagation();setMemoEditing(true)}}>+ メモ</button>}
 </div>
 <div style={{display:"flex",justifyContent:"space-between",gap:6,marginTop:12,alignItems:"center"}}>
-{!isHold&&<button className="ne" style={{padding:"5px 10px",borderRadius:6,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:11,fontWeight:600,cursor:"pointer"}} onClick={e=>{e.stopPropagation();onQuickUpdate("type",isW?"task":"wish")}}>{isW?"→ タスクへ":"→ やりたいへ"}</button>}
-{isHold&&<button className="ne" style={{padding:"5px 10px",borderRadius:6,border:"1px solid #c084fc",background:"rgba(192,132,252,0.12)",color:"#c084fc",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={e=>{e.stopPropagation();onUnhold&&onUnhold()}}>↩ タスクへ戻す</button>}
+<div style={{display:"flex",gap:6}}>
+{!isW&&!isHold&&!task.done&&<button className="ne" style={{padding:"5px 12px",borderRadius:6,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:11,fontWeight:600,cursor:"pointer"}} onClick={e=>{e.stopPropagation();onSetHold&&onSetHold()}}>保留へ</button>}
+{isHold&&<button className="ne" style={{padding:"5px 12px",borderRadius:6,border:"1px solid #c084fc",background:"rgba(192,132,252,0.12)",color:"#c084fc",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={e=>{e.stopPropagation();onUnhold&&onUnhold()}}>↩ タスクへ戻す</button>}
+</div>
 <div style={{display:"flex",gap:6}}>
 <button className="ne" style={{padding:"5px 12px",borderRadius:6,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:11,fontWeight:600,cursor:"pointer"}} onClick={e=>{e.stopPropagation();onEdit()}}>✏️ 編集</button>
 <button className="ne" style={{padding:"5px 12px",borderRadius:6,border:"1px solid rgba(255,59,48,0.3)",background:"transparent",color:"#ff3b30",fontSize:11,fontWeight:600,cursor:"pointer"}} onClick={e=>{e.stopPropagation();onDelete()}}>🗑</button>
 </div>
 </div>
+{isHold&&<div className="ne" style={{marginTop:14,marginLeft:-22,marginRight:-14,padding:"12px 14px 12px 22px",background:"rgba(192,132,252,0.06)",borderTop:"1px solid #c084fc",borderBottom:"1px solid #c084fc"}} onClick={e=>e.stopPropagation()}>
+<div style={{fontSize:10,fontWeight:700,color:"#c084fc",textTransform:"uppercase",letterSpacing:1,marginBottom:8,fontFamily:"'JetBrains Mono',monospace"}}>⏸ 保留中</div>
+<div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6,flexWrap:"wrap"}}>
+<span style={{fontSize:11,color:T.sub,whiteSpace:"nowrap"}}>解除日:</span>
+<input type="date" style={{flex:1,minWidth:140,padding:"6px 10px",background:T.bg,border:"1px solid "+T.brd,borderRadius:5,color:T.text,fontSize:12,outline:"none",colorScheme:T.sch}} value={task.holdUntil?task.holdUntil.slice(0,10):""} onChange={e=>onSetHoldUntil&&onSetHoldUntil(e.target.value?e.target.value+"T"+(new Date().toTimeString().slice(0,5)):"")}/>
+{task.holdUntil&&<button style={{padding:"6px 10px",borderRadius:5,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:10,cursor:"pointer"}} onClick={()=>onSetHoldUntil&&onSetHoldUntil("")}>無期限に</button>}
+</div>
+<div style={{fontSize:10,color:T.dim,lineHeight:1.5}}>{task.holdUntil?"※ "+new Date(task.holdUntil).toLocaleDateString("ja-JP")+"以降に自動でタスクへ戻ります":"※ 無期限保留中(右スワイプで手動解除)"}</div>
+</div>}
 </div>}
 </div>
 </div>)
