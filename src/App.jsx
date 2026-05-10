@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from “react”;
 import { useSwipeable } from “react-swipeable”;
 
-const VER = “3.15.4”;
+const VER = “3.15.5”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
@@ -108,19 +108,20 @@ function ScrollTitle({text,style}){
 const wrapRef=useRef(null);const innerRef=useRef(null);
 const[dist,setDist]=useState(0);
 useEffect(()=>{
-if(!wrapRef.current||!innerRef.current)return;
-let raf1=0,raf2=0;
+if(!wrapRef.current)return;
+let raf1=0,raf2=0,t1=0,t2=0,t3=0;
 const measure=()=>{
-if(!wrapRef.current||!innerRef.current)return;
-const wW=wrapRef.current.offsetWidth;const iW=innerRef.current.scrollWidth;
-setDist(iW>wW+2?iW-wW+24:0);
+if(!wrapRef.current)return;
+const wW=wrapRef.current.clientWidth;const sW=wrapRef.current.scrollWidth;
+if(wW>0)setDist(sW>wW+2?sW-wW+24:0);
 };
 measure();
 raf1=requestAnimationFrame(()=>{measure();raf2=requestAnimationFrame(measure)});
+t1=setTimeout(measure,200);t2=setTimeout(measure,800);t3=setTimeout(measure,2000);
 if(typeof document!==“undefined”&&document.fonts&&document.fonts.ready)document.fonts.ready.then(measure).catch(()=>{});
 let ro=null;
 if(typeof ResizeObserver!==“undefined”){ro=new ResizeObserver(measure);ro.observe(wrapRef.current)}
-return()=>{cancelAnimationFrame(raf1);cancelAnimationFrame(raf2);if(ro)ro.disconnect()};
+return()=>{cancelAnimationFrame(raf1);cancelAnimationFrame(raf2);clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);if(ro)ro.disconnect()};
 },[text]);
 const overflow=dist>0;
 const dur=Math.max(6,Math.min(16,dist/26));
