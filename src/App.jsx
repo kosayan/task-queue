@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from “react”;
 import { useSwipeable } from “react-swipeable”;
 
-const VER = “3.15.6”;
+const VER = “3.15.7”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
@@ -124,10 +124,15 @@ if(typeof ResizeObserver!==“undefined”){ro=new ResizeObserver(measure);ro.ob
 return()=>{cancelAnimationFrame(raf1);cancelAnimationFrame(raf2);clearTimeout(t1);clearTimeout(t2);clearTimeout(t3);if(ro)ro.disconnect()};
 },[text]);
 const overflow=dist>0;
-const dur=Math.max(6,Math.min(16,dist/26));
+const startPause=0.7,travelSpeed=90,endPause=2;
+const travel=dist/travelSpeed;
+const totalDur=startPause+travel+endPause;
+const x1=+(startPause/totalDur*100).toFixed(2);
+const x2=+((startPause+travel)/totalDur*100).toFixed(2);
 const animName=“tqts”+dist;
-const kf=”@keyframes “+animName+”{0%,3%{transform:translateX(0)}45%,80%{transform:translateX(-”+dist+“px)}100%{transform:translateX(0)}}”;
-return(<div ref={wrapRef} style={{…style,whiteSpace:“nowrap”,overflow:“hidden”,textOverflow:overflow?“clip”:“ellipsis”,maskImage:overflow?“linear-gradient(90deg,transparent 0,#000 12px,#000 calc(100% - 12px),transparent 100%)”:“none”,WebkitMaskImage:overflow?“linear-gradient(90deg,transparent 0,#000 12px,#000 calc(100% - 12px),transparent 100%)”:“none”}}>{overflow&&<style>{kf}</style>}<span ref={innerRef} style={overflow?{display:“inline-block”,animation:animName+” “+dur+“s linear infinite”,paddingRight:24}:undefined}>{text}</span></div>);
+const kf=”@keyframes “+animName+”{0%,”+x1+”%{transform:translateX(0)}”+x2+”%,100%{transform:translateX(-”+dist+“px)}}”;
+const mask=overflow?“linear-gradient(90deg,#000 0,#000 calc(100% - 12px),transparent 100%)”:“none”;
+return(<div ref={wrapRef} style={{…style,whiteSpace:“nowrap”,overflow:“hidden”,textOverflow:overflow?“clip”:“ellipsis”,maskImage:mask,WebkitMaskImage:mask}}>{overflow&&<style>{kf}</style>}<span ref={innerRef} style={overflow?{display:“inline-block”,animation:animName+” “+totalDur+“s linear infinite”,paddingRight:24}:undefined}>{text}</span></div>);
 }
 
 function AutoMemo({value,onChange,minH,fontSize,maxLines,style,…rest}){
