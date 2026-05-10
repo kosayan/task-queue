@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from “react”;
 import { useSwipeable } from “react-swipeable”;
 
-const VER = “3.15.2”;
+const VER = “3.15.4”;
 const IMP = [{ v: 3, l: “高”, c: “#ff3b30”, icon: “≡” }, { v: 2, l: “中”, c: “#ff9500”, icon: “=” }, { v: 1, l: “低”, c: “#8e8e93”, icon: “―” }];
 const WI = [{ v: 3, l: “重い”, h: “4h+”, bw: 6, bh: 100 }, { v: 2, l: “普通”, h: “1-4h”, bw: 4, bh: 75 }, { v: 1, l: “軽い”, h: “~1h”, bw: 3, bh: 55 }, { v: 0, l: “超軽い”, h: “~10m”, bw: 2, bh: 40 }];
 const REC = [{ v: “none”, l: “なし” }, { v: “daily”, l: “毎日” }, { v: “weekly”, l: “毎週” }, { v: “monthly”, l: “毎月” }];
@@ -106,15 +106,25 @@ return<span ref={ref} style={{position:“absolute”,left:0,top:0,width:p.sz,he
 
 function ScrollTitle({text,style}){
 const wrapRef=useRef(null);const innerRef=useRef(null);
-const[overflow,setOverflow]=useState(false);const[dist,setDist]=useState(0);
+const[dist,setDist]=useState(0);
 useEffect(()=>{
 if(!wrapRef.current||!innerRef.current)return;
+let raf1=0,raf2=0;
+const measure=()=>{
+if(!wrapRef.current||!innerRef.current)return;
 const wW=wrapRef.current.offsetWidth;const iW=innerRef.current.scrollWidth;
-if(iW>wW+2){setOverflow(true);setDist(iW-wW+24)}else{setOverflow(false);setDist(0)}
+setDist(iW>wW+2?iW-wW+24:0);
+};
+measure();
+raf1=requestAnimationFrame(()=>{measure();raf2=requestAnimationFrame(measure)});
+if(typeof document!==“undefined”&&document.fonts&&document.fonts.ready)document.fonts.ready.then(measure).catch(()=>{});
+let ro=null;
+if(typeof ResizeObserver!==“undefined”){ro=new ResizeObserver(measure);ro.observe(wrapRef.current)}
+return()=>{cancelAnimationFrame(raf1);cancelAnimationFrame(raf2);if(ro)ro.disconnect()};
 },[text]);
-if(!overflow)return<div ref={wrapRef} style={{…style,whiteSpace:“nowrap”,overflow:“hidden”,textOverflow:“ellipsis”}}><span ref={innerRef}>{text}</span></div>;
-const dur=Math.max(6,Math.min(18,dist/28));
-return(<div ref={wrapRef} style={{…style,whiteSpace:“nowrap”,overflow:“hidden”,maskImage:“linear-gradient(90deg,transparent 0,#000 12px,#000 calc(100% - 12px),transparent 100%)”,WebkitMaskImage:“linear-gradient(90deg,transparent 0,#000 12px,#000 calc(100% - 12px),transparent 100%)”}}><span ref={innerRef} style={{display:“inline-block”,animation:“titleScroll “+dur+“s linear infinite”,paddingRight:24,[”–d”]:”-”+dist+“px”}}>{text}</span></div>);
+const overflow=dist>0;
+const dur=Math.max(6,Math.min(16,dist/26));
+return(<div ref={wrapRef} style={{…style,whiteSpace:“nowrap”,overflow:“hidden”,textOverflow:overflow?“clip”:“ellipsis”,maskImage:overflow?“linear-gradient(90deg,transparent 0,#000 12px,#000 calc(100% - 12px),transparent 100%)”:“none”,WebkitMaskImage:overflow?“linear-gradient(90deg,transparent 0,#000 12px,#000 calc(100% - 12px),transparent 100%)”:“none”}}><span ref={innerRef} style={overflow?{display:“inline-block”,animation:“titleScroll “+dur+“s linear infinite”,paddingRight:24,[”–d”]:”-”+dist+“px”}:undefined}>{text}</span></div>);
 }
 
 function AutoMemo({value,onChange,minH,fontSize,maxLines,style,…rest}){
@@ -508,7 +518,7 @@ const bannerTs=e=>{topSwipeStart.current=e.touches[0].clientX};
 const bannerTm=e=>{const dx=e.touches[0].clientX-topSwipeStart.current;setTopSwipeOff(dx)};
 const bannerTe=()=>{if(topSwipeOff>50&&topIdx>0)setTopIdx(topIdx-1);else if(topSwipeOff<-50&&topIdx<topTasks.length-1)setTopIdx(topIdx+1);setTopSwipeOff(0)};
 
-const gcss=”@import url(‘https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap’);*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html,body,#root{min-height:100vh}input,select,button,textarea{font-family:‘Noto Sans JP’,sans-serif}@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}@keyframes slideDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}@keyframes titleScroll{0%,12%{transform:translateX(0)}88%,100%{transform:translateX(var(–d))}}.task-card{animation:fadeIn .3s ease}.overdue-pulse{animation:pulse 1.5s ease infinite}.form-slide{animation:slideUp .3s ease}”;
+const gcss=”@import url(‘https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap’);*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html,body,#root{min-height:100vh}input,select,button,textarea{font-family:‘Noto Sans JP’,sans-serif}@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}@keyframes slideDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}@keyframes titleScroll{0%,3%{transform:translateX(0)}45%,80%{transform:translateX(var(–d))}100%{transform:translateX(0)}}.task-card{animation:fadeIn .3s ease}.overdue-pulse{animation:pulse 1.5s ease infinite}.form-slide{animation:slideUp .3s ease}”;
 
 const isTask=mode===“task”,isWish=mode===“wish”,isHabit=mode===“habit”;
 const habitsSorted=useMemo(()=>{const done=habits.filter(h=>h.doneToday);const un=habits.filter(h=>!h.doneToday);return[…un,…done]},[habits]);
@@ -1135,7 +1145,7 @@ return(<div {…swipeHandlers} style={{position:“relative”,overflow:“hidde
 <button className="ne" style={{width:20,height:20,borderRadius:5,border:"2px solid "+(task.done?"#4ade80":T.chk),background:task.done?"#4ade80":"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#000",fontSize:11,fontWeight:800}} onClick={e=>{e.stopPropagation();onToggleDone()}}>{task.done&&"✓"}</button>
 </div>
 <div style={{flex:1,minWidth:0,paddingTop:2}}>
-<ScrollTitle text={task.title} style={{fontSize:ts.fs,fontWeight:ts.fw,color:ts.tc}}/>
+{(expanded||memoExp)?<div style={{fontSize:ts.fs,fontWeight:ts.fw,color:ts.tc,wordBreak:"break-word",lineHeight:1.4}}>{task.title}</div>:<ScrollTitle text={task.title} style={{fontSize:ts.fs,fontWeight:ts.fw,color:ts.tc}}/>}
 {!isW&&!task.done&&<div style={{fontSize:ts.mfs,color:ts.mc,marginTop:3,display:"flex",gap:5,fontFamily:"'JetBrains Mono',monospace",flexWrap:"wrap",alignItems:"center"}}>
 <span style={{color:im?.c,fontSize:ts.mfs+2,fontWeight:900}}>{im?.icon}</span>
 <span style={{opacity:.3}}>·</span>
