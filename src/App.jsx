@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
 import { useSwipeable } from "react-swipeable";
 
-const VER = "3.16.1";
+const VER = "3.16.2";
 const IMP = [{ v: 3, l: "高", c: "#ff3b30", icon: "≡" }, { v: 2, l: "中", c: "#ff9500", icon: "=" }, { v: 1, l: "低", c: "#8e8e93", icon: "―" }];
 const WI = [{ v: 3, l: "重い", h: "4h+", bw: 6, bh: 100 }, { v: 2, l: "普通", h: "1-4h", bw: 4, bh: 75 }, { v: 1, l: "軽い", h: "~1h", bw: 3, bh: 55 }, { v: 0, l: "超軽い", h: "~10m", bw: 2, bh: 40 }];
 const REC = [{ v: "none", l: "なし" }, { v: "daily", l: "毎日" }, { v: "weekly", l: "毎週" }, { v: "monthly", l: "毎月" }];
@@ -536,7 +536,7 @@ const bannerTs=e=>{topSwipeStart.current=e.touches[0].clientX};
 const bannerTm=e=>{const dx=e.touches[0].clientX-topSwipeStart.current;setTopSwipeOff(dx)};
 const bannerTe=()=>{if(topSwipeOff>50&&topIdx>0)setTopIdx(topIdx-1);else if(topSwipeOff<-50&&topIdx<topTasks.length-1)setTopIdx(topIdx+1);setTopSwipeOff(0)};
 
-const gcss="@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap');*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html,body,#root{min-height:100vh}input,select,button,textarea{font-family:'Noto Sans JP',sans-serif}@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}@keyframes slideDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}@keyframes titleScroll{0%,3%{transform:translateX(0)}45%,80%{transform:translateX(var(--d))}100%{transform:translateX(0)}}.task-card{animation:fadeIn .3s ease}.overdue-pulse{animation:pulse 1.5s ease infinite}.form-slide{animation:slideUp .3s ease}";
+const gcss="*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html,body,#root{min-height:100vh}input,select,button,textarea{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif}body{font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif}@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}@keyframes slideDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}@keyframes titleScroll{0%,3%{transform:translateX(0)}45%,80%{transform:translateX(var(--d))}100%{transform:translateX(0)}}.task-card{animation:fadeIn .3s ease}.overdue-pulse{animation:pulse 1.5s ease infinite}.form-slide{animation:slideUp .3s ease}";
 
 const isTask=mode==="task",isWish=mode==="wish",isHabit=mode==="habit";
 const habitsSorted=useMemo(()=>{const done=habits.filter(h=>h.doneToday);const un=habits.filter(h=>!h.doneToday);return[...un,...done]},[habits]);
@@ -646,8 +646,8 @@ useEffect(()=>{if(rouletteId&&!wishList.find(w=>w.id===rouletteId))setRouletteId
 return(<div style={{minHeight:"100dvh",background:T.bg,color:T.text,fontFamily:"'Noto Sans JP',sans-serif",padding:"calc(16px + env(safe-area-inset-top)) 14px calc(80px + env(safe-area-inset-bottom))",maxWidth:600,margin:"0 auto"}}><style>{gcss+"html,body,#root{background:"+T.bg+"}"}</style>
 
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:16}}>
-<div><h1 style={{fontFamily:"'JetBrains Mono',monospace",fontSize:20,fontWeight:800,letterSpacing:2,color:T.text,margin:0}}><span style={{color:"#ff3b30"}}>▌</span>TASK QUEUE</h1>
-<p style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:T.mut,marginTop:3}}>{tasks.filter(t=>!t.done&&t.type!=="wish").length}件<span style={{opacity:.3,margin:"0 6px"}}>|</span><span style={{color:stats.todayDone>0?"#4ade80":T.mut}}>今日 ✓{stats.todayDone}</span><span style={{opacity:.3,margin:"0 6px"}}>|</span>週{stats.weekDone}<span style={{opacity:.3,margin:"0 6px"}}>|</span>{tasks.filter(t=>!t.done&&t.type==="wish").length}やりたい</p></div>
+<div><h1 style={{fontFamily:"'Courier New',monospace",fontSize:20,fontWeight:800,letterSpacing:2,color:T.text,margin:0}}><span style={{color:"#ff3b30"}}>▌</span>TASK QUEUE</h1>
+<p style={{fontFamily:"'Courier New',monospace",fontSize:11,color:T.mut,marginTop:3}}>{tasks.filter(t=>!t.done&&t.type!=="wish").length}件<span style={{opacity:.3,margin:"0 6px"}}>|</span><span style={{color:stats.todayDone>0?"#4ade80":T.mut}}>今日 ✓{stats.todayDone}</span><span style={{opacity:.3,margin:"0 6px"}}>|</span>週{stats.weekDone}<span style={{opacity:.3,margin:"0 6px"}}>|</span>{tasks.filter(t=>!t.done&&t.type==="wish").length}やりたい</p></div>
 <div style={{display:"flex",gap:5}}>
 <button style={{width:36,height:36,borderRadius:8,border:"1px solid "+T.iBrd,background:T.iBg,color:T.iC,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} onClick={()=>window.location.reload()}><Refresh/></button>
 <button style={{width:36,height:36,borderRadius:8,border:"1px solid "+T.iBrd,background:T.iBg,color:T.iC,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} onClick={()=>setIsDark(v=>!v)}>{isDark?"☀️":"🌙"}</button>
@@ -660,7 +660,7 @@ return(<div style={{minHeight:"100dvh",background:T.bg,color:T.text,fontFamily:"
 </div>
 
 {isTask&&stallTask&&!showForm&&<div style={{marginBottom:10,background:isDark?"rgba(168,85,247,0.1)":"rgba(168,85,247,0.08)",border:"1px solid rgba(168,85,247,0.4)",borderRadius:12,padding:"10px 12px"}}>
-<div style={{fontSize:10,fontWeight:700,color:"#c084fc",marginBottom:4,fontFamily:"'JetBrains Mono',monospace",letterSpacing:1}}>👻 1ヶ月以上動いてないよ</div>
+<div style={{fontSize:10,fontWeight:700,color:"#c084fc",marginBottom:4,fontFamily:"'Courier New',monospace",letterSpacing:1}}>👻 1ヶ月以上動いてないよ</div>
 <div style={{fontSize:13,fontWeight:700,color:T.text,marginBottom:8}}>{stallTask.icon?stallTask.icon+" ":""}{stallTask.title}</div>
 <div style={{display:"flex",gap:6}}>
 <button style={{flex:1,padding:"7px 8px",borderRadius:7,border:"1px solid #4ade80",background:"rgba(74,222,128,0.15)",color:"#4ade80",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={()=>stallToToday(stallTask.id)}>今日やる</button>
@@ -670,7 +670,7 @@ return(<div style={{minHeight:"100dvh",background:T.bg,color:T.text,fontFamily:"
 </div>}
 
 {isTask&&overdueCount>=3&&!showForm&&<div style={{marginBottom:10,background:"rgba(255,59,48,0.1)",border:"1px solid rgba(255,59,48,0.4)",borderRadius:12,padding:"10px 12px"}}>
-<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7,fontSize:11,fontWeight:700}}><span style={{color:"#ff3b30",fontFamily:"'JetBrains Mono',monospace"}}>⚠ 期限切れ {overdueCount}件</span></div>
+<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7,fontSize:11,fontWeight:700}}><span style={{color:"#ff3b30",fontFamily:"'Courier New',monospace"}}>⚠ 期限切れ {overdueCount}件</span></div>
 <div style={{display:"flex",gap:6}}>
 <button style={{flex:1,padding:"7px 10px",borderRadius:7,border:"1px solid rgba(255,149,0,0.5)",background:"rgba(255,149,0,0.12)",color:"#ff9500",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={rescheduleOverdue}>明日に延期</button>
 <button style={{flex:1,padding:"7px 10px",borderRadius:7,border:"1px solid rgba(255,59,48,0.5)",background:"rgba(255,59,48,0.12)",color:"#ff3b30",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={giveUpOverdue}>諦めて削除</button>
@@ -680,11 +680,11 @@ return(<div style={{minHeight:"100dvh",background:T.bg,color:T.text,fontFamily:"
 {isTask&&curTop&&!showForm&&!searchQ&&locFilter===null&&(<div style={{marginBottom:12}}>
 <div style={{background:T.card,border:"1px solid "+sLabel(score(curTop)).c,borderRadius:14,padding:"14px 16px",transform:"translateX("+topSwipeOff+"px)",transition:topSwipeOff===0?"transform .25s":"none",touchAction:"pan-y"}} onTouchStart={bannerTs} onTouchMove={bannerTm} onTouchEnd={bannerTe}>
 <div style={{fontSize:10,fontWeight:700,marginBottom:5,letterSpacing:1,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-<span style={{color:sLabel(score(curTop)).c,fontFamily:"JetBrains Mono"}}>● 今やるべきタスク</span>
-<span style={{color:T.dim,fontSize:9,fontFamily:"JetBrains Mono"}}>{topIdx+1}/{topTasks.length}</span>
+<span style={{color:sLabel(score(curTop)).c,fontFamily:"'Courier New',monospace"}}>● 今やるべきタスク</span>
+<span style={{color:T.dim,fontSize:9,fontFamily:"'Courier New',monospace"}}>{topIdx+1}/{topTasks.length}</span>
 </div>
 <div style={{fontSize:16,fontWeight:700,color:T.text,marginBottom:5}}>{curTop.icon?curTop.icon+" ":""}{curTop.title}</div>
-<div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,color:T.sub,display:"flex",gap:8,alignItems:"center"}}><span>{fmtDl(curTop.deadline)}</span><span style={{opacity:.3}}>|</span><span>スコア {Math.round(score(curTop))}</span><span style={{flex:1}}/><button style={{background:sLabel(score(curTop)).c,border:"none",borderRadius:6,color:"#000",padding:"4px 10px",fontSize:10,fontWeight:800,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",letterSpacing:1}} onClick={()=>setFocusTaskId(curTop.id)}>▶ これやる</button></div>
+<div style={{fontFamily:"'Courier New',monospace",fontSize:10,color:T.sub,display:"flex",gap:8,alignItems:"center"}}><span>{fmtDl(curTop.deadline)}</span><span style={{opacity:.3}}>|</span><span>スコア {Math.round(score(curTop))}</span><span style={{flex:1}}/><button style={{background:sLabel(score(curTop)).c,border:"none",borderRadius:6,color:"#000",padding:"4px 10px",fontSize:10,fontWeight:800,cursor:"pointer",fontFamily:"'Courier New',monospace",letterSpacing:1}} onClick={()=>setFocusTaskId(curTop.id)}>▶ これやる</button></div>
 </div>
 {topTasks.length>1&&topTasks.length<=5&&<div style={{display:"flex",justifyContent:"center",gap:6,marginTop:6}}>{topTasks.map((_,i)=><span key={i} onClick={()=>setTopIdx(i)} style={{width:6,height:6,borderRadius:"50%",background:i===topIdx?sLabel(score(curTop)).c:T.dim,cursor:"pointer",transition:"background .2s"}}/>)}</div>}
 </div>)}
@@ -693,11 +693,11 @@ return(<div style={{minHeight:"100dvh",background:T.bg,color:T.text,fontFamily:"
 {!rouletteTask?<button style={{width:"100%",padding:"14px 16px",background:T.card,border:"1px dashed "+T.brd,borderRadius:14,color:T.text,fontSize:14,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8,letterSpacing:1}} onClick={spinRoulette}>🎲 何やるルーレット</button>
 :<div style={{background:T.card,border:"1px solid #c084fc",borderRadius:14,padding:"14px 16px"}}>
 <div style={{fontSize:10,fontWeight:700,marginBottom:5,letterSpacing:1,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-<span style={{color:"#c084fc",fontFamily:"JetBrains Mono"}}>🎲 これやる?</span>
+<span style={{color:"#c084fc",fontFamily:"'Courier New',monospace"}}>🎲 これやる?</span>
 <button style={{background:"none",border:"1px solid "+T.brd,borderRadius:6,color:T.sub,fontSize:14,cursor:"pointer",padding:"2px 8px"}} onClick={spinRoulette}>🎲</button>
 </div>
 <div style={{fontSize:16,fontWeight:700,color:T.text,marginBottom:5}}>{rouletteTask.icon?rouletteTask.icon+" ":"⭐ "}{rouletteTask.title}</div>
-{(rouletteTask.deadline||rouletteTask.memo)&&<div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,color:T.sub,display:"flex",gap:8,flexWrap:"wrap"}}>{rouletteTask.deadline&&<span>⏰ {fmtDl(rouletteTask.deadline)}</span>}{rouletteTask.memo&&<><span style={{opacity:.3}}>|</span><span>{rouletteTask.memo.slice(0,40)}{rouletteTask.memo.length>40?"...":""}</span></>}</div>}
+{(rouletteTask.deadline||rouletteTask.memo)&&<div style={{fontFamily:"'Courier New',monospace",fontSize:10,color:T.sub,display:"flex",gap:8,flexWrap:"wrap"}}>{rouletteTask.deadline&&<span>⏰ {fmtDl(rouletteTask.deadline)}</span>}{rouletteTask.memo&&<><span style={{opacity:.3}}>|</span><span>{rouletteTask.memo.slice(0,40)}{rouletteTask.memo.length>40?"...":""}</span></>}</div>}
 </div>}
 </div>)}
 
@@ -708,11 +708,11 @@ return(<div style={{minHeight:"100dvh",background:T.bg,color:T.text,fontFamily:"
 <div style={{display:"flex",gap:6,marginBottom:6,alignItems:"center",position:"relative"}}>
 <button style={{display:"flex",alignItems:"center",justifyContent:"center",width:34,height:30,borderRadius:8,border:"1px solid "+T.fBrd,background:showSearch?T.cOn:T.inp,color:showSearch?T.cOnT:T.mut,fontSize:14,cursor:"pointer",flexShrink:0}} onClick={()=>setShowSearch(v=>!v)}>🔍</button>
 <div ref={sortDDRef} style={{position:"relative"}}>
-<button style={{display:"flex",alignItems:"center",gap:3,padding:"6px 10px",borderRadius:8,border:"1px solid "+T.fBrd,background:T.inp,fontSize:11,fontWeight:600,color:T.sub,fontFamily:"'JetBrains Mono',monospace",cursor:"pointer"}} onClick={()=>setShowSortDD(v=>!v)}>{(SORTS.find(s=>s.v===sortOrder)?.rev)?(sortReverse?"▲ ":"▼ "):"▼ "}{SORTS.find(s=>s.v===sortOrder)?.l}</button>
+<button style={{display:"flex",alignItems:"center",gap:3,padding:"6px 10px",borderRadius:8,border:"1px solid "+T.fBrd,background:T.inp,fontSize:11,fontWeight:600,color:T.sub,fontFamily:"'Courier New',monospace",cursor:"pointer"}} onClick={()=>setShowSortDD(v=>!v)}>{(SORTS.find(s=>s.v===sortOrder)?.rev)?(sortReverse?"▲ ":"▼ "):"▼ "}{SORTS.find(s=>s.v===sortOrder)?.l}</button>
 {showSortDD&&<div style={{position:"absolute",top:34,left:0,background:T.card,border:"1px solid "+T.brd,borderRadius:10,padding:6,zIndex:50,boxShadow:"0 4px 12px "+T.shd,minWidth:140}}>{SORTS.map(s=><button key={s.v} style={{display:"block",width:"100%",textAlign:"left",padding:"8px 12px",borderRadius:6,border:"none",background:sortOrder===s.v?T.cOn:"transparent",color:sortOrder===s.v?T.cOnT:T.sub,fontSize:12,fontWeight:600,cursor:"pointer",marginBottom:2}} onClick={()=>{if(sortOrder===s.v&&s.rev){setSortReverse(v=>!v)}else{setSortOrder(s.v);setSortReverse(false)}setShowSortDD(false);setOpenGroup(null)}}>{(sortOrder===s.v&&s.rev)?(sortReverse?"▲ ":"▼ "):""}{s.l}</button>)}</div>}
 </div>
 {isTask&&locs.length>0&&<div style={{position:"relative"}}>
-<button style={{display:"flex",alignItems:"center",gap:3,padding:"6px 10px",borderRadius:8,border:"1px solid "+T.fBrd,background:locFilter!==null?T.cOn:T.inp,fontSize:11,fontWeight:600,color:locFilter!==null?T.cOnT:T.sub,fontFamily:"'JetBrains Mono',monospace",cursor:"pointer"}} onClick={()=>setShowLocDD(v=>!v)}>📍 {locFilter!==null?(locEmojis[locFilter]?locEmojis[locFilter]+" ":"")+locFilter:"場所"}</button>
+<button style={{display:"flex",alignItems:"center",gap:3,padding:"6px 10px",borderRadius:8,border:"1px solid "+T.fBrd,background:locFilter!==null?T.cOn:T.inp,fontSize:11,fontWeight:600,color:locFilter!==null?T.cOnT:T.sub,fontFamily:"'Courier New',monospace",cursor:"pointer"}} onClick={()=>setShowLocDD(v=>!v)}>📍 {locFilter!==null?(locEmojis[locFilter]?locEmojis[locFilter]+" ":"")+locFilter:"場所"}</button>
 {showLocDD&&<div style={{position:"absolute",top:34,left:0,background:T.card,border:"1px solid "+T.brd,borderRadius:10,padding:6,zIndex:50,boxShadow:"0 4px 12px "+T.shd,minWidth:140}}>
 <button style={{display:"block",width:"100%",textAlign:"left",padding:"8px 12px",borderRadius:6,border:"none",background:locFilter===null?T.cOn:"transparent",color:locFilter===null?T.cOnT:T.sub,fontSize:12,fontWeight:600,cursor:"pointer",marginBottom:2}} onClick={()=>{setLocFilter(null);setShowLocDD(false)}}>すべての場所</button>
 {locs.map(l=><button key={l} style={{display:"block",width:"100%",textAlign:"left",padding:"8px 12px",borderRadius:6,border:"none",background:locFilter===l?T.cOn:"transparent",color:locFilter===l?T.cOnT:T.sub,fontSize:12,fontWeight:600,cursor:"pointer",marginBottom:2}} onClick={()=>{setLocFilter(l);setShowLocDD(false)}}>{locEmojis[l]?locEmojis[l]+" ":""}{l}</button>)}
@@ -727,19 +727,19 @@ return(<div style={{minHeight:"100dvh",background:T.bg,color:T.text,fontFamily:"
 {showForm&&<div ref={formRef} className="form-slide" style={{background:T.card,border:"1px solid "+T.brd,borderRadius:14,padding:16,marginBottom:12,maxWidth:"100%",overflow:"hidden"}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}><span style={{fontSize:14,fontWeight:700,color:T.text}}>{editId?"編集":isWish?"やりたいこと":"新しいタスク"}</span><button style={{background:"none",border:"none",color:T.mut,fontSize:16,cursor:"pointer"}} onClick={resetForm}>✕</button></div>
 <div style={{display:"flex",gap:6,marginBottom:6}}><input style={{width:44,padding:"9px 6px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:16,outline:"none",textAlign:"center",flexShrink:0}} placeholder="📌" value={icon} onChange={e=>{setIcon(e.target.value);setIconTouched(true)}} maxLength={8}/><input style={{flex:1,padding:"9px 12px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:14,outline:"none",minWidth:0}} placeholder={isWish?"やりたいこと...":"タスク名..."} value={title} onChange={e=>setTitle(e.target.value)} autoFocus onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&submit()}/></div>
-{!icon&&title.trim()&&suggestEmoji(title)&&<div style={{marginBottom:6,fontSize:11,color:T.mut,display:"flex",alignItems:"center",gap:6,fontFamily:"'JetBrains Mono',monospace"}}>→ アイコン候補: <button style={{background:T.inp,border:"1px solid "+T.brd,borderRadius:6,padding:"3px 10px",fontSize:14,cursor:"pointer"}} onClick={()=>{setIcon(suggestEmoji(title));setIconTouched(true)}}>{suggestEmoji(title)}</button></div>}
+{!icon&&title.trim()&&suggestEmoji(title)&&<div style={{marginBottom:6,fontSize:11,color:T.mut,display:"flex",alignItems:"center",gap:6,fontFamily:"'Courier New',monospace"}}>→ アイコン候補: <button style={{background:T.inp,border:"1px solid "+T.brd,borderRadius:6,padding:"3px 10px",fontSize:14,cursor:"pointer"}} onClick={()=>{setIcon(suggestEmoji(title));setIconTouched(true)}}>{suggestEmoji(title)}</button></div>}
 {!isWish&&<>
-<div style={{marginBottom:10}}><div style={{fontSize:9,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:6,fontFamily:"'JetBrains Mono',monospace"}}>重要度</div><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{IMP.map(o=><button key={o.v} style={{padding:"6px 12px",borderRadius:7,border:"1px solid "+(importance===o.v?o.c:T.brd),fontSize:12,fontWeight:600,cursor:"pointer",background:importance===o.v?o.c:T.cOff,color:importance===o.v?"#fff":T.cOffT,display:"flex",alignItems:"center",gap:4}} onClick={()=>setImportance(o.v)}><span style={{fontSize:13,fontWeight:900}}>{o.icon}</span>{o.l}</button>)}</div></div>
-<div style={{marginBottom:10}}><div style={{fontSize:9,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:6,fontFamily:"'JetBrains Mono',monospace"}}>重さ</div><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{WI.map(o=>{const c=roi(importance,o.v);return<button key={o.v} style={{padding:"6px 10px",borderRadius:7,border:"1px solid "+(weight===o.v?c:T.brd),fontSize:11,fontWeight:weight===o.v?700:600,cursor:"pointer",background:weight===o.v?c:T.cOff,color:weight===o.v?"#000":T.cOffT}} onClick={()=>setWeight(o.v)}>{o.l}</button>})}</div></div>
+<div style={{marginBottom:10}}><div style={{fontSize:9,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:6,fontFamily:"'Courier New',monospace"}}>重要度</div><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{IMP.map(o=><button key={o.v} style={{padding:"6px 12px",borderRadius:7,border:"1px solid "+(importance===o.v?o.c:T.brd),fontSize:12,fontWeight:600,cursor:"pointer",background:importance===o.v?o.c:T.cOff,color:importance===o.v?"#fff":T.cOffT,display:"flex",alignItems:"center",gap:4}} onClick={()=>setImportance(o.v)}><span style={{fontSize:13,fontWeight:900}}>{o.icon}</span>{o.l}</button>)}</div></div>
+<div style={{marginBottom:10}}><div style={{fontSize:9,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:6,fontFamily:"'Courier New',monospace"}}>重さ</div><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{WI.map(o=>{const c=roi(importance,o.v);return<button key={o.v} style={{padding:"6px 10px",borderRadius:7,border:"1px solid "+(weight===o.v?c:T.brd),fontSize:11,fontWeight:weight===o.v?700:600,cursor:"pointer",background:weight===o.v?c:T.cOff,color:weight===o.v?"#000":T.cOffT}} onClick={()=>setWeight(o.v)}>{o.l}</button>})}</div></div>
 </>}
-<div style={{marginBottom:10}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}><span style={{fontSize:9,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,fontFamily:"'JetBrains Mono',monospace"}}>締切</span><button style={{padding:"3px 10px",borderRadius:7,border:"1px solid "+(!hasDeadline?T.cOn:T.brd),fontSize:10,fontWeight:600,cursor:"pointer",background:!hasDeadline?T.cOn:T.cOff,color:!hasDeadline?T.cOnT:T.cOffT}} onClick={()=>setHasDeadline(v=>!v)}>締切なし</button></div>{hasDeadline&&<input type="datetime-local" style={{width:"100%",padding:"9px 12px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:13,outline:"none",colorScheme:T.sch}} value={deadline} onChange={e=>setDeadline(e.target.value)}/>}</div>
-{!isWish&&hasDeadline&&<div style={{marginBottom:10}}><div style={{fontSize:9,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:6,fontFamily:"'JetBrains Mono',monospace"}}>繰り返し</div><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{REC.map(o=><button key={o.v} style={{padding:"6px 12px",borderRadius:7,border:"1px solid "+(recurrence===o.v?T.cOn:T.brd),fontSize:11,fontWeight:600,cursor:"pointer",background:recurrence===o.v?T.cOn:T.cOff,color:recurrence===o.v?T.cOnT:T.cOffT}} onClick={()=>setRecurrence(o.v)}>{o.l}</button>)}</div></div>}
-{!isWish&&<div style={{marginBottom:10}}><div style={{fontSize:9,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:6,fontFamily:"'JetBrains Mono',monospace"}}>場所</div><input style={{width:"100%",padding:"9px 12px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:13,outline:"none",minWidth:0}} placeholder="例: 自宅" value={location} onChange={e=>{const v=e.target.value;setLocation(v);if(!iconTouched&&locEmojis[v.trim()])setIcon(locEmojis[v.trim()])}} list="pl"/><datalist id="pl">{locs.map(l=><option key={l} value={l}/>)}</datalist>{location.trim()&&locEmojis[location.trim()]&&!iconTouched&&<div style={{fontSize:10,color:T.mut,marginTop:4,fontFamily:"'JetBrains Mono',monospace"}}>→ アイコン自動設定: {locEmojis[location.trim()]}</div>}</div>}
+<div style={{marginBottom:10}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}><span style={{fontSize:9,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,fontFamily:"'Courier New',monospace"}}>締切</span><button style={{padding:"3px 10px",borderRadius:7,border:"1px solid "+(!hasDeadline?T.cOn:T.brd),fontSize:10,fontWeight:600,cursor:"pointer",background:!hasDeadline?T.cOn:T.cOff,color:!hasDeadline?T.cOnT:T.cOffT}} onClick={()=>setHasDeadline(v=>!v)}>締切なし</button></div>{hasDeadline&&<input type="datetime-local" style={{width:"100%",padding:"9px 12px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:13,outline:"none",colorScheme:T.sch}} value={deadline} onChange={e=>setDeadline(e.target.value)}/>}</div>
+{!isWish&&hasDeadline&&<div style={{marginBottom:10}}><div style={{fontSize:9,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:6,fontFamily:"'Courier New',monospace"}}>繰り返し</div><div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{REC.map(o=><button key={o.v} style={{padding:"6px 12px",borderRadius:7,border:"1px solid "+(recurrence===o.v?T.cOn:T.brd),fontSize:11,fontWeight:600,cursor:"pointer",background:recurrence===o.v?T.cOn:T.cOff,color:recurrence===o.v?T.cOnT:T.cOffT}} onClick={()=>setRecurrence(o.v)}>{o.l}</button>)}</div></div>}
+{!isWish&&<div style={{marginBottom:10}}><div style={{fontSize:9,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:6,fontFamily:"'Courier New',monospace"}}>場所</div><input style={{width:"100%",padding:"9px 12px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:13,outline:"none",minWidth:0}} placeholder="例: 自宅" value={location} onChange={e=>{const v=e.target.value;setLocation(v);if(!iconTouched&&locEmojis[v.trim()])setIcon(locEmojis[v.trim()])}} list="pl"/><datalist id="pl">{locs.map(l=><option key={l} value={l}/>)}</datalist>{location.trim()&&locEmojis[location.trim()]&&!iconTouched&&<div style={{fontSize:10,color:T.mut,marginTop:4,fontFamily:"'Courier New',monospace"}}>→ アイコン自動設定: {locEmojis[location.trim()]}</div>}</div>}
 <div style={{marginBottom:10}}>{formExpandSubs?<div style={{padding:12,background:T.inp,borderRadius:10,border:"1px solid "+T.brd}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-<span style={{fontSize:11,fontWeight:800,color:T.text,letterSpacing:1,textTransform:"uppercase",fontFamily:"'JetBrains Mono',monospace"}}>📋 サブタスク</span>
+<span style={{fontSize:11,fontWeight:800,color:T.text,letterSpacing:1,textTransform:"uppercase",fontFamily:"'Courier New',monospace"}}>📋 サブタスク</span>
 <div style={{display:"flex",gap:8,alignItems:"center"}}>
-{formSubs.length>0&&<span style={{fontSize:10,color:T.mut,fontFamily:"'JetBrains Mono',monospace"}}>{formSubs.length}件</span>}
+{formSubs.length>0&&<span style={{fontSize:10,color:T.mut,fontFamily:"'Courier New',monospace"}}>{formSubs.length}件</span>}
 <button style={{background:"none",border:"none",color:T.mut,fontSize:14,cursor:"pointer",padding:"0 4px"}} onClick={()=>{if(formSubs.length===0&&!formSubInput.trim())setFormExpandSubs(false)}} aria-label="閉じる">▴</button>
 </div>
 </div>
@@ -752,8 +752,8 @@ return(<div style={{minHeight:"100dvh",background:T.bg,color:T.text,fontFamily:"
 <input style={{flex:1,padding:"10px 12px",background:T.card,border:"1px dashed "+T.brd,borderRadius:8,color:T.text,fontSize:14,outline:"none",minWidth:0}} value={formSubInput} onChange={e=>setFormSubInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.nativeEvent.isComposing&&formSubInput.trim()){setFormSubs(p=>[...p,{id:Date.now().toString(36)+Math.random().toString(36).slice(2,4),title:formSubInput.trim(),done:false}]);setFormSubInput("")}}} placeholder="＋ サブタスクを追加してEnter" autoFocus/>
 <button style={{width:44,height:42,borderRadius:8,border:"1px solid "+T.brd,background:formSubInput.trim()?T.cOn:T.cOff,color:formSubInput.trim()?T.cOnT:T.cOffT,fontSize:20,fontWeight:700,cursor:"pointer",flexShrink:0}} onClick={()=>{if(formSubInput.trim()){setFormSubs(p=>[...p,{id:Date.now().toString(36)+Math.random().toString(36).slice(2,4),title:formSubInput.trim(),done:false}]);setFormSubInput("")}}}>+</button>
 </div>
-</div>:<button style={{padding:"8px 12px",borderRadius:8,border:"1px dashed "+T.brd,background:"transparent",color:T.sub,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace"}} onClick={()=>setFormExpandSubs(true)}>+ サブタスク</button>}</div>
-{formExpandMemo?<div style={{marginBottom:10}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}><span style={{fontSize:9,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,fontFamily:"'JetBrains Mono',monospace"}}>メモ</span><button style={{background:"none",border:"none",color:T.mut,fontSize:14,cursor:"pointer",padding:"0 4px"}} onClick={()=>{if(!memo.trim())setFormExpandMemo(false)}} aria-label="閉じる">▴</button></div><textarea style={{width:"100%",padding:"9px 12px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:13,outline:"none",minHeight:50,resize:"vertical",fontFamily:"inherit"}} placeholder="メモ..." value={memo} onChange={e=>setMemo(e.target.value)} autoFocus/></div>:<div style={{marginBottom:10}}><button style={{padding:"8px 12px",borderRadius:8,border:"1px dashed "+T.brd,background:"transparent",color:T.sub,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace"}} onClick={()=>setFormExpandMemo(true)}>+ メモ</button></div>}
+</div>:<button style={{padding:"8px 12px",borderRadius:8,border:"1px dashed "+T.brd,background:"transparent",color:T.sub,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Courier New',monospace"}} onClick={()=>setFormExpandSubs(true)}>+ サブタスク</button>}</div>
+{formExpandMemo?<div style={{marginBottom:10}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}><span style={{fontSize:9,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,fontFamily:"'Courier New',monospace"}}>メモ</span><button style={{background:"none",border:"none",color:T.mut,fontSize:14,cursor:"pointer",padding:"0 4px"}} onClick={()=>{if(!memo.trim())setFormExpandMemo(false)}} aria-label="閉じる">▴</button></div><textarea style={{width:"100%",padding:"9px 12px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:13,outline:"none",minHeight:50,resize:"vertical",fontFamily:"inherit"}} placeholder="メモ..." value={memo} onChange={e=>setMemo(e.target.value)} autoFocus/></div>:<div style={{marginBottom:10}}><button style={{padding:"8px 12px",borderRadius:8,border:"1px dashed "+T.brd,background:"transparent",color:T.sub,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Courier New',monospace"}} onClick={()=>setFormExpandMemo(true)}>+ メモ</button></div>}
 {editId&&<div style={{display:"flex",justifyContent:"flex-end",marginBottom:8}}><button style={{padding:"6px 12px",borderRadius:6,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:11,fontWeight:600,cursor:"pointer"}} onClick={()=>{const target=tasks.find(t=>t.id===editId);if(!target)return;quickUpdate(editId,"type",target.type==="wish"?"task":"wish");resetForm();setShowForm(false)}}>{(()=>{const t=tasks.find(t=>t.id===editId);return t&&t.type==="wish"?"→ タスクへ":"→ やりたいへ"})()}</button></div>}
 <button style={{width:"100%",padding:12,background:"#ff3b30",border:"none",borderRadius:9,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}} onClick={submit}>{editId?"更新する":"追加する"}</button>
 </div>}
@@ -765,23 +765,23 @@ return(<div style={{minHeight:"100dvh",background:T.bg,color:T.text,fontFamily:"
 <button style={{width:40,height:38,borderRadius:8,border:"1px solid "+T.brd,background:habitInput.trim()?T.cOn:T.cOff,color:habitInput.trim()?T.cOnT:T.cOffT,fontSize:18,fontWeight:700,cursor:"pointer",flexShrink:0}} onClick={()=>{if(habitInput.trim()){setHabits(p=>[...p,{id:Date.now().toString(36)+Math.random().toString(36).slice(2,4),title:habitInput.trim(),memo:"",icon:habitIcon.trim(),doneToday:false}]);setHabitInput("");setHabitIcon("")}}}>+</button>
 </div>
 {habitsSorted.map(h=><HabitCard key={h.id} habit={h} T={T} isEditing={editHabitId===h.id} dragging={draggingId===h.id} onSetEdit={setEditHabitId} onUpdate={u=>setHabits(p=>p.map(x=>x.id===u.id?u:x))} onDelete={()=>setHabits(p=>p.filter(x=>x.id!==h.id))} onToggleDone={()=>togHabitDone(h.id)} onDragStart={y=>dragStart(h.id,"habit",y)} onDragMove={dragMove} onDragEnd={dragEnd}/>)}
-{habits.length===0&&<div style={{textAlign:"center",padding:36,color:T.dim,fontSize:13,fontFamily:"'JetBrains Mono',monospace"}}>日課を追加しましょう</div>}
+{habits.length===0&&<div style={{textAlign:"center",padding:36,color:T.dim,fontSize:13,fontFamily:"'Courier New',monospace"}}>日課を追加しましょう</div>}
 </>}
 
 {!isHabit&&!isGroupMode&&<div style={{display:"flex",flexDirection:"column",gap:8}}>
-{sorted.length===0&&<div style={{textAlign:"center",padding:36,color:T.dim,fontSize:13,fontFamily:"'JetBrains Mono',monospace"}}>{searchQ?"検索結果なし":filter==="done"?"完了タスクなし":"タスクを追加しましょう"}</div>}
+{sorted.length===0&&<div style={{textAlign:"center",padding:36,color:T.dim,fontSize:13,fontFamily:"'Courier New',monospace"}}>{searchQ?"検索結果なし":filter==="done"?"完了タスクなし":"タスクを追加しましょう"}</div>}
 {sorted.map((task,idx)=>{const useRank=isTask&&sortOrder!=="impGroup"&&sortOrder!=="weightGroup"&&filter!=="done";const dt=useRank?Math.max(1,Math.min(9,Math.floor(idx/Math.max(1,sorted.length/9))+1)):null;return<TaskCard key={task.id} task={task} T={T} isDark={isDark} sortOrder={sortOrder} expanded={expandedId===task.id} memoExp={memoExpId===task.id} dragging={draggingId===task.id} draggable={isWish} isToday={todayPicks.includes(task.id)} isLatestDone={latestDoneId===task.id} locEmojis={locEmojis} displayTier={dt} defaultIconTask={defaults.iconTask||"📝"} defaultIconWish={defaults.iconWish||"⭐"} onToggleExpand={()=>{setExpandedId(expandedId===task.id?null:task.id);setMemoExpId(null)}} onToggleMemo={()=>{setMemoExpId(memoExpId===task.id?null:task.id);setExpandedId(null)}} onToggleDone={(silent)=>togDone(task.id,silent)} onEdit={()=>startEdit(task)} onDelete={()=>delTask(task.id)} onUpdateSubtasks={s=>upSub(task.id,s)} onUpdateMemo={m=>upMemo(task.id,m)} onQuickUpdate={(f,v)=>quickUpdate(task.id,f,v)} onToggleToday={()=>setTodayPicks(p=>p.includes(task.id)?p.filter(x=>x!==task.id):[...p,task.id])} onFocus={()=>setFocusTaskId(task.id)} onSetHold={()=>setHoldTask(task.id)} onUnhold={()=>unholdTask(task.id)} onSetHoldUntil={(u)=>setHoldUntil(task.id,u)} onSetDeadline={(v)=>setTaskDeadline(task.id,v)} onDragStart={y=>dragStart(task.id,"wish",y)} onDragMove={dragMove} onDragEnd={dragEnd} onSwipeCompleteSound={playCompleteSound}/>})}
 </div>}
 
 {isGroupMode&&<div style={{display:"flex",flexDirection:"column",gap:6}}>
-{sorted.length===0&&<div style={{textAlign:"center",padding:36,color:T.dim,fontSize:13,fontFamily:"'JetBrains Mono',monospace"}}>タスクなし</div>}
+{sorted.length===0&&<div style={{textAlign:"center",padding:36,color:T.dim,fontSize:13,fontFamily:"'Courier New',monospace"}}>タスクなし</div>}
 {groups&&groups.map(g=>(<div key={g.k}>
 <button style={{width:"100%",padding:"10px 14px",background:openGroup===g.k?T.card:T.inp,border:"1px solid "+(openGroup===g.k?g.c:T.brd),borderRadius:10,color:T.text,fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}} onClick={()=>setOpenGroup(openGroup===g.k?null:g.k)}>
 <span style={{display:"flex",alignItems:"center",gap:8}}><span style={{width:10,height:10,borderRadius:"50%",background:g.c}}/>{g.l}</span>
-<span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,color:T.mut,display:"flex",alignItems:"center",gap:6}}>{g.items.length}件<span style={{fontSize:10}}>{openGroup===g.k?"▲":"▼"}</span></span>
+<span style={{fontFamily:"'Courier New',monospace",fontSize:11,color:T.mut,display:"flex",alignItems:"center",gap:6}}>{g.items.length}件<span style={{fontSize:10}}>{openGroup===g.k?"▲":"▼"}</span></span>
 </button>
 {openGroup===g.k&&<div style={{display:"flex",flexDirection:"column",gap:6,marginTop:6,marginBottom:4,paddingLeft:6}}>
-{g.items.length===0&&<div style={{padding:12,color:T.dim,fontSize:11,fontFamily:"'JetBrains Mono',monospace"}}>なし</div>}
+{g.items.length===0&&<div style={{padding:12,color:T.dim,fontSize:11,fontFamily:"'Courier New',monospace"}}>なし</div>}
 {g.items.map(task=><TaskCard key={task.id} task={task} T={T} isDark={isDark} sortOrder={sortOrder} expanded={expandedId===task.id} memoExp={memoExpId===task.id} dragging={false} draggable={false} isToday={todayPicks.includes(task.id)} locEmojis={locEmojis} defaultIconTask={defaults.iconTask||"📝"} defaultIconWish={defaults.iconWish||"⭐"} onToggleExpand={()=>{setExpandedId(expandedId===task.id?null:task.id);setMemoExpId(null)}} onToggleMemo={()=>{setMemoExpId(memoExpId===task.id?null:task.id);setExpandedId(null)}} onToggleDone={()=>togDone(task.id)} onEdit={()=>startEdit(task)} onDelete={()=>delTask(task.id)} onUpdateSubtasks={s=>upSub(task.id,s)} onUpdateMemo={m=>upMemo(task.id,m)} onQuickUpdate={(f,v)=>quickUpdate(task.id,f,v)} onToggleToday={()=>setTodayPicks(p=>p.includes(task.id)?p.filter(x=>x!==task.id):[...p,task.id])} onFocus={()=>setFocusTaskId(task.id)} onSetHold={()=>setHoldTask(task.id)} onUnhold={()=>unholdTask(task.id)} onSetHoldUntil={(u)=>setHoldUntil(task.id,u)} onSetDeadline={(v)=>setTaskDeadline(task.id,v)}/>)}
 </div>}
 </div>))}
@@ -789,16 +789,16 @@ return(<div style={{minHeight:"100dvh",background:T.bg,color:T.text,fontFamily:"
 
 {showWeekReport&&weekReportStats&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:T.modal,zIndex:240,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"40px 16px 20px",overflowY:"auto"}}><div style={{background:T.card,border:"1px solid "+T.brd,borderRadius:16,padding:20,width:"100%",maxWidth:420}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><span style={{fontSize:15,fontWeight:800,color:T.text}}>📊 今週のふりかえり</span><button style={{background:"none",border:"none",color:T.mut,fontSize:16,cursor:"pointer"}} onClick={()=>setShowWeekReport(false)}>✕</button></div>
-<div style={{textAlign:"center",marginBottom:16}}><div style={{fontSize:42,fontWeight:900,color:"#4ade80",fontFamily:"'JetBrains Mono',monospace",lineHeight:1}}>{weekReportStats.weekDone}</div><div style={{fontSize:11,color:T.mut,marginTop:4,fontFamily:"'JetBrains Mono',monospace",letterSpacing:1}}>件 完了</div></div>
-<div style={{marginBottom:16}}><div style={{fontSize:10,fontWeight:700,color:T.mut,marginBottom:8,fontFamily:"'JetBrains Mono',monospace",letterSpacing:1}}>日別の完了数</div>
-<div style={{display:"flex",alignItems:"flex-end",gap:4,height:80}}>{weekReportStats.days.map((dy,i)=>{const max=Math.max(1,...weekReportStats.days.map(d=>d.count));const h=(dy.count/max)*60;return<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}><div style={{width:"100%",height:60,display:"flex",alignItems:"flex-end"}}><div style={{width:"100%",height:h+"px",background:dy.count>0?"#c084fc":T.dim,borderRadius:"3px 3px 0 0",minHeight:dy.count>0?4:2}}/></div><span style={{fontSize:9,color:T.mut,fontFamily:"'JetBrains Mono',monospace"}}>{dy.label}</span><span style={{fontSize:10,color:T.text,fontFamily:"'JetBrains Mono',monospace",fontWeight:700}}>{dy.count}</span></div>})}</div></div>
-<div style={{padding:12,background:T.inp,borderRadius:10,border:"1px solid "+T.brd,marginBottom:14}}><div style={{fontSize:10,fontWeight:700,color:T.mut,marginBottom:6,fontFamily:"'JetBrains Mono',monospace",letterSpacing:1}}>来週(今後7日)の予定</div><div style={{display:"flex",gap:14,fontSize:13}}><div><span style={{color:"#ff3b30",fontWeight:800,fontFamily:"'JetBrains Mono',monospace"}}>{weekReportStats.nextNow}</span><span style={{color:T.mut,fontSize:10,marginLeft:4}}>NOW</span></div><div><span style={{color:"#ff9500",fontWeight:800,fontFamily:"'JetBrains Mono',monospace"}}>{weekReportStats.nextSoon}</span><span style={{color:T.mut,fontSize:10,marginLeft:4}}>SOON</span></div></div></div>
+<div style={{textAlign:"center",marginBottom:16}}><div style={{fontSize:42,fontWeight:900,color:"#4ade80",fontFamily:"'Courier New',monospace",lineHeight:1}}>{weekReportStats.weekDone}</div><div style={{fontSize:11,color:T.mut,marginTop:4,fontFamily:"'Courier New',monospace",letterSpacing:1}}>件 完了</div></div>
+<div style={{marginBottom:16}}><div style={{fontSize:10,fontWeight:700,color:T.mut,marginBottom:8,fontFamily:"'Courier New',monospace",letterSpacing:1}}>日別の完了数</div>
+<div style={{display:"flex",alignItems:"flex-end",gap:4,height:80}}>{weekReportStats.days.map((dy,i)=>{const max=Math.max(1,...weekReportStats.days.map(d=>d.count));const h=(dy.count/max)*60;return<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}><div style={{width:"100%",height:60,display:"flex",alignItems:"flex-end"}}><div style={{width:"100%",height:h+"px",background:dy.count>0?"#c084fc":T.dim,borderRadius:"3px 3px 0 0",minHeight:dy.count>0?4:2}}/></div><span style={{fontSize:9,color:T.mut,fontFamily:"'Courier New',monospace"}}>{dy.label}</span><span style={{fontSize:10,color:T.text,fontFamily:"'Courier New',monospace",fontWeight:700}}>{dy.count}</span></div>})}</div></div>
+<div style={{padding:12,background:T.inp,borderRadius:10,border:"1px solid "+T.brd,marginBottom:14}}><div style={{fontSize:10,fontWeight:700,color:T.mut,marginBottom:6,fontFamily:"'Courier New',monospace",letterSpacing:1}}>来週(今後7日)の予定</div><div style={{display:"flex",gap:14,fontSize:13}}><div><span style={{color:"#ff3b30",fontWeight:800,fontFamily:"'Courier New',monospace"}}>{weekReportStats.nextNow}</span><span style={{color:T.mut,fontSize:10,marginLeft:4}}>NOW</span></div><div><span style={{color:"#ff9500",fontWeight:800,fontFamily:"'Courier New',monospace"}}>{weekReportStats.nextSoon}</span><span style={{color:T.mut,fontSize:10,marginLeft:4}}>SOON</span></div></div></div>
 <button style={{width:"100%",padding:12,borderRadius:10,border:"none",background:"#4ade80",color:"#000",fontSize:14,fontWeight:800,cursor:"pointer"}} onClick={()=>setShowWeekReport(false)}>OK</button>
 </div></div>}
 
 {showMonthReset&&monthResetTasks.length>0&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:T.modal,zIndex:240,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"40px 16px 20px",overflowY:"auto"}}><div style={{background:T.card,border:"1px solid "+T.brd,borderRadius:16,padding:20,width:"100%",maxWidth:420}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}><span style={{fontSize:15,fontWeight:800,color:T.text}}>📅 先月のやり残し</span><button style={{background:"none",border:"none",color:T.mut,fontSize:16,cursor:"pointer"}} onClick={()=>setShowMonthReset(false)}>✕</button></div>
-<div style={{fontSize:11,color:T.mut,marginBottom:14,fontFamily:"'JetBrains Mono',monospace"}}>{monthResetTasks.length}件のタスクをどうしますか?</div>
+<div style={{fontSize:11,color:T.mut,marginBottom:14,fontFamily:"'Courier New',monospace"}}>{monthResetTasks.length}件のタスクをどうしますか?</div>
 <div style={{display:"flex",flexDirection:"column",gap:8,maxHeight:"55vh",overflowY:"auto",marginBottom:12}}>{monthResetTasks.map(t=>{const c=roi(t.importance,t.weight);return<div key={t.id} style={{padding:10,background:T.inp,border:"1px solid "+T.brd,borderRadius:9}}>
 <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}><span style={{width:3,height:18,background:c,borderRadius:2,flexShrink:0}}/>{t.icon&&<span style={{fontSize:14,flexShrink:0}}>{t.icon}</span>}<span style={{flex:1,fontSize:13,fontWeight:600,color:T.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{t.title}</span></div>
 <div style={{display:"flex",gap:6}}><button style={{flex:1,padding:"7px 6px",borderRadius:6,border:"1px solid #4ade80",background:"rgba(74,222,128,0.12)",color:"#4ade80",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={()=>monthAction(t.id,"keep")}>今月もやる</button><button style={{flex:1,padding:"7px 6px",borderRadius:6,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={()=>monthAction(t.id,"next")}>来月送り</button><button style={{flex:1,padding:"7px 6px",borderRadius:6,border:"1px solid rgba(255,59,48,0.4)",background:"transparent",color:"#ff3b30",fontSize:11,fontWeight:700,cursor:"pointer"}} onClick={()=>monthAction(t.id,"trash")}>やめる</button></div>
@@ -810,24 +810,24 @@ return(<div style={{minHeight:"100dvh",background:T.bg,color:T.text,fontFamily:"
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}><span style={{fontSize:15,fontWeight:700,color:T.text}}>設定</span><button style={{background:"none",border:"none",color:T.mut,fontSize:16,cursor:"pointer"}} onClick={()=>setShowSettings(false)}>✕</button></div>
 
 <div style={{marginBottom:14}}>
-<div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:8,fontFamily:"'JetBrains Mono',monospace"}}>この1週間の完了数</div>
+<div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:8,fontFamily:"'Courier New',monospace"}}>この1週間の完了数</div>
 <div style={{display:"flex",alignItems:"stretch",gap:4,padding:"0 2px"}}>
 {weekChart.map((dy,i)=>{const max=Math.max(1,...weekChart.map(d=>d.count));const h=(dy.count/max)*60;const isToday=i===weekChart.length-1;return<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
 <div style={{width:"100%",height:64,display:"flex",alignItems:"flex-end"}}><div style={{width:"100%",height:h+"px",background:dy.count>0?(isToday?"#4ade80":"#c084fc"):T.dim,borderRadius:"3px 3px 0 0",minHeight:dy.count>0?4:2,transition:"height .3s"}}/></div>
-<span style={{fontSize:9,color:isToday?"#4ade80":T.mut,fontFamily:"'JetBrains Mono',monospace",fontWeight:isToday?700:400,lineHeight:1}}>{dy.label}</span>
-<span style={{fontSize:10,color:T.text,fontFamily:"'JetBrains Mono',monospace",fontWeight:700,lineHeight:1}}>{dy.count}</span>
+<span style={{fontSize:9,color:isToday?"#4ade80":T.mut,fontFamily:"'Courier New',monospace",fontWeight:isToday?700:400,lineHeight:1}}>{dy.label}</span>
+<span style={{fontSize:10,color:T.text,fontFamily:"'Courier New',monospace",fontWeight:700,lineHeight:1}}>{dy.count}</span>
 </div>})}
 </div>
 </div>
 
-<div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>バックアップ・復元</div><div style={{display:"flex",gap:8}}><button style={{flex:1,padding:10,borderRadius:9,border:"1px solid "+T.brd,background:T.cOff,color:T.text,fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={doExport}>エクスポート</button><button style={{flex:1,padding:10,borderRadius:9,border:"1px solid "+T.brd,background:T.cOff,color:T.text,fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={doImportClick}>インポート</button><input ref={fr} type="file" accept="application/json" style={{display:"none"}} onChange={doImport}/></div>
+<div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'Courier New',monospace"}}>バックアップ・復元</div><div style={{display:"flex",gap:8}}><button style={{flex:1,padding:10,borderRadius:9,border:"1px solid "+T.brd,background:T.cOff,color:T.text,fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={doExport}>エクスポート</button><button style={{flex:1,padding:10,borderRadius:9,border:"1px solid "+T.brd,background:T.cOff,color:T.text,fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={doImportClick}>インポート</button><input ref={fr} type="file" accept="application/json" style={{display:"none"}} onChange={doImport}/></div>
 <div style={{marginTop:10,paddingTop:10,borderTop:"1px solid "+T.brd}}>
-<div style={{fontSize:10,fontWeight:700,color:T.mut,marginBottom:6,fontFamily:"'JetBrains Mono',monospace",letterSpacing:1}}>自動バックアップの頻度</div>
+<div style={{fontSize:10,fontWeight:700,color:T.mut,marginBottom:6,fontFamily:"'Courier New',monospace",letterSpacing:1}}>自動バックアップの頻度</div>
 <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>{BACKUP_FREQ_OPTS.map(o=><button key={o.v} style={{padding:"5px 10px",borderRadius:6,border:"1px solid "+(backupFreq===o.v?T.cOn:T.brd),fontSize:11,fontWeight:600,cursor:"pointer",background:backupFreq===o.v?T.cOn:T.cOff,color:backupFreq===o.v?T.cOnT:T.cOffT}} onClick={()=>setBackupFreq(o.v)}>{o.l}</button>)}</div>
 </div>
 </div>
 
-<div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>今日やる3つ(朝の選択)</div>
+<div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'Courier New',monospace"}}>今日やる3つ(朝の選択)</div>
 <div style={{fontSize:11,color:T.sub,marginBottom:7}}>現在の選択: {todayPicks.length}件</div>
 <div style={{display:"flex",gap:8}}>
 <button style={{flex:1,padding:10,borderRadius:9,border:"1px solid "+T.brd,background:T.cOff,color:T.text,fontSize:12,fontWeight:700,cursor:"pointer"}} onClick={()=>{setShowSettings(false);setShowPicker(true)}}>選び直す</button>
@@ -836,7 +836,7 @@ return(<div style={{minHeight:"100dvh",background:T.bg,color:T.text,fontFamily:"
 </div>
 
 <div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}>
-<div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>場所の管理</div>
+<div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'Courier New',monospace"}}>場所の管理</div>
 {locs.length===0&&<div style={{fontSize:11,color:T.dim,padding:"4px 0"}}>タスクに場所を設定すると、ここで絵文字を管理できます</div>}
 {locs.map(l=><div key={l} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 0",borderBottom:"1px solid "+(isDark?"#1a1a1a":T.brd)}}>
 <input style={{width:42,padding:"5px",background:T.inp,border:"1px solid "+T.brd,borderRadius:6,color:T.text,fontSize:14,outline:"none",textAlign:"center",flexShrink:0}} placeholder="📌" value={locEmojis[l]||""} onChange={e=>setLocEmojis(prev=>({...prev,[l]:e.target.value}))} maxLength={8}/>
@@ -846,12 +846,12 @@ return(<div style={{minHeight:"100dvh",background:T.bg,color:T.text,fontFamily:"
 </div>
 
 <div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}>
-<div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>今やるべきタスクの表示件数</div>
+<div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'Courier New',monospace"}}>今やるべきタスクの表示件数</div>
 <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{[3,4,5,6,7].map(n=><button key={n} style={{padding:"6px 14px",borderRadius:7,border:"1px solid "+(bannerCount===n?T.cOn:T.brd),fontSize:12,fontWeight:700,cursor:"pointer",background:bannerCount===n?T.cOn:T.cOff,color:bannerCount===n?T.cOnT:T.cOffT}} onClick={()=>setBannerCount(n)}>{n}件</button>)}</div>
 </div>
 
 <div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}>
-<div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>効果音</div>
+<div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'Courier New',monospace"}}>効果音</div>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0"}}>
 <span style={{fontSize:12,color:T.sub}}>完了時の効果音</span>
 <button style={{width:44,height:24,borderRadius:12,border:"none",background:soundEnabled?"#4ade80":T.dim,position:"relative",cursor:"pointer",transition:"background .2s"}} onClick={async()=>{const next=!soundEnabled;setSoundEnabled(next);if(next){try{await ensureAudio();playSoundOnBuf()}catch{}}}}>
@@ -859,7 +859,7 @@ return(<div style={{minHeight:"100dvh",background:T.bg,color:T.text,fontFamily:"
 </button>
 </div>
 {soundEnabled&&<div style={{padding:"6px 0",borderTop:"1px solid "+T.brd,marginTop:4}}>
-<div style={{fontSize:11,fontWeight:700,color:T.mut,marginBottom:6,letterSpacing:1,fontFamily:"'JetBrains Mono',monospace"}}>カスタム音声</div>
+<div style={{fontSize:11,fontWeight:700,color:T.mut,marginBottom:6,letterSpacing:1,fontFamily:"'Courier New',monospace"}}>カスタム音声</div>
 <div style={{fontSize:11,color:T.dim,marginBottom:8,lineHeight:1.5}}>{customSoundName?"現在: "+customSoundName:"デフォルト音声を使用中"}</div>
 <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
 <label style={{flex:1,minWidth:120,padding:"9px 12px",borderRadius:8,border:"1px solid "+T.brd,background:T.inp,color:T.text,fontSize:12,fontWeight:600,cursor:"pointer",textAlign:"center",display:"inline-block"}}>
@@ -874,7 +874,7 @@ return(<div style={{minHeight:"100dvh",background:T.bg,color:T.text,fontFamily:"
 </div>
 
 <div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}>
-<div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>表示</div>
+<div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'Courier New',monospace"}}>表示</div>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0"}}>
 <span style={{fontSize:12,color:T.sub}}>色覚多様性モード(青・黄・茶ベース)</span>
 <button style={{width:44,height:24,borderRadius:12,border:"none",background:colorBlindMode?"#4ade80":T.dim,position:"relative",cursor:"pointer",transition:"background .2s"}} onClick={()=>setColorBlindMode(v=>!v)}>
@@ -883,7 +883,7 @@ return(<div style={{minHeight:"100dvh",background:T.bg,color:T.text,fontFamily:"
 </div>
 </div>
 
-<div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>新規タスクのデフォルト</div>
+<div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'Courier New',monospace"}}>新規タスクのデフォルト</div>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0"}}>
 <span style={{fontSize:12,color:T.sub}}>新規タスク作成時、締切入力欄を最初から表示</span>
 <button style={{width:44,height:24,borderRadius:12,border:"none",background:defaults.hasDeadline?"#4ade80":T.dim,position:"relative",cursor:"pointer",transition:"background .2s"}} onClick={()=>setDefaults(p=>({...p,hasDeadline:!p.hasDeadline}))}>
@@ -905,11 +905,11 @@ return(<div style={{minHeight:"100dvh",background:T.bg,color:T.text,fontFamily:"
 </div>
 </div>
 
-<div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'JetBrains Mono',monospace"}}>1日の境目(時)</div><input type="number" min="0" max="23" style={{width:60,padding:"8px 10px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:14,outline:"none"}} value={dayReset} onChange={e=>setDayReset(parseInt(e.target.value)||0)}/><span style={{fontSize:11,color:T.mut,marginLeft:6}}>時</span></div>
+<div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}><div style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:7,fontFamily:"'Courier New',monospace"}}>1日の境目(時)</div><input type="number" min="0" max="23" style={{width:60,padding:"8px 10px",background:T.inp,border:"1px solid "+T.brd,borderRadius:8,color:T.text,fontSize:14,outline:"none"}} value={dayReset} onChange={e=>setDayReset(parseInt(e.target.value)||0)}/><span style={{fontSize:11,color:T.mut,marginLeft:6}}>時</span></div>
 
 <div style={{marginBottom:14,borderTop:"1px solid "+T.brd,paddingTop:14}}>
 <button style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",padding:"6px 0",background:"none",border:"none",cursor:"pointer",color:T.text}} onClick={()=>setTrashOpen(v=>!v)}>
-<span style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,fontFamily:"'JetBrains Mono',monospace"}}>ゴミ箱({trash.length}件)</span>
+<span style={{fontSize:10,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,fontFamily:"'Courier New',monospace"}}>ゴミ箱({trash.length}件)</span>
 <span style={{fontSize:10,color:T.mut}}>{trashOpen?"▲":"▼"}</span>
 </button>
 {trashOpen&&<div style={{marginTop:8}}>
@@ -922,16 +922,16 @@ return(<div style={{minHeight:"100dvh",background:T.bg,color:T.text,fontFamily:"
 
 {focusTaskId&&(()=>{const ft=tasks.find(t=>t.id===focusTaskId);if(!ft){setFocusTaskId(null);return null}const fsubs=ft.subtasks||[];const fsd=fsubs.filter(s=>s.done).length;return(<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:T.bg,zIndex:280,display:"flex",flexDirection:"column",padding:"calc(24px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom))",overflowY:"auto"}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
-<span style={{fontSize:10,fontWeight:700,color:T.mut,fontFamily:"'JetBrains Mono',monospace",letterSpacing:2}}>FOCUS MODE</span>
+<span style={{fontSize:10,fontWeight:700,color:T.mut,fontFamily:"'Courier New',monospace",letterSpacing:2}}>FOCUS MODE</span>
 <button style={{background:"none",border:"none",color:T.mut,fontSize:24,cursor:"pointer",padding:4}} onClick={()=>setFocusTaskId(null)}>✕</button>
 </div>
 <div style={{flex:1,display:"flex",flexDirection:"column",gap:20,paddingTop:8}}>
 {ft.icon&&<div style={{fontSize:64,textAlign:"center"}}>{ft.icon}</div>}
 <div style={{fontSize:24,fontWeight:800,color:T.text,textAlign:"center",lineHeight:1.3,padding:"0 8px"}}>{ft.title}</div>
-{ft.deadline&&<div style={{fontSize:13,color:T.sub,textAlign:"center",fontFamily:"'JetBrains Mono',monospace"}}>⏰ {fmtDl(ft.deadline)}</div>}
+{ft.deadline&&<div style={{fontSize:13,color:T.sub,textAlign:"center",fontFamily:"'Courier New',monospace"}}>⏰ {fmtDl(ft.deadline)}</div>}
 {ft.memo&&<div style={{background:T.memo,border:"1px solid "+T.memB,borderRadius:12,padding:16,fontSize:14,lineHeight:1.7,color:T.sub,whiteSpace:"pre-wrap"}}>{ft.memo}</div>}
 {fsubs.length>0&&<div style={{background:T.inp,borderRadius:12,padding:16,border:"1px solid "+T.brd}}>
-<div style={{fontSize:10,fontWeight:700,color:T.mut,marginBottom:10,fontFamily:"'JetBrains Mono',monospace",letterSpacing:1}}>サブタスク {fsd}/{fsubs.length}</div>
+<div style={{fontSize:10,fontWeight:700,color:T.mut,marginBottom:10,fontFamily:"'Courier New',monospace",letterSpacing:1}}>サブタスク {fsd}/{fsubs.length}</div>
 {fsubs.map(sub=><div key={sub.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0"}}>
 <button style={{width:22,height:22,borderRadius:6,border:"2px solid "+(sub.done?"#4ade80":T.chk),background:sub.done?"#4ade80":"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,color:"#000",fontSize:12,fontWeight:800}} onClick={()=>upSub(focusTaskId,fsubs.map(s=>s.id===sub.id?{...s,done:!s.done}:s))}>{sub.done&&"✓"}</button>
 <span style={{fontSize:15,color:sub.done?T.mut:T.text,opacity:sub.done?0.5:1,flex:1,lineHeight:1.4,textDecoration:sub.done?"line-through":"none"}}>{sub.title}</span>
@@ -969,14 +969,14 @@ return(<div style={{minHeight:"100dvh",background:T.bg,color:T.text,fontFamily:"
 
 {showPicker&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:T.modal,zIndex:250,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"40px 16px 20px",overflowY:"auto"}}><div style={{background:T.card,border:"1px solid "+T.brd,borderRadius:16,padding:20,width:"100%",maxWidth:500}}>
 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}><span style={{fontSize:16,fontWeight:800,color:T.text}}>🌅 今日やる3つを選ぼう</span><button style={{background:"none",border:"none",color:T.mut,fontSize:16,cursor:"pointer"}} onClick={()=>setShowPicker(false)}>✕</button></div>
-<div style={{fontSize:11,color:T.mut,marginBottom:12,fontFamily:"'JetBrains Mono',monospace"}}>選択: {todayPicks.length}/3</div>
+<div style={{fontSize:11,color:T.mut,marginBottom:12,fontFamily:"'Courier New',monospace"}}>選択: {todayPicks.length}/3</div>
 <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:14,maxHeight:"50vh",overflowY:"auto"}}>
 {tasks.filter(t=>!t.done&&t.type!=="wish").map(t=>{const on=todayPicks.includes(t.id);const dis=!on&&todayPicks.length>=3;const c=roi(t.importance,t.weight);return<button key={t.id} disabled={dis} style={{display:"flex",alignItems:"center",gap:8,padding:"9px 12px",borderRadius:8,border:"1px solid "+(on?"#4ade80":T.brd),background:on?"rgba(74,222,128,0.12)":T.inp,color:T.text,fontSize:13,cursor:dis?"not-allowed":"pointer",opacity:dis?.4:1,textAlign:"left",width:"100%"}} onClick={()=>setTodayPicks(p=>on?p.filter(x=>x!==t.id):[...p,t.id])}>
 <span style={{width:16,height:16,borderRadius:4,border:"2px solid "+(on?"#4ade80":T.chk),background:on?"#4ade80":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,color:"#000",fontSize:9,fontWeight:800}}>{on?"✓":""}</span>
 <span style={{width:3,height:18,background:c,borderRadius:2,flexShrink:0}}/>
 {t.icon&&<span style={{fontSize:14,flexShrink:0}}>{t.icon}</span>}
 <span style={{flex:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{t.title}</span>
-<span style={{fontSize:9,color:T.mut,fontFamily:"'JetBrains Mono',monospace",flexShrink:0}}>{fmtDl(t.deadline)}</span>
+<span style={{fontSize:9,color:T.mut,fontFamily:"'Courier New',monospace",flexShrink:0}}>{fmtDl(t.deadline)}</span>
 </button>})}
 </div>
 <div style={{display:"flex",gap:8}}>
@@ -990,7 +990,7 @@ return(<div style={{minHeight:"100dvh",background:T.bg,color:T.text,fontFamily:"
 
 {!showForm&&!isHabit&&!focusTaskId&&!showSettings&&!showPicker&&!showWeekReport&&!showMonthReset&&!showQuotaWarn&&!showBackupNudge&&!expandedId&&!memoExpId&&<button style={{position:"fixed",bottom:"calc("+(undoData?108:52)+"px + env(safe-area-inset-bottom))",right:20,width:56,height:56,borderRadius:"50%",border:"none",background:"#ff3b30",color:"#fff",fontSize:32,fontWeight:300,cursor:"pointer",boxShadow:"0 4px 16px rgba(255,59,48,0.35),0 2px 6px rgba(0,0,0,0.2)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:150,padding:0,lineHeight:1,touchAction:"manipulation",transition:"bottom .2s"}} onClick={()=>{resetForm();setShowForm(true)}} aria-label={isWish?"やりたいことを追加":"新しいタスク"}>+</button>}
 
-<div style={{position:"fixed",bottom:6,right:10,fontFamily:"'JetBrains Mono',monospace",fontSize:9,color:T.dim,userSelect:"none",pointerEvents:"none"}}>v{VER}</div>
+<div style={{position:"fixed",bottom:6,right:10,fontFamily:"'Courier New',monospace",fontSize:9,color:T.dim,userSelect:"none",pointerEvents:"none"}}>v{VER}</div>
 </div>)
 }
 
@@ -1023,7 +1023,7 @@ return(<div {...swipeHandlers} style={{position:"relative",overflow:"hidden",bor
 </div>:<div style={{display:"flex",alignItems:"center",gap:8}}>
 <button style={{width:20,height:20,borderRadius:5,border:"2px solid "+(habit.doneToday?"#4ade80":T.chk),background:habit.doneToday?"#4ade80":"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,color:"#000",fontSize:10,fontWeight:700}} onClick={e=>{e.stopPropagation();onToggleDone()}}>{habit.doneToday&&"✓"}</button>
 <div style={{fontSize:18,flexShrink:0,width:24,textAlign:"center",cursor:"pointer"}} onClick={()=>onSetEdit(habit.id)}>{habit.icon||"📌"}</div>
-<div style={{flex:1,cursor:"pointer",minWidth:0}} onClick={()=>onSetEdit(habit.id)}><ScrollTitle text={habit.title} style={{fontSize:13,fontWeight:500,color:T.text,textDecoration:habit.doneToday?"line-through":"none"}}/><div style={{display:"flex",gap:6,alignItems:"center",marginTop:2}}>{habit.streak>=2&&<span style={{fontSize:10,color:"#ff9500",fontFamily:"'JetBrains Mono',monospace",fontWeight:700}}>🔥 {habit.streak}</span>}{habit.memo&&<span style={{fontSize:10,color:T.mut,fontFamily:"'JetBrains Mono',monospace",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0,flex:1}}>{habit.memo}</span>}</div></div>
+<div style={{flex:1,cursor:"pointer",minWidth:0}} onClick={()=>onSetEdit(habit.id)}><ScrollTitle text={habit.title} style={{fontSize:13,fontWeight:500,color:T.text,textDecoration:habit.doneToday?"line-through":"none"}}/><div style={{display:"flex",gap:6,alignItems:"center",marginTop:2}}>{habit.streak>=2&&<span style={{fontSize:10,color:"#ff9500",fontFamily:"'Courier New',monospace",fontWeight:700}}>🔥 {habit.streak}</span>}{habit.memo&&<span style={{fontSize:10,color:T.mut,fontFamily:"'Courier New',monospace",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",minWidth:0,flex:1}}>{habit.memo}</span>}</div></div>
 <div style={{flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",width:28,height:28,color:T.dim,cursor:"grab",touchAction:"none"}} onTouchStart={e=>{e.stopPropagation();onDragStart(e.touches[0].clientY)}} onTouchMove={e=>{if(dragging){e.stopPropagation();onDragMove(e.touches[0].clientY)}}} onTouchEnd={e=>{e.stopPropagation();onDragEnd()}} onClick={e=>e.stopPropagation()}><Grip/></div>
 </div>}
 </div>
@@ -1135,7 +1135,7 @@ return(<div {...swipeHandlers} style={{position:"relative",overflow:"hidden",bor
 </div>}
 {showQuickMenu&&<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,background:"rgba(0,0,0,0.6)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={()=>setShowQuickMenu(false)}>
 <div style={{background:T.card,border:"1px solid "+T.brd,borderRadius:14,padding:14,minWidth:240,maxWidth:320,userSelect:"none",WebkitUserSelect:"none",WebkitTouchCallout:"none"}} onClick={e=>e.stopPropagation()}>
-<div style={{fontSize:12,color:T.mut,marginBottom:10,fontFamily:"'JetBrains Mono',monospace",textAlign:"center"}}>クイック操作</div>
+<div style={{fontSize:12,color:T.mut,marginBottom:10,fontFamily:"'Courier New',monospace",textAlign:"center"}}>クイック操作</div>
 <div style={{fontSize:14,fontWeight:700,color:T.text,marginBottom:12,textAlign:"center",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{task.icon?task.icon+" ":""}{task.title}</div>
 <div style={{display:"flex",flexDirection:"column",gap:6}}>
 {!task.done&&task.type!=="wish"&&onFocus&&<button style={{padding:"13px",borderRadius:8,border:"none",background:"#ff9500",color:"#000",fontSize:14,fontWeight:800,cursor:"pointer",letterSpacing:1}} onClick={()=>{onFocus();setShowQuickMenu(false)}}>▶ これやる(集中モード)</button>}
@@ -1159,7 +1159,7 @@ return(<div {...swipeHandlers} style={{position:"relative",overflow:"hidden",bor
 </div>
 <div style={{flex:1,minWidth:0,paddingTop:2}}>
 {(expanded||memoExp)?<div style={{fontSize:ts.fs,fontWeight:ts.fw,color:ts.tc,wordBreak:"break-word",lineHeight:1.4}}>{task.title}</div>:<ScrollTitle text={task.title} style={{fontSize:ts.fs,fontWeight:ts.fw,color:ts.tc}}/>}
-{!isW&&!task.done&&<div style={{fontSize:ts.mfs,color:ts.mc,marginTop:3,display:"flex",gap:5,fontFamily:"'JetBrains Mono',monospace",flexWrap:"wrap",alignItems:"center"}}>
+{!isW&&!task.done&&<div style={{fontSize:ts.mfs,color:ts.mc,marginTop:3,display:"flex",gap:5,fontFamily:"'Courier New',monospace",flexWrap:"wrap",alignItems:"center"}}>
 <span style={{color:im?.c,fontSize:ts.mfs+2,fontWeight:900}}>{im?.icon}</span>
 <span style={{opacity:.3}}>·</span>
 <span style={{color:rc,fontSize:ts.mfs,letterSpacing:1}}>{wDots(task.weight,rc)}</span>
@@ -1169,8 +1169,8 @@ return(<div {...swipeHandlers} style={{position:"relative",overflow:"hidden",bor
 {task.recurrence&&task.recurrence!=="none"&&<><span style={{opacity:.3}}>·</span><span>🔁</span></>}
 {hs&&<><span style={{opacity:.3}}>·</span><span style={{color:sd===subs.length?"#4ade80":ts.mc}}>{sd}/{subs.length}</span></>}
 </div>}
-{!isW&&task.done&&task.completedAt&&<div style={{fontSize:9,color:ts.mc,marginTop:3,fontFamily:"'JetBrains Mono',monospace"}}>✓ {new Date(task.completedAt).toLocaleString("ja-JP",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})}</div>}
-{isW&&<div style={{fontSize:10,color:T.mut,marginTop:3,display:"flex",gap:5,fontFamily:"'JetBrains Mono',monospace",flexWrap:"wrap",alignItems:"center"}}>
+{!isW&&task.done&&task.completedAt&&<div style={{fontSize:9,color:ts.mc,marginTop:3,fontFamily:"'Courier New',monospace"}}>✓ {new Date(task.completedAt).toLocaleString("ja-JP",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})}</div>}
+{isW&&<div style={{fontSize:10,color:T.mut,marginTop:3,display:"flex",gap:5,fontFamily:"'Courier New',monospace",flexWrap:"wrap",alignItems:"center"}}>
 {(()=>{const days=Math.floor((Date.now()-task.createdAt)/(24*36e5));return<span style={{color:days>90?"#c084fc":T.mut}}>💭 {days===0?"今日":days+"日前に追加"}</span>})()}
 {task.deadline&&<><span style={{opacity:.3}}>·</span><span style={{color:wishOver?"#ff3b30":wishUrgent?"#ff9500":T.mut}}>⏰ {fmtDl(task.deadline)}</span></>}
 {task.memo&&<><span style={{opacity:.3}}>·</span><span>{task.memo.slice(0,30)}{task.memo.length>30?"...":""}</span></>}
@@ -1182,20 +1182,20 @@ return(<div {...swipeHandlers} style={{position:"relative",overflow:"hidden",bor
 <span style={{fontSize:13}}>📝</span>
 {task.memo&&<span style={{width:5,height:5,borderRadius:"50%",background:"#4ade80",display:"inline-block"}}/>}
 </button>}
-{isToday&&!task.done&&<span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:ts.bfs,fontWeight:800,letterSpacing:1,padding:ts.bp,borderRadius:5,border:"1px solid #4ade80",background:"rgba(74,222,128,0.15)",color:"#4ade80"}}>TODAY</span>}
-{!task.done&&<span className={isOD?"overdue-pulse":""} style={{fontFamily:"'JetBrains Mono',monospace",fontSize:ts.bfs,fontWeight:700,letterSpacing:1,padding:ts.bp,borderRadius:5,border:"1px solid",background:lb.c+"22",color:lb.c,borderColor:lb.c+"44"}}>{lb.t}</span>}
+{isToday&&!task.done&&<span style={{fontFamily:"'Courier New',monospace",fontSize:ts.bfs,fontWeight:800,letterSpacing:1,padding:ts.bp,borderRadius:5,border:"1px solid #4ade80",background:"rgba(74,222,128,0.15)",color:"#4ade80"}}>TODAY</span>}
+{!task.done&&<span className={isOD?"overdue-pulse":""} style={{fontFamily:"'Courier New',monospace",fontSize:ts.bfs,fontWeight:700,letterSpacing:1,padding:ts.bp,borderRadius:5,border:"1px solid",background:lb.c+"22",color:lb.c,borderColor:lb.c+"44"}}>{lb.t}</span>}
 {draggable&&<div className="ne" style={{display:"flex",alignItems:"center",justifyContent:"center",width:28,height:28,color:T.dim,cursor:"grab",touchAction:"none",marginLeft:2}} onTouchStart={e=>{e.stopPropagation();onDragStart(e.touches[0].clientY)}} onTouchMove={e=>{e.stopPropagation();if(onDragMove)onDragMove(e.touches[0].clientY)}} onTouchEnd={e=>{e.stopPropagation();onDragEnd()}} onClick={e=>e.stopPropagation()}><Grip/></div>}
 </div>
 </div>
 {memoExp&&!expanded&&<div className="ne" style={{marginTop:10,paddingTop:10,borderTop:"1px solid "+T.brd,width:"100%",animation:"slideDown .25s ease"}} onClick={e=>e.stopPropagation()}>
-<div style={{fontSize:9,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:6,fontFamily:"'JetBrains Mono',monospace"}}>📝 メモ</div>
+<div style={{fontSize:9,fontWeight:700,color:T.mut,textTransform:"uppercase",letterSpacing:1,marginBottom:6,fontFamily:"'Courier New',monospace"}}>📝 メモ</div>
 <AutoMemo minH={120} fontSize={14} maxLines={12} placeholder="メモを入力..." value={task.memo} onChange={v=>onUpdateMemo(v)} onClick={e=>e.stopPropagation()} autoFocus style={{width:"100%",padding:"10px 12px",background:T.memo,border:"1px solid "+T.memB,borderRadius:8,color:T.text,outline:"none"}}/>
 </div>}
 {expanded&&<div style={{marginTop:12,paddingTop:12,borderTop:"1px solid "+T.brd,width:"100%",animation:"slideDown .25s ease"}}>
 {!isW&&<div className="ne" style={{display:"flex",justifyContent:"flex-end",gap:6,marginBottom:8,flexWrap:"wrap"}} onClick={e=>e.stopPropagation()}>
-{!task.done&&!isHold&&onToggleToday&&<button style={{padding:"6px 11px",borderRadius:7,border:"1px "+(isToday?"solid #4ade80":"dashed "+T.dim),background:isToday?"rgba(74,222,128,0.12)":"transparent",color:isToday?"#4ade80":T.mut,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace",letterSpacing:1}} onClick={e=>{e.stopPropagation();onToggleToday()}}>{isToday?"◆ TODAY":"+ TODAY"}</button>}
+{!task.done&&!isHold&&onToggleToday&&<button style={{padding:"6px 11px",borderRadius:7,border:"1px "+(isToday?"solid #4ade80":"dashed "+T.dim),background:isToday?"rgba(74,222,128,0.12)":"transparent",color:isToday?"#4ade80":T.mut,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"'Courier New',monospace",letterSpacing:1}} onClick={e=>{e.stopPropagation();onToggleToday()}}>{isToday?"◆ TODAY":"+ TODAY"}</button>}
 <button style={{padding:"6px 11px",borderRadius:7,border:"1px "+(task.location?"solid "+T.brd:"dashed "+T.dim),background:task.location?T.inp:"transparent",color:task.location?T.text:T.mut,fontSize:11,fontWeight:600,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:4}} onClick={e=>{e.stopPropagation();setLocEditing(true)}}>{task.location?(locEmojis[task.location]?locEmojis[task.location]+" ":"📍 ")+task.location:"+ 場所"}</button>
-<button style={{padding:"6px 11px",borderRadius:7,border:"1px "+(task.deadline?"solid "+T.brd:"dashed "+T.dim),background:task.deadline?T.inp:"transparent",color:task.deadline?T.text:T.mut,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"'JetBrains Mono',monospace"}} onClick={e=>{e.stopPropagation();setDlEditing(true)}}>{task.deadline?fmtDlBtn(task.deadline):"無期限"}</button>
+<button style={{padding:"6px 11px",borderRadius:7,border:"1px "+(task.deadline?"solid "+T.brd:"dashed "+T.dim),background:task.deadline?T.inp:"transparent",color:task.deadline?T.text:T.mut,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"'Courier New',monospace"}} onClick={e=>{e.stopPropagation();setDlEditing(true)}}>{task.deadline?fmtDlBtn(task.deadline):"無期限"}</button>
 </div>}
 {locEditing&&!isW&&<div className="ne" style={{marginBottom:8,display:"flex",gap:6,alignItems:"center"}} onClick={e=>e.stopPropagation()}>
 <input list={"locs-"+task.id} autoFocus style={{flex:1,padding:"6px 10px",background:T.inp,border:"1px solid "+T.cOn,borderRadius:6,color:T.text,fontSize:12,outline:"none"}} defaultValue={task.location||""} placeholder="場所名..." onBlur={e=>{onQuickUpdate("location",e.target.value.trim());setLocEditing(false)}} onKeyDown={e=>{if(e.key==="Enter"&&!e.nativeEvent.isComposing){e.target.blur()}}}/>
@@ -1212,16 +1212,16 @@ return(<div {...swipeHandlers} style={{position:"relative",overflow:"hidden",bor
 <span style={{opacity:.2}}>|</span>
 {WI.map(o=>{const c=roi(task.importance,o.v);return<button key={o.v} style={{padding:"3px 8px",borderRadius:5,border:"1px solid "+(task.weight===o.v?c:T.brd),fontSize:10,fontWeight:600,cursor:"pointer",background:task.weight===o.v?c:T.cOff,color:task.weight===o.v?"#000":T.cOffT}} onClick={e=>{e.stopPropagation();onQuickUpdate("weight",o.v)}}>{o.l}</button>})}
 </div>}
-{task.recurrence&&task.recurrence!=="none"&&<div style={{display:"flex",justifyContent:"space-between",padding:"4px 0",fontSize:12}}><span style={{color:T.mut,fontFamily:"'JetBrains Mono',monospace",fontSize:10}}>繰り返し</span><span style={{color:T.text}}>{REC.find(r=>r.v===task.recurrence)?.l}</span></div>}
+{task.recurrence&&task.recurrence!=="none"&&<div style={{display:"flex",justifyContent:"space-between",padding:"4px 0",fontSize:12}}><span style={{color:T.mut,fontFamily:"'Courier New',monospace",fontSize:10}}>繰り返し</span><span style={{color:T.text}}>{REC.find(r=>r.v===task.recurrence)?.l}</span></div>}
 <div style={{marginTop:10}}>
-{hs&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}><span style={{color:T.sub,fontFamily:"'JetBrains Mono',monospace",fontSize:10,letterSpacing:1,textTransform:"uppercase",fontWeight:700}}>サブタスク</span><span style={{fontSize:11,color:sd===subs.length?"#4ade80":T.sub,fontFamily:"'JetBrains Mono',monospace",fontWeight:700}}>{sd}/{subs.length}</span></div>}
+{hs&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}><span style={{color:T.sub,fontFamily:"'Courier New',monospace",fontSize:10,letterSpacing:1,textTransform:"uppercase",fontWeight:700}}>サブタスク</span><span style={{fontSize:11,color:sd===subs.length?"#4ade80":T.sub,fontFamily:"'Courier New',monospace",fontWeight:700}}>{sd}/{subs.length}</span></div>}
 {subs.map(sub=><div key={sub.id} className="ne" style={{display:"flex",alignItems:"center",gap:8,padding:"7px 0",borderBottom:"1px solid "+(isDark?"#1a1a1a":T.brd),opacity:subDragId===sub.id?0.5:1,transition:"opacity .2s"}}><button style={{width:16,height:16,borderRadius:4,border:"2px solid "+(sub.done?"#4ade80":T.chk),background:sub.done?"#4ade80":"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}} onClick={e=>{e.stopPropagation();const wasOff=!sub.done;const updated=subs.map(s=>s.id===sub.id?{...s,done:!s.done}:s);onUpdateSubtasks(updated);if(wasOff&&typeof navigator!=="undefined"&&navigator.vibrate)try{navigator.vibrate(10)}catch{}const allDone=updated.length>0&&updated.every(s=>s.done);if(allDone&&!task.done){setTimeout(()=>{if(confirm("サブタスク全部✓!親タスクも完了にする?"))onToggleDone()},300)}}}>{sub.done&&<span style={{fontSize:9,color:"#000",fontWeight:800}}>✓</span>}</button>{editingSubId===sub.id?<input autoFocus value={editingSubText} onChange={e=>setEditingSubText(e.target.value)} onBlur={()=>{const t=editingSubText.trim();if(t)onUpdateSubtasks(subs.map(s=>s.id===sub.id?{...s,title:t}:s));setEditingSubId(null)}} onKeyDown={e=>{if(e.key==="Enter"&&!e.nativeEvent.isComposing){e.target.blur()}else if(e.key==="Escape"){setEditingSubId(null)}}} onClick={e=>e.stopPropagation()} style={{flex:1,padding:"4px 8px",background:T.memo,border:"1px solid "+T.cOn,borderRadius:5,color:T.text,fontSize:13,fontWeight:500,outline:"none",minWidth:0,fontFamily:"inherit"}}/>:<span style={{fontSize:13,fontWeight:500,color:T.text,flex:1,textDecoration:sub.done?"line-through":"none",opacity:sub.done?.5:1,lineHeight:1.4,cursor:"text",minWidth:0,wordBreak:"break-word"}} onClick={e=>{e.stopPropagation();setEditingSubId(sub.id);setEditingSubText(sub.title)}}>{sub.title}</span>}<div style={{display:"flex",alignItems:"center",justifyContent:"center",width:26,height:26,color:T.dim,cursor:"grab",touchAction:"none",flexShrink:0}} onTouchStart={e=>{e.stopPropagation();subDragStart(sub.id,e.touches[0].clientY)}} onTouchMove={e=>{if(subDragId===sub.id){e.stopPropagation();subDragMove(e.touches[0].clientY)}}} onTouchEnd={e=>{e.stopPropagation();subDragEnd()}} onClick={e=>e.stopPropagation()}><Grip/></div><button style={{background:"none",border:"none",color:T.dim,fontSize:12,cursor:"pointer",padding:4}} onClick={e=>{e.stopPropagation();onUpdateSubtasks(subs.filter(s=>s.id!==sub.id))}}>✕</button></div>)}
 {(showSubInput||hs)?<div className="ne" style={{display:"flex",gap:6,marginTop:6}}><input style={{flex:1,padding:"8px 10px",background:T.memo,border:"1px solid "+T.brd,borderRadius:6,color:T.text,fontSize:13,outline:"none",minWidth:0}} placeholder="サブタスク追加..." value={ns} onChange={e=>setNs(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.stopPropagation();addS()}}} onClick={e=>e.stopPropagation()}/><button style={{width:30,height:30,borderRadius:6,border:"1px solid "+T.brd,background:T.cOff,color:T.sub,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} onClick={e=>{e.stopPropagation();addS()}}>+</button></div>
 :<button className="ne" style={{marginTop:4,padding:"5px 10px",borderRadius:6,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:11,fontWeight:600,cursor:"pointer"}} onClick={e=>{e.stopPropagation();setShowSubInput(true)}}>+ サブタスク</button>}
 </div>
 <div className="ne" style={{marginTop:12}} onClick={e=>e.stopPropagation()}>
 {(memoEditing||(task.memo&&task.memo.trim()))?<>
-<div style={{fontSize:10,fontWeight:700,color:T.sub,textTransform:"uppercase",letterSpacing:1,marginBottom:5,fontFamily:"'JetBrains Mono',monospace"}}>メモ</div>
+<div style={{fontSize:10,fontWeight:700,color:T.sub,textTransform:"uppercase",letterSpacing:1,marginBottom:5,fontFamily:"'Courier New',monospace"}}>メモ</div>
 <AutoMemo autoFocus={memoEditing&&!task.memo} minH={50} fontSize={13} maxLines={12} placeholder="メモ..." value={task.memo} onChange={v=>onUpdateMemo(v)} style={{width:"100%",padding:10,background:T.memo,border:"1px solid "+T.memB,borderRadius:6,color:T.text,outline:"none"}}/>
 </>:<button style={{padding:"6px 12px",borderRadius:6,border:"1px solid "+T.brd,background:"transparent",color:T.sub,fontSize:11,fontWeight:600,cursor:"pointer"}} onClick={e=>{e.stopPropagation();setMemoEditing(true)}}>+ メモ</button>}
 </div>
@@ -1236,7 +1236,7 @@ return(<div {...swipeHandlers} style={{position:"relative",overflow:"hidden",bor
 </div>
 </div>
 {isHold&&<div className="ne" style={{marginTop:14,marginLeft:-22,marginRight:-14,padding:"12px 14px 12px 22px",background:"rgba(192,132,252,0.06)",borderTop:"1px solid #c084fc",borderBottom:"1px solid #c084fc"}} onClick={e=>e.stopPropagation()}>
-<div style={{fontSize:10,fontWeight:700,color:"#c084fc",textTransform:"uppercase",letterSpacing:1,marginBottom:8,fontFamily:"'JetBrains Mono',monospace"}}>⏸ 保留中</div>
+<div style={{fontSize:10,fontWeight:700,color:"#c084fc",textTransform:"uppercase",letterSpacing:1,marginBottom:8,fontFamily:"'Courier New',monospace"}}>⏸ 保留中</div>
 <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6,flexWrap:"wrap"}}>
 <span style={{fontSize:11,color:T.sub,whiteSpace:"nowrap"}}>解除日:</span>
 <input type="date" style={{flex:1,minWidth:140,padding:"6px 10px",background:T.bg,border:"1px solid "+T.brd,borderRadius:5,color:T.text,fontSize:12,outline:"none",colorScheme:T.sch}} value={task.holdUntil?task.holdUntil.slice(0,10):""} onChange={e=>onSetHoldUntil&&onSetHoldUntil(e.target.value?e.target.value+"T"+(new Date().toTimeString().slice(0,5)):"")}/>
