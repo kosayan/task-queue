@@ -10,18 +10,20 @@ export default defineConfig({
       registerType: 'autoUpdate',
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,mp3}'],
-        runtimeCaching: []
+        runtimeCaching: [],
+        navigateFallback: 'index.html',
+        navigationPreload: false
       },
       manifest: {
         name: 'TASK QUEUE',
         short_name: 'TASK QUEUE',
-        start_url: '/task-queue/',
-        display: 'standalone',
-        background_color: '#0a0a0a',
         theme_color: '#0a0a0a',
+        background_color: '#0a0a0a',
+        display: 'standalone',
+        start_url: '/task-queue/',
         icons: [
-          { src: '/task-queue/icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/task-queue/icon-512.png', sizes: '512x512', type: 'image/png' }
+          { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'icon-512.png', sizes: '512x512', type: 'image/png' }
         ]
       }
     })
